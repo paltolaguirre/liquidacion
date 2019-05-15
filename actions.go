@@ -16,12 +16,8 @@ import (
 
 func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 
-	tokenAutenticacion, tokenError := apiclientautenticacion.CheckTokenValido(r)
-
-	if tokenError != nil {
-		apiclientautenticacion.ErrorToken(w, tokenError)
-		return
-	} else {
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
 
 		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion)
 		automigrateTablasPrivadas(db)
@@ -38,12 +34,8 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 
 func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 
-	tokenAutenticacion, tokenError := apiclientautenticacion.CheckTokenValido(r)
-
-	if tokenError != nil {
-		apiclientautenticacion.ErrorToken(w, tokenError)
-		return
-	} else {
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
 
 		params := mux.Vars(r)
 		liquidacion_id := params["id"]
@@ -67,12 +59,8 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 
 func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
-	tokenAutenticacion, tokenError := apiclientautenticacion.CheckTokenValido(r)
-
-	if tokenError != nil {
-		apiclientautenticacion.ErrorToken(w, tokenError)
-		return
-	} else {
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
 
@@ -100,13 +88,8 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
-	tokenAutenticacion, tokenError := apiclientautenticacion.CheckTokenValido(r)
-
-	if tokenError != nil {
-
-		apiclientautenticacion.ErrorToken(w, tokenError)
-		return
-	} else {
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
 
 		params := mux.Vars(r)
 		//se convirtió el string en uint para poder comparar
@@ -155,13 +138,8 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 
-	tokenAutenticacion, tokenError := apiclientautenticacion.CheckTokenValido(r)
-
-	if tokenError != nil {
-
-		apiclientautenticacion.ErrorToken(w, tokenError)
-		return
-	} else {
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
 
 		//Para obtener los parametros por la url
 		params := mux.Vars(r)
