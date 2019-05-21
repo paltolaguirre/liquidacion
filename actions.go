@@ -14,13 +14,15 @@ import (
 	"github.com/xubiosueldos/liquidacion/structLiquidacion"
 )
 
+var nombreMicroservicio string = "liquidacion"
+
 func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
 
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion)
-		automigrateTablasPrivadas(db)
+		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+
 		defer db.Close()
 
 		var liquidaciones []structLiquidacion.Liquidacion
@@ -42,8 +44,8 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 
 		var liquidacion structLiquidacion.Liquidacion
 
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion)
-		automigrateTablasPrivadas(db)
+		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+
 		defer db.Close()
 
 		//gorm:auto_preload se usa para que complete todos los struct con su informacion
@@ -73,8 +75,8 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer r.Body.Close()
 
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion)
-		automigrateTablasPrivadas(db)
+		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+
 		defer db.Close()
 
 		if err := db.Create(&liquidacion_data).Error; err != nil {
@@ -93,8 +95,8 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 		params := mux.Vars(r)
 		//se convirtió el string en uint para poder comparar
-		param_liquidacionid, _ := strconv.ParseUint(params["id"], 10, 64)
-		p_liquidacionid := uint(param_liquidacionid)
+		param_liquidacionid, _ := strconv.ParseInt(params["id"], 10, 64)
+		p_liquidacionid := int(param_liquidacionid)
 
 		if p_liquidacionid == 0 {
 			framework.RespondError(w, http.StatusNotFound, framework.IdParametroVacio)
@@ -117,8 +119,8 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			liquidacion_data.ID = p_liquidacionid
 
-			db := apiclientconexionbd.ObtenerDB(tokenAutenticacion)
-			automigrateTablasPrivadas(db)
+			db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+
 			defer db.Close()
 
 			if err := db.Save(&liquidacion_data).Error; err != nil {
@@ -145,8 +147,8 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		liquidacion_id := params["id"]
 
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion)
-		automigrateTablasPrivadas(db)
+		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+
 		defer db.Close()
 
 		//--Borrado Fisico
@@ -161,7 +163,7 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func automigrateTablasPrivadas(db *gorm.DB) {
+func AutomigrateTablasPrivadas(db *gorm.DB) {
 
 	//para actualizar tablas...agrega columnas e indices, pero no elimina
 	db.AutoMigrate(&structLiquidacion.Liquidacion{})
