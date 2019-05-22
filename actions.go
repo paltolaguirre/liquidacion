@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/xubiosueldos/framework/configuracion"
+
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -21,7 +23,8 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
 
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+		versionMicroservicio := obtenerVersionLiquidacion()
+		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
 
 		defer db.Close()
 
@@ -44,7 +47,8 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 
 		var liquidacion structLiquidacion.Liquidacion
 
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+		versionMicroservicio := obtenerVersionLiquidacion()
+		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
 
 		defer db.Close()
 
@@ -75,7 +79,8 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer r.Body.Close()
 
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+		versionMicroservicio := obtenerVersionLiquidacion()
+		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
 
 		defer db.Close()
 
@@ -119,7 +124,8 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			liquidacion_data.ID = p_liquidacionid
 
-			db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+			versionMicroservicio := obtenerVersionLiquidacion()
+			db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
 
 			defer db.Close()
 
@@ -147,7 +153,8 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		liquidacion_id := params["id"]
 
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, AutomigrateTablasPrivadas)
+		versionMicroservicio := obtenerVersionLiquidacion()
+		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
 
 		defer db.Close()
 
@@ -168,4 +175,10 @@ func AutomigrateTablasPrivadas(db *gorm.DB) {
 	//para actualizar tablas...agrega columnas e indices, pero no elimina
 	db.AutoMigrate(&structLiquidacion.Liquidacion{})
 
+}
+
+func obtenerVersionLiquidacion() int {
+	configuracion := configuracion.GetInstance()
+
+	return configuracion.Versionliquidacion
 }
