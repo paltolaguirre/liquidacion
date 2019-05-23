@@ -95,6 +95,10 @@ github.com/xubiosueldos/framework v0.0.0-20190514130847-a392b8b7bf9b h1:OaWXsrFZ
 github.com/xubiosueldos/framework v0.0.0-20190514130847-a392b8b7bf9b/go.mod h1:txPj3GVjVoZeJnObRIBrzNFVDT7baf2VEpK3kCkpDWg=
 github.com/xubiosueldos/framework v0.0.0-20190522111645-0816e190bbfb h1:LyD5yobcFRSlNiYBVJ5R1GD9CoThZzxiCvEFkwF4kDs=
 github.com/xubiosueldos/framework v0.0.0-20190522111645-0816e190bbfb/go.mod h1:txPj3GVjVoZeJnObRIBrzNFVDT7baf2VEpK3kCkpDWg=
+github.com/xubiosueldos/framework v0.0.0-20190523131015-5bbfef162085 h1:NRE4q27RRzjrKnSEcZuPv4GRdAq+3J8kzEeSyJomCrA=
+github.com/xubiosueldos/framework v0.0.0-20190523131015-5bbfef162085/go.mod h1:txPj3GVjVoZeJnObRIBrzNFVDT7baf2VEpK3kCkpDWg=
+github.com/xubiosueldos/framework v0.0.0-20190523131541-5dfe865fb28f h1:jBAw9KYst8mVeY2srajJWMjptpeqj7hJRSDWYWvoTuo=
+github.com/xubiosueldos/framework v0.0.0-20190523131541-5dfe865fb28f/go.mod h1:txPj3GVjVoZeJnObRIBrzNFVDT7baf2VEpK3kCkpDWg=
 go.opencensus.io v0.20.1/go.mod h1:6WKK9ahsWS3RSO+PY9ZHZUfv2irvY6gN279GOPZjmmk=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
