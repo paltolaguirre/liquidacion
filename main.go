@@ -3,13 +3,16 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/xubiosueldos/framework/configuracion"
 )
 
 func main() {
+	configuracion := configuracion.GetInstance()
 
 	router := newRouter()
 
-	server := http.ListenAndServe(":8085", router)
+	server := http.ListenAndServe(":"+configuracion.Puertomicroserivicioliquidacion, router)
 
 	log.Fatal(server)
 

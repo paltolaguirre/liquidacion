@@ -30,31 +30,31 @@ var routes = Routes{
 	Route{
 		"LiquidacionList",
 		"GET",
-		"/liquidaciones",
+		"/api/liquidacion/liquidaciones",
 		LiquidacionList,
 	},
 	Route{
 		"LiquidacionShow",
 		"GET",
-		"/liquidaciones/{id}",
+		"/api/liquidacion/liquidaciones/{id}",
 		LiquidacionShow,
 	},
 	Route{
 		"LiquidacionAdd",
 		"POST",
-		"/liquidaciones",
+		"/api/liquidacion/liquidaciones",
 		LiquidacionAdd,
 	},
 	Route{
 		"LiquidacionUpdate",
 		"PUT",
-		"/liquidaciones/{id}",
+		"/api/liquidacion/liquidaciones/{id}",
 		LiquidacionUpdate,
 	},
 	Route{
 		"LiquidacionRemove",
 		"DELETE",
-		"/liquidaciones/{id}",
+		"/api/liquidacion/liquidaciones/{id}",
 		LiquidacionRemove,
 	},
 }
