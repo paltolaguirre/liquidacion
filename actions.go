@@ -165,7 +165,7 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		framework.RespondJSON(w, http.StatusOK, framework.NovedadEliminada+liquidacion_id)
+		framework.RespondJSON(w, http.StatusOK, framework.Liquidacion+liquidacion_id+framework.MicroservicioEliminado)
 	}
 
 }
