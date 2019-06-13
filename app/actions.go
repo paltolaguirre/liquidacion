@@ -18,6 +18,11 @@ import (
 
 var nombreMicroservicio string = "liquidacion"
 
+// Sirve para controlar si el server esta OK
+func Healthy(writer http.ResponseWriter, request *http.Request) {
+	writer.Write([]byte("Healthy"))
+}
+
 func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
