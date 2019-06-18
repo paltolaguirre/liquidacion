@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -24,9 +25,12 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 	if tokenValido {
 
 		versionMicroservicio := obtenerVersionLiquidacion()
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
-		defer db.Close()
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+
+		//defer db.Close()
+		defer apiclientconexionbd.CerrarDB(db)
 
 		var liquidaciones []structLiquidacion.Liquidacion
 
@@ -48,9 +52,12 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 		var liquidacion structLiquidacion.Liquidacion
 
 		versionMicroservicio := obtenerVersionLiquidacion()
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
-		defer db.Close()
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+
+		//defer db.Close()
+		defer apiclientconexionbd.CerrarDB(db)
 
 		//gorm:auto_preload se usa para que complete todos los struct con su informacion
 		if err := db.Set("gorm:auto_preload", true).First(&liquidacion, "id = ?", liquidacion_id).Error; gorm.IsRecordNotFoundError(err) {
@@ -80,9 +87,12 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
 		versionMicroservicio := obtenerVersionLiquidacion()
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
-		defer db.Close()
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+
+		//defer db.Close()
+		defer apiclientconexionbd.CerrarDB(db)
 
 		if err := db.Create(&liquidacion_data).Error; err != nil {
 			framework.RespondError(w, http.StatusInternalServerError, err.Error())
@@ -100,7 +110,12 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 		params := mux.Vars(r)
 		//se convirtió el string en uint para poder comparar
-		param_liquidacionid, _ := strconv.ParseInt(params["id"], 10, 64)
+		param_liquidacionid, err := strconv.ParseInt(params["id"], 10, 64)
+
+		if err != nil {
+			fmt.Println("Error: ", err)
+		}
+
 		p_liquidacionid := int(param_liquidacionid)
 
 		if p_liquidacionid == 0 {
@@ -125,9 +140,12 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			liquidacion_data.ID = p_liquidacionid
 
 			versionMicroservicio := obtenerVersionLiquidacion()
-			db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+			tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
-			defer db.Close()
+			db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+
+			//defer db.Close()
+			defer apiclientconexionbd.CerrarDB(db)
 
 			if err := db.Save(&liquidacion_data).Error; err != nil {
 				framework.RespondError(w, http.StatusInternalServerError, err.Error())
@@ -154,9 +172,12 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 		liquidacion_id := params["id"]
 
 		versionMicroservicio := obtenerVersionLiquidacion()
-		db := apiclientconexionbd.ObtenerDB(tokenAutenticacion, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
-		defer db.Close()
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+
+		//defer db.Close()
+		defer apiclientconexionbd.CerrarDB(db)
 
 		//--Borrado Fisico
 		if err := db.Unscoped().Where("id = ?", liquidacion_id).Delete(structLiquidacion.Liquidacion{}).Error; err != nil {
