@@ -233,6 +233,13 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 		liquidacionid := liquidacion_data.ID
 
+		var requestMono requestMono
+
+		if err := requestMono.requestMonolitico("CANQUERY", w, r, liquidacion_data, tokenAutenticacion, "cuenta").Error; err != nil {
+			framework.RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
 		if p_liquidacionid == liquidacionid || liquidacionid == 0 {
 
 			liquidacion_data.ID = p_liquidacionid
