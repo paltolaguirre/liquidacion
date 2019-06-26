@@ -69,7 +69,7 @@ func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r
 	strHlprSrv.Tenant = token.Tenant
 	strHlprSrv.Token = token.Token
 	strHlprSrv.Username = token.Username
-	strHlprSrv.CuentaContable = *liquidacion_data.Banco
+	strHlprSrv.CuentaContable = *liquidacion_data.Cuentabanco
 	pagesJson, err := json.Marshal(strHlprSrv)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
