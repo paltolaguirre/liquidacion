@@ -20,7 +20,7 @@ type Liquidacion struct {
 	Fechaultimodepositoaportejubilatorio time.Time               `json:"fechaultimodepositoaportejubilatorio"`
 	Zonatrabajo                          string                  `json:"zonatrabajo"`
 	Condicionpago                        *int                    `json:"condicionpago"` /*1-Cuenta Corriente, 2-Contado*/
-	Banco                                *int                    `json:"banco"`         /*Hace referencia a la Cuenta Banco*/
+	Cuentabanco                          *int                    `json:"cuentabanco"`
 	Fechaperiododepositado               time.Time               `json:"fechaperiododepositado"`
 	Fechaperiodoliquidacion              time.Time               `json:"fechaperiodoliquidacion"`
 	Importesremunerativos                []Importeremunerativo   `json:"importesremunerativos" gorm:"ForeignKey:Liquidacionid;association_foreignkey:ID"`
