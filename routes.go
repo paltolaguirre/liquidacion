@@ -57,4 +57,10 @@ var routes = Routes{
 		"/api/liquidacion/liquidaciones/{id}",
 		LiquidacionRemove,
 	},
+	Route{
+		"LiquidacionContabilizar",
+		"POST",
+		"/api/liquidacion/contabilizar",
+		LiquidacionContabilizar,
+	},
 }
