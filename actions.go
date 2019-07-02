@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/xubiosueldos/framework/configuracion"
 
@@ -51,8 +53,8 @@ type requestMono struct {
 	Error error
 }
 
-type strIdsLiquidaciones struct {
-	Idsliquidaciones []int `json:"idsliquidaciones"`
+type strFechaLiquidacionesAContabilizar struct {
+	Fechaliquidaciones time.Time `json:"fechaliquidaciones"`
 }
 
 type strCuentaImporte struct {
@@ -61,12 +63,17 @@ type strCuentaImporte struct {
 }
 
 type strLiquidacionContabilizar struct {
-	Username        string             `json:"username"`
-	Tenant          string             `json:"tenant"`
-	Token           string             `json:"token"`
-	Liquidacionid   int                `json:"liquidacionid"`
-	Descripcion     string             `json:"descripcion"`
-	Cuentasimportes []strCuentaImporte `json:"cuentasimportes"`
+	Username         string             `json:"username"`
+	Tenant           string             `json:"tenant"`
+	Token            string             `json:"token"`
+	Descripcion      string             `json:"descripcion"`
+	FechaLiquidacion string             `json:"fechaliquidacion"`
+	Cuentasimportes  []strCuentaImporte `json:"cuentasimportes"`
+}
+
+type respJson struct {
+	Codigo    int    `json:"codigo"`
+	Respuesta string `json:"respuesta"`
 }
 
 var nombreMicroservicio string = "liquidacion"
@@ -338,47 +345,54 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 }
 
 func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
-
+	var mapCuentasImportes = make(map[int]float32)
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
 
-		var stridsliquidaciones strIdsLiquidaciones
+		var strFechaLiquidacionesAContabilizar strFechaLiquidacionesAContabilizar
 
-		if err := decoder.Decode(&stridsliquidaciones); err != nil {
+		if err := decoder.Decode(&strFechaLiquidacionesAContabilizar); err != nil {
 			framework.RespondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-
-		defer r.Body.Close()
 
 		versionMicroservicio := obtenerVersionLiquidacion()
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
 
-		for i := 0; i < len(stridsliquidaciones.Idsliquidaciones); i++ {
+		defer apiclientconexionbd.CerrarDB(db)
 
-			var liquidacion structLiquidacion.Liquidacion
-			liquidacion_id := stridsliquidaciones.Idsliquidaciones[i]
+		var liquidaciones []structLiquidacion.Liquidacion
+		y, m, _ := strFechaLiquidacionesAContabilizar.Fechaliquidaciones.Date()
+		loc := strFechaLiquidacionesAContabilizar.Fechaliquidaciones.Location()
+		firstDay := time.Date(y, m, 1, 0, 0, 0, 0, loc).Format("2006-01-02T15:04:05")
+		lastDay := time.Date(y, m+1, 0, 0, 0, 0, 0, loc).Format("2006-01-02T15:04:05")
 
-			if err := db.Set("gorm:auto_preload", true).First(&liquidacion, "id = ?", liquidacion_id).Error; gorm.IsRecordNotFoundError(err) {
-				framework.RespondError(w, http.StatusNotFound, err.Error())
-				return
+		fechas := strings.Split(firstDay, "-")
+		fecha := fechas[1] + "/" + fechas[0]
+
+		db.Set("gorm:auto_preload", true).Find(&liquidaciones, "fechaperiodoliquidacion BETWEEN ? AND ?", firstDay, lastDay)
+		if len(liquidaciones) > 0 {
+			for i := 0; i < len(liquidaciones); i++ {
+				if !liquidaciones[i].Estacontabilizada {
+					agruparLasCuentasDeLasGrillasYSusImportes(liquidaciones[i], mapCuentasImportes)
+				}
+
 			}
-			if !liquidacion.Estacontabilizada {
-				generarAsientoManualDesdeMonolitico(w, r, liquidacion, tokenAutenticacion)
-			}
 
+			generarAsientoManualDesdeMonolitico(w, r, liquidaciones, mapCuentasImportes, tokenAutenticacion, lastDay, fecha, db)
+		} else {
+			framework.RespondError(w, http.StatusNotFound, "No se encontraron Liquidaciones en el mes y año seleccionado")
 		}
+
 	}
 
 }
 
-func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidacion structLiquidacion.Liquidacion, tokenAutenticacion *publico.Security) {
-
-	var mapCuentasImportes = make(map[int]float32)
+func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *publico.Security, lastDay string, fecha string, db *gorm.DB) {
 
 	var strLiquidacionContabilizar strLiquidacionContabilizar
 	token := *tokenAutenticacion
@@ -386,11 +400,8 @@ func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request,
 	strLiquidacionContabilizar.Tenant = token.Tenant
 	strLiquidacionContabilizar.Token = token.Token
 	strLiquidacionContabilizar.Username = token.Username
-	strLiquidacionContabilizar.Liquidacionid = liquidacion.ID
-	strLiquidacionContabilizar.Descripcion = "Asiento Generado para el Legajo: " + liquidacion.Legajo.Legajo + " en el mes: " + liquidacion.Fechaperiodoliquidacion.Month().String() + " del año: " + strconv.Itoa(liquidacion.Fechaperiodoliquidacion.Year())
-
-	agruparLasCuentasDeLasGrillasYSusImportes(liquidacion, mapCuentasImportes)
-
+	strLiquidacionContabilizar.Descripcion = "Asiento Generado para las Liquidaciones con fecha " + fecha
+	strLiquidacionContabilizar.FechaLiquidacion = lastDay
 	strLiquidacionContabilizar.Cuentasimportes = obtenerCuentasImportesLiquidacion(mapCuentasImportes)
 
 	pagesJson, err := json.Marshal(strLiquidacionContabilizar)
@@ -419,9 +430,23 @@ func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request,
 		fmt.Println("Error: ", err)
 	}
 
-	str := string(body)
-	fmt.Println("BYTES RECIBIDOS :", len(str))
+	if resp.StatusCode == http.StatusOK {
+		marcarLiquidacionesComoContabilizadas(liquidaciones, db)
+		var respuestaJson respJson
+		respuestaJson.Codigo = http.StatusOK
+		respuestaJson.Respuesta = "Se contabilizaron correctamente " + strconv.Itoa(len(liquidaciones)) + " liquidaciones"
+		framework.RespondJSON(w, http.StatusOK, respuestaJson)
+	} else {
+		str := string(body)
+		framework.RespondError(w, http.StatusNotFound, str)
+	}
 
+}
+
+func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liquidacion, db *gorm.DB) {
+	for i := 0; i < len(liquidaciones); i++ {
+		db.Model(&liquidaciones[i]).Update("Estacontabilizada", true)
+	}
 }
 
 func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32) {
