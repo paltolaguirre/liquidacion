@@ -27,4 +27,5 @@ type Liquidacion struct {
 	Importesnoremunerativos              []Importenoremunerativo `json:"importesnoremunerativos" gorm:"ForeignKey:Liquidacionid;association_foreignkey:ID"`
 	Descuentos                           []Descuento             `json:"descuentos" gorm:"ForeignKey:Liquidacionid;association_foreignkey:ID"`
 	Retenciones                          []Retencion             `json:"retenciones" gorm:"ForeignKey:Liquidacionid;association_foreignkey:ID"`
+	Estacontabilizada                    bool                    `json:"estacontabilizada"`
 }

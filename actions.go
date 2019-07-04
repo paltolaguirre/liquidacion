@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/xubiosueldos/framework/configuracion"
 
@@ -51,6 +53,29 @@ type requestMono struct {
 	Error error
 }
 
+type strFechaLiquidacionesAContabilizar struct {
+	Fechaliquidaciones time.Time `json:"fechaliquidaciones"`
+}
+
+type strCuentaImporte struct {
+	Cuentaid      int     `json:"cuentaid"`
+	Importecuenta float32 `json:"importecuenta"`
+}
+
+type strLiquidacionContabilizar struct {
+	Username         string             `json:"username"`
+	Tenant           string             `json:"tenant"`
+	Token            string             `json:"token"`
+	Descripcion      string             `json:"descripcion"`
+	FechaLiquidacion string             `json:"fechaliquidacion"`
+	Cuentasimportes  []strCuentaImporte `json:"cuentasimportes"`
+}
+
+type respJson struct {
+	Codigo    int    `json:"codigo"`
+	Respuesta string `json:"respuesta"`
+}
+
 var nombreMicroservicio string = "liquidacion"
 
 // Sirve para controlar si el server esta OK
@@ -59,8 +84,6 @@ func Healthy(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r *http.Request, liquidacion_data structLiquidacion.Liquidacion, tokenAutenticacion *publico.Security, codigo string) *requestMono {
-
-	//configuracion := configuracion.GetInstance()
 
 	var strHlprSrv strHlprServlet
 	token := *tokenAutenticacion
@@ -97,16 +120,6 @@ func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r
 
 	str := string(body)
 	fmt.Println("BYTES RECIBIDOS :", len(str))
-	/*
-		fixUtf := func(r rune) rune {
-			if r == utf8.RuneError {
-				return -1
-			}
-			return r
-		}
-
-			var dataStruct []strResponse
-			json.Unmarshal([]byte(strings.Map(fixUtf, s)), &dataStruct)*/
 
 	if str == "0" {
 		framework.RespondError(w, http.StatusNotFound, "Cuenta Inexistente")
@@ -329,6 +342,163 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 		framework.RespondJSON(w, http.StatusOK, framework.Liquidacion+liquidacion_id+framework.MicroservicioEliminado)
 	}
 
+}
+
+func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
+	var mapCuentasImportes = make(map[int]float32)
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		decoder := json.NewDecoder(r.Body)
+
+		var strFechaLiquidacionesAContabilizar strFechaLiquidacionesAContabilizar
+
+		if err := decoder.Decode(&strFechaLiquidacionesAContabilizar); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		versionMicroservicio := obtenerVersionLiquidacion()
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+
+		defer apiclientconexionbd.CerrarDB(db)
+
+		var liquidaciones []structLiquidacion.Liquidacion
+		y, m, _ := strFechaLiquidacionesAContabilizar.Fechaliquidaciones.Date()
+		loc := strFechaLiquidacionesAContabilizar.Fechaliquidaciones.Location()
+		firstDay := time.Date(y, m, 1, 0, 0, 0, 0, loc).Format("2006-01-02T15:04:05")
+		lastDay := time.Date(y, m+1, 0, 0, 0, 0, 0, loc).Format("2006-01-02T15:04:05")
+
+		fechas := strings.Split(firstDay, "-")
+		fecha := fechas[1] + "/" + fechas[0]
+
+		db.Set("gorm:auto_preload", true).Find(&liquidaciones, "fechaperiodoliquidacion BETWEEN ? AND ?", firstDay, lastDay)
+		if len(liquidaciones) > 0 {
+			for i := 0; i < len(liquidaciones); i++ {
+				if !liquidaciones[i].Estacontabilizada {
+					agruparLasCuentasDeLasGrillasYSusImportes(liquidaciones[i], mapCuentasImportes)
+				}
+
+			}
+
+			generarAsientoManualDesdeMonolitico(w, r, liquidaciones, mapCuentasImportes, tokenAutenticacion, lastDay, fecha, db)
+		} else {
+			framework.RespondError(w, http.StatusNotFound, "No se encontraron Liquidaciones en el mes y año seleccionado")
+		}
+
+	}
+
+}
+
+func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *publico.Security, lastDay string, fecha string, db *gorm.DB) {
+
+	var strLiquidacionContabilizar strLiquidacionContabilizar
+	token := *tokenAutenticacion
+
+	strLiquidacionContabilizar.Tenant = token.Tenant
+	strLiquidacionContabilizar.Token = token.Token
+	strLiquidacionContabilizar.Username = token.Username
+	strLiquidacionContabilizar.Descripcion = "Asiento Generado para las Liquidaciones con fecha " + fecha
+	strLiquidacionContabilizar.FechaLiquidacion = lastDay
+	strLiquidacionContabilizar.Cuentasimportes = obtenerCuentasImportesLiquidacion(mapCuentasImportes)
+
+	pagesJson, err := json.Marshal(strLiquidacionContabilizar)
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	url := configuracion.GetUrlMonolitico() + "ContabilizarLiquidacionServlet"
+
+	fmt.Println("URL:>", url)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(pagesJson))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	if resp.StatusCode == http.StatusOK {
+		marcarLiquidacionesComoContabilizadas(liquidaciones, db)
+		var respuestaJson respJson
+		respuestaJson.Codigo = http.StatusOK
+		respuestaJson.Respuesta = "Se contabilizaron correctamente " + strconv.Itoa(len(liquidaciones)) + " liquidaciones"
+		framework.RespondJSON(w, http.StatusOK, respuestaJson)
+	} else {
+		str := string(body)
+		framework.RespondError(w, http.StatusNotFound, str)
+	}
+
+}
+
+func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liquidacion, db *gorm.DB) {
+	for i := 0; i < len(liquidaciones); i++ {
+		db.Model(&liquidaciones[i]).Update("Estacontabilizada", true)
+	}
+}
+
+func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32) {
+
+	var cuentaContable *int
+
+	for i := 0; i < len(liquidacion.Descuentos); i++ {
+		cuentaContable = liquidacion.Descuentos[i].Concepto.CuentaContable
+		importeUnitario := *liquidacion.Descuentos[i].Importeunitario
+
+		importe := mapCuentasImportes[*cuentaContable]
+		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
+
+	}
+
+	for j := 0; j < len(liquidacion.Importesnoremunerativos); j++ {
+		cuentaContable = liquidacion.Importesnoremunerativos[j].Concepto.CuentaContable
+		importeUnitario := *liquidacion.Importesnoremunerativos[j].Importeunitario
+
+		importe := mapCuentasImportes[*cuentaContable]
+		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
+	}
+
+	for k := 0; k < len(liquidacion.Importesremunerativos); k++ {
+		cuentaContable = liquidacion.Importesremunerativos[k].Concepto.CuentaContable
+		importeUnitario := *liquidacion.Importesremunerativos[k].Importeunitario
+
+		importe := mapCuentasImportes[*cuentaContable]
+		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
+	}
+
+	for m := 0; m < len(liquidacion.Retenciones); m++ {
+		cuentaContable = liquidacion.Retenciones[m].Concepto.CuentaContable
+		importeUnitario := *liquidacion.Retenciones[m].Importeunitario
+
+		importe := mapCuentasImportes[*cuentaContable]
+		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
+	}
+
+}
+
+func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []strCuentaImporte {
+	var arrayStrCuentaImporte []strCuentaImporte
+
+	for cuenta, importe := range mapCuentasImportes {
+		var strcuentaimporte strCuentaImporte
+		strcuentaimporte.Cuentaid = cuenta
+		strcuentaimporte.Importecuenta = importe
+		arrayStrCuentaImporte = append(arrayStrCuentaImporte, strcuentaimporte)
+	}
+
+	return arrayStrCuentaImporte
 }
 
 func AutomigrateTablasPrivadas(db *gorm.DB) {
