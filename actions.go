@@ -76,6 +76,10 @@ type respJson struct {
 	Respuesta string `json:"respuesta"`
 }
 
+type IdsAEliminar struct {
+	Ids []int `json:"ids"`
+}
+
 var nombreMicroservicio string = "liquidacion"
 
 // Sirve para controlar si el server esta OK
@@ -499,6 +503,46 @@ func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []str
 	}
 
 	return arrayStrCuentaImporte
+}
+
+func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
+	var resultadoDeEliminacion = make(map[int]string)
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		var idsEliminar IdsAEliminar
+		decoder := json.NewDecoder(r.Body)
+
+		if err := decoder.Decode(&idsEliminar); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		versionMicroservicio := obtenerVersionLiquidacion()
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+
+		defer apiclientconexionbd.CerrarDB(db)
+
+		if len(idsEliminar.Ids) > 0 {
+			for i := 0; i < len(idsEliminar.Ids); i++ {
+				liquidacion_id := idsEliminar.Ids[i]
+				if err := db.Unscoped().Where("id = ?", liquidacion_id).Delete(structLiquidacion.Liquidacion{}).Error; err != nil {
+					//framework.RespondError(w, http.StatusInternalServerError, err.Error())
+					resultadoDeEliminacion[liquidacion_id] = string(err.Error())
+
+				} else {
+					resultadoDeEliminacion[liquidacion_id] = "Fue eliminado con exito"
+				}
+			}
+		} else {
+			framework.RespondError(w, http.StatusInternalServerError, "Seleccione por lo menos un registro")
+		}
+
+		framework.RespondJSON(w, http.StatusOK, resultadoDeEliminacion)
+	}
+
 }
 
 func AutomigrateTablasPrivadas(db *gorm.DB) {
