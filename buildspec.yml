@@ -16,9 +16,12 @@ phases:
       - echo Getting commit hash...
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-      # Logging in to Amazon ECR
-      - echo Logging in to Amazon ECR...
-      - $(aws ecr get-login --no-include-email --region $AWS_REGION)
+      - export GO111MODULE=on
+      - echo Build App started on `date`
+      - cd app/ && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w' -o main *.go && cd ..
+      # Getting configuracion.json
+      - echo Getting configuracion.json
+      - wget https://raw.githubusercontent.com/xubiosueldos/configuracion/master/configuracionProduccion/configuracion.json
   build:
     commands:
       - echo Pre build completed on `date`

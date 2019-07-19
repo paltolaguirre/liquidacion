@@ -156,6 +156,8 @@ github.com/xubiosueldos/framework v0.0.0-20190603133101-66e63e34e421 h1:I1Zf80c5
 github.com/xubiosueldos/framework v0.0.0-20190603133101-66e63e34e421/go.mod h1:Atdymo+Iri+Mn8+VPhqIyb6dW/S/q3xPgobPRPBirzs=
 github.com/xubiosueldos/framework v0.0.0-20190603145241-3bd1c9badd91 h1:ciXkSt5dtZ0iYsHHNjQSMiX8yEf7Axr9TzvDwXvYlTo=
 github.com/xubiosueldos/framework v0.0.0-20190603145241-3bd1c9badd91/go.mod h1:Atdymo+Iri+Mn8+VPhqIyb6dW/S/q3xPgobPRPBirzs=
+github.com/xubiosueldos/framework v0.0.0-20190716174343-07e9d38331c0 h1:jM7b+dHdwQQMAEqrvtK9Ki+T0egFaw72bgvdAoL1Md0=
+github.com/xubiosueldos/framework v0.0.0-20190716174343-07e9d38331c0/go.mod h1:Atdymo+Iri+Mn8+VPhqIyb6dW/S/q3xPgobPRPBirzs=
 github.com/xubiosueldos/legajo v1.0.0 h1:GCrlYMgDceGIaofSBvph4JYSxF84Mc2Rj/KIHLDAZUk=
 github.com/xubiosueldos/legajo v1.0.1-0.20190618135926-69d9a1186081 h1:xYGxVGj1YXH1C8IKBEMnQsx18uWyo/tVwISLKSv5s2w=
 github.com/xubiosueldos/legajo v1.0.1-0.20190618135926-69d9a1186081/go.mod h1:qoPS8aRdOhstnNvr5XnK1dAHGP3M/VHISrZ8ay09Les=

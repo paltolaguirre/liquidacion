@@ -28,4 +28,6 @@ type Liquidacion struct {
 	Descuentos                           []Descuento             `json:"descuentos" gorm:"ForeignKey:Liquidacionid;association_foreignkey:ID"`
 	Retenciones                          []Retencion             `json:"retenciones" gorm:"ForeignKey:Liquidacionid;association_foreignkey:ID"`
 	Estacontabilizada                    bool                    `json:"estacontabilizada"`
+	Asientomanualtransaccionid           int                     `json:"asientomanualtransaccionid"`
+	Asientomanualnombre                  string                  `json:"asientomanualnombre"`
 }
