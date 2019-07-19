@@ -567,7 +567,7 @@ func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []str
 	return arrayStrCuentaImporte
 }
 
-func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
+/*func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
 	var respuestaDescontabilizar = make(map[int]respJson)
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
@@ -647,7 +647,7 @@ func blanquearAsientoManualTransaccionYNombreEnLiquidaciones(w http.ResponseWrit
 
 	db.Model(&liquidaciones).Where("asientomanualtransaccionid = " + strconv.Itoa(asientocontablemanualid)).Updates(structLiquidacion.Liquidacion{Asientomanualtransaccionid: 0, Asientomanualnombre: ""})
 }
-
+*/
 func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 	var resultadoDeEliminacion = make(map[int]string)
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
