@@ -18,7 +18,7 @@ phases:
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - export GO111MODULE=on
       - echo Build App started on `date`
-      - cd app/ && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w' -o main *.go && cd ..
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w' -o main *.go
       # Getting configuracion.json
       - echo Getting configuracion.json
       - wget https://raw.githubusercontent.com/xubiosueldos/configuracion/master/configuracionProduccion/configuracion.json
