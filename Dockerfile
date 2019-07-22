@@ -5,8 +5,8 @@ ARG RECENV=P
 ENV RECENV $RECENV
 
 # Se instala app
-ADD app/main /
-ADD app/configuracion.json /
+ADD main /
+ADD configuracion.json /
 # Se copia certificado de maquina host
 #COPY ca-certificates.crt /etc/ssl/certs/
 
