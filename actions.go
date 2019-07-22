@@ -149,9 +149,7 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
-
-		var p_fechadesde string = r.URL.Query()["fechadesde"][0]
-		var p_fechahasta string = r.URL.Query()["fechahasta"][0]
+		queries := r.URL.Query()
 
 		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
@@ -163,7 +161,13 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 
 		var liquidaciones []structLiquidacion.Liquidacion
 
-		db.Where("fechaperiodoliquidacion BETWEEN ? AND ?", p_fechadesde, p_fechahasta).Find(&liquidaciones)
+		if queries["fechadesde"] == nil && queries["fechahasta"] == nil {
+			db.Find(&liquidaciones)
+		} else {
+			var p_fechadesde string = r.URL.Query()["fechadesde"][0]
+			var p_fechahasta string = r.URL.Query()["fechahasta"][0]
+			db.Where("fechaperiodoliquidacion BETWEEN ? AND ?", p_fechadesde, p_fechahasta).Find(&liquidaciones)
+		}
 
 		framework.RespondJSON(w, http.StatusOK, liquidaciones)
 	}
