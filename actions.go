@@ -67,12 +67,12 @@ type strCuentaImporte struct {
 }
 
 type strLiquidacionContabilizarDescontabilizar struct {
-	Username                string             `json:"username"`
-	Tenant                  string             `json:"tenant"`
-	Token                   string             `json:"token"`
-	Descripcion             string             `json:"descripcion"`
-	Cuentasimportes         []strCuentaImporte `json:"cuentasimportes"`
-	Asientocontablemanualid int                `json:"asientocontablemanualid"`
+	Username                   string             `json:"username"`
+	Tenant                     string             `json:"tenant"`
+	Token                      string             `json:"token"`
+	Descripcion                string             `json:"descripcion"`
+	Cuentasimportes            []strCuentaImporte `json:"cuentasimportes"`
+	Asientomanualtransaccionid int                `json:"asientomanualtransaccionid"`
 }
 
 type respJson struct {
@@ -482,7 +482,7 @@ func requestMonoliticoContabilizarDescontabilizarLiquidaciones(r *http.Request, 
 		strLiquidacionContabilizarDescontabilizar.Descripcion = descripcion
 		strLiquidacionContabilizarDescontabilizar.Cuentasimportes = obtenerCuentasImportesLiquidacion(mapCuentasImportes)
 	} else {
-		strLiquidacionContabilizarDescontabilizar.Asientocontablemanualid = asientomanualtransaccionid
+		strLiquidacionContabilizarDescontabilizar.Asientomanualtransaccionid = asientomanualtransaccionid
 	}
 	pagesJson, err := json.Marshal(strLiquidacionContabilizarDescontabilizar)
 
@@ -571,8 +571,10 @@ func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []str
 	return arrayStrCuentaImporte
 }
 
-/*func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
+func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
 	var respuestaDescontabilizar = make(map[int]respJson)
+	var cantidadLiquidaciones int
+	var cantidadAsientoManualTransaccionID int
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
 
@@ -594,26 +596,38 @@ func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []str
 
 		for i := 0; i < len(strTransaccionesIdsAsientosContablesManuales.Transaccionesidsasientoscontablesmanuales); i++ {
 			asientomanualtransaccionid := strTransaccionesIdsAsientosContablesManuales.Transaccionesidsasientoscontablesmanuales[i]
-			if checkAsientoManualTransaccionID(w, asientomanualtransaccionid, respuestaDescontabilizar, db) {
-				descontabilizarLiquidaciones(w, r, asientomanualtransaccionid, tokenAutenticacion, respuestaDescontabilizar, db)
+			existeAsientoManualID, liquidaciones := checkAsientoManualTransaccionID(w, asientomanualtransaccionid, respuestaDescontabilizar, db)
+			if existeAsientoManualID {
+				cantidadLiquidacionesDescontabilizadas, cantidadTransaccionIDDescontabilizada := descontabilizarLiquidaciones(w, r, liquidaciones, asientomanualtransaccionid, tokenAutenticacion, respuestaDescontabilizar, db)
+				cantidadLiquidaciones = cantidadLiquidaciones + cantidadLiquidacionesDescontabilizadas
+				cantidadAsientoManualTransaccionID = cantidadAsientoManualTransaccionID + cantidadTransaccionIDDescontabilizada
 			} else {
 				var respuestaJson respJson
-				respuestaJson.Codigo = http.StatusOK
-				respuestaJson.Respuesta = "No se encuentra contabilizando ninguna liquidación"
+				respuestaJson.Codigo = http.StatusConflict
+				respuestaJson.Respuesta = "La TransaccionID " + strconv.Itoa(asientomanualtransaccionid) + " no se encuentra contabilizando ninguna liquidación"
 				respuestaDescontabilizar[asientomanualtransaccionid] = respuestaJson
 			}
 		}
+		if cantidadLiquidaciones > 0 {
+			var respuestaJson respJson
+			respuestaJson.Codigo = http.StatusOK
+			respuestaJson.Respuesta = "Se descontabilizaron correctamente " + strconv.Itoa(cantidadLiquidaciones) + " Liquidaciones, correspondientes a " + strconv.Itoa(cantidadAsientoManualTransaccionID) + " Asientos Manuales"
+			respuestaDescontabilizar[-1] = respuestaJson
+		}
+
+		framework.RespondJSON(w, http.StatusOK, respuestaDescontabilizar)
+	} else {
+		framework.RespondError(w, http.StatusConflict, "El token utilizado es invalido")
 	}
 
-	framework(w, http.StatusOK, respuestaDescontabilizar)
 }
-func checkAsientoManualTransaccionID(w http.ResponseWriter, asientomanualtransaccionid int, respuestaDescontabilizar map[int]respJson, db *gorm.DB) bool {
+func checkAsientoManualTransaccionID(w http.ResponseWriter, asientomanualtransaccionid int, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (bool, []structLiquidacion.Liquidacion) {
 
-	liquidaciones := buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid, respuestaDescontabilizar, db)
-	return len(liquidaciones) > 0
+	liquidaciones := buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid, respuestaDescontabilizar, w, db)
+	return len(liquidaciones) > 0, liquidaciones
 }
 
-func buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid int, w http.ResponseWriter, db *gorm.DB) []structLiquidacion.Liquidacion {
+func buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid int, respuestaDescontabilizar map[int]respJson, w http.ResponseWriter, db *gorm.DB) []structLiquidacion.Liquidacion {
 	var liquidaciones []structLiquidacion.Liquidacion
 
 	if err := db.Find(&liquidaciones, "asientomanualtransaccionid = ?", asientomanualtransaccionid).Error; gorm.IsRecordNotFoundError(err) {
@@ -621,37 +635,48 @@ func buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid int,
 
 	}
 
-	return &liquidaciones
+	return liquidaciones
 }
 
-func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, asientomanualtransaccionid int, tokenAutenticacion *publico.Security, respuestaDescontabilizar map[int]string, db *gorm.DB) {
+func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, asientomanualtransaccionid int, tokenAutenticacion *publico.Security, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (int, int) {
 
 	resp := requestMonoliticoContabilizarDescontabilizarLiquidaciones(r, nil, tokenAutenticacion, "", asientomanualtransaccionid, db)
 	body, err := ioutil.ReadAll(resp.Body)
-
+	var cantLiquidaciones int
+	var cantAsientoManualTransaccionID int
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
 
 	defer resp.Body.Close()
 
+	var respuestaJson respJson
 	if resp.StatusCode == http.StatusOK {
-		blanquearAsientoManualTransaccionYNombreEnLiquidaciones(w, asientomanualtransaccionid, db)
-		var respuestaJson respJson
-		respuestaJson.Codigo = http.StatusOK
-		respuestaJson.Respuesta = ""
-		framework.RespondJSON(w, http.StatusOK, respuestaJson)
+		blanquearAsientoManualTransaccionYNombreEnLiquidaciones(w, liquidaciones, asientomanualtransaccionid, db)
+		cantLiquidaciones = cantLiquidaciones + len(liquidaciones)
+		cantAsientoManualTransaccionID = cantAsientoManualTransaccionID + 1
 	} else {
 		str := string(body)
-		framework.RespondError(w, http.StatusNotFound, str)
+		respuestaJson.Codigo = http.StatusNotFound
+		respuestaJson.Respuesta = str
+		respuestaDescontabilizar[asientomanualtransaccionid] = respuestaJson
+
 	}
+
+	return cantLiquidaciones, cantAsientoManualTransaccionID
+
 }
 
-func blanquearAsientoManualTransaccionYNombreEnLiquidaciones(w http.ResponseWriter, asientocontablemanualid int, db *gorm.DB) {
+func blanquearAsientoManualTransaccionYNombreEnLiquidaciones(w http.ResponseWriter, liquidaciones []structLiquidacion.Liquidacion, asientocontablemanualid int, db *gorm.DB) {
 
-	db.Model(&liquidaciones).Where("asientomanualtransaccionid = " + strconv.Itoa(asientocontablemanualid)).Updates(structLiquidacion.Liquidacion{Asientomanualtransaccionid: 0, Asientomanualnombre: ""})
+	//Utilice la forma "manual" para updetear porque la otra no me funcionaba! (ver!)
+	db.Raw("UPDATE LIQUIDACION SET Asientomanualtransaccionid = 0, Asientomanualnombre = '', Estacontabilizada = false WHERE Asientomanualtransaccionid = " + strconv.Itoa(asientocontablemanualid)).Scan(&liquidaciones)
+
+	//var liquidacion structLiquidacion.Liquidacion
+	//db.Model(&liquidacion).Where("Asientomanualtransaccionid = ?", asientocontablemanualid).UpdateColumns(structLiquidacion.Liquidacion{Asientomanualtransaccionid: 0, Asientomanualnombre: "", Estacontabilizada: false})
+	//db.Model(&liquidaciones).Updates(structLiquidacion.Liquidacion{Asientomanualtransaccionid: 0, Asientomanualnombre: "", })
 }
-*/
+
 func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 	var resultadoDeEliminacion = make(map[int]string)
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
