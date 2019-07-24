@@ -437,6 +437,8 @@ func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquid
 	var strCheckLiquidacionesNoContabilizadas strCheckLiquidacionesNoContabilizadas
 
 	db.Raw("SELECT COUNT(ID) AS cantidadliquidacionesnocontabilizadas FROM LIQUIDACION WHERE ID IN " + liquidaciones_ids + " AND ESTACONTABILIZADA = " + strconv.FormatBool(false)).Scan(&strCheckLiquidacionesNoContabilizadas)
+	fmt.Println("La query ejecutada: SELECT COUNT(ID) AS cantidadliquidacionesnocontabilizadas FROM LIQUIDACION WHERE ID IN " + liquidaciones_ids + " AND ESTACONTABILIZADA = " + strconv.FormatBool(false))
+	fmt.Println("La cantidad de liquidaciones contabilizadas es:" + strconv.Itoa(strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas))
 	return len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas
 }
 
@@ -533,7 +535,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 
 	}
-
+	fmt.Println("For Descuentos")
 	for j := 0; j < len(liquidacion.Importesnoremunerativos); j++ {
 		cuentaContable = liquidacion.Importesnoremunerativos[j].Concepto.CuentaContable
 		importeUnitario := *liquidacion.Importesnoremunerativos[j].Importeunitario
@@ -541,7 +543,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-
+	fmt.Println("For Importesnoremunerativos")
 	for k := 0; k < len(liquidacion.Importesremunerativos); k++ {
 		cuentaContable = liquidacion.Importesremunerativos[k].Concepto.CuentaContable
 		importeUnitario := *liquidacion.Importesremunerativos[k].Importeunitario
@@ -549,7 +551,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-
+	fmt.Println("For Importesremunerativos")
 	for m := 0; m < len(liquidacion.Retenciones); m++ {
 		cuentaContable = liquidacion.Retenciones[m].Concepto.CuentaContable
 		importeUnitario := *liquidacion.Retenciones[m].Importeunitario
@@ -557,7 +559,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-
+	fmt.Println("For Retenciones")
 }
 
 func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []strCuentaImporte {
