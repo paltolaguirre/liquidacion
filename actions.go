@@ -378,10 +378,11 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 }
 
 func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("La URL accedida: " + r.URL.String())
 	var mapCuentasImportes = make(map[int]float32)
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
-
+		fmt.Println("Token valido")
 		decoder := json.NewDecoder(r.Body)
 
 		var strIdsLiquidaciones strIdsLiquidacionesAContabilizar
@@ -406,11 +407,12 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 		}
 		var liquidaciones []structLiquidacion.Liquidacion
 		db.Set("gorm:auto_preload", true).Find(&liquidaciones, "id IN "+liquidaciones_ids)
-
+		fmt.Println("Los ids de las liquidaciones a contabilizar: " + liquidaciones_ids)
 		if len(liquidaciones) > 0 {
 			if checkLiquidacionesNoContabilizadas(liquidaciones, liquidaciones_ids, db) {
 				for i := 0; i < len(liquidaciones); i++ {
 					agruparLasCuentasDeLasGrillasYSusImportes(liquidaciones[i], mapCuentasImportes)
+					fmt.Println("Las cuentas fueron agrupadas correctamente")
 				}
 			} else {
 				framework.RespondError(w, http.StatusNotFound, framework.Seleccionaronliquidacionescontabilizadas)
