@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -13,6 +14,7 @@ func main() {
 	router := newRouter()
 
 	server := http.ListenAndServe(":"+configuracion.Puertomicroservicioliquidacion, router)
+	fmt.Println("Microservicio de Liquidación escuchando en el puerto: " + configuracion.Puertomicroservicioliquidacion)
 
 	log.Fatal(server)
 

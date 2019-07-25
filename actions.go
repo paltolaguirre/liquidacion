@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/xubiosueldos/concepto/structConcepto"
 	"github.com/xubiosueldos/framework/configuracion"
 
 	"sueldos-liquidacion/structLiquidacion"
@@ -407,14 +408,11 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 		}
 		var liquidaciones []structLiquidacion.Liquidacion
 		db.Set("gorm:auto_preload", true).Find(&liquidaciones, "id IN "+liquidaciones_ids)
-		fmt.Println("Los ids de las liquidaciones a contabilizar: " + liquidaciones_ids)
+
 		if len(liquidaciones) > 0 {
 			if checkLiquidacionesNoContabilizadas(liquidaciones, liquidaciones_ids, db) {
 				for i := 0; i < len(liquidaciones); i++ {
-					fmt.Println("Entro al FOR para hacer iteraciones = ", len(liquidaciones))
-					fmt.Println("Mando a agrupar las cuentas de la liquidacion: ", liquidaciones[i])
-					agruparLasCuentasDeLasGrillasYSusImportes(liquidaciones[i], mapCuentasImportes)
-					fmt.Println("Las cuentas fueron agrupadas correctamente")
+					agruparLasCuentasDeLasGrillasYSusImportes(liquidaciones[i], mapCuentasImportes, r)
 				}
 			} else {
 				framework.RespondError(w, http.StatusNotFound, framework.Seleccionaronliquidacionescontabilizadas)
@@ -437,11 +435,8 @@ func liquidacionContabilizada(liquidacion_id int, db *gorm.DB) bool {
 
 func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquidacion, liquidaciones_ids string, db *gorm.DB) bool {
 	var strCheckLiquidacionesNoContabilizadas strCheckLiquidacionesNoContabilizadas
-
 	db.Raw("SELECT COUNT(ID) AS cantidadliquidacionesnocontabilizadas FROM LIQUIDACION WHERE ID IN " + liquidaciones_ids + " AND ESTACONTABILIZADA = " + strconv.FormatBool(false)).Scan(&strCheckLiquidacionesNoContabilizadas)
-	fmt.Println("La query ejecutada: SELECT COUNT(ID) AS cantidadliquidacionesnocontabilizadas FROM LIQUIDACION WHERE ID IN " + liquidaciones_ids + " AND ESTACONTABILIZADA = " + strconv.FormatBool(false))
-	fmt.Println("La cantidad de liquidaciones contabilizadas es:" + strconv.Itoa(strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas))
-	fmt.Print("resultado de checkLiquidacionesNoContabilizadas: ", len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas)
+
 	return len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas
 }
 
@@ -497,7 +492,7 @@ func requestMonoliticoContabilizarDescontabilizarLiquidaciones(r *http.Request, 
 
 	url := configuracion.GetUrlMonolitico() + "ContabilizarLiquidacionServlet"
 
-	fmt.Println("URL:>", url)
+	fmt.Println("Se hace un request al monolitico con la siguiente URL:>", url)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(pagesJson))
 
 	if err != nil {
@@ -526,50 +521,54 @@ func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liq
 	}
 }
 
-func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32) {
-	fmt.Println("Entro al agrupar")
+func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, r *http.Request) {
+	fmt.Println("Se agrupan las cuentas para la Liquidacion: " + strconv.Itoa(liquidacion.ID))
 	var cuentaContable *int
-	fmt.Println("Inicion For Descuentos")
+
 	for i := 0; i < len(liquidacion.Descuentos); i++ {
-		fmt.Println("La cantidad de descuentos en la grilla es: ", len(liquidacion.Descuentos))
-		fmt.Println("El concepto de descuento es: ", &liquidacion.Descuentos[i].Concepto)
-		fmt.Println("La cuenta contable es: ", &liquidacion.Descuentos[i].Concepto.CuentaContable)
-		cuentaContable = liquidacion.Descuentos[i].Concepto.CuentaContable
-		fmt.Println("La cuenta contable en la iteracion " + strconv.Itoa(i) + " es: " + strconv.Itoa(*cuentaContable))
-		importeUnitario := *liquidacion.Descuentos[i].Importeunitario
-		fmt.Println("El importe unitario en la iteracion: " + strconv.Itoa(i) + " es: " + strconv.Itoa(int(importeUnitario)))
+
+		descuento := liquidacion.Descuentos[i]
+		concepto := obtenerConcepto(*descuento.Conceptoid, r)
+		cuentaContable = concepto.CuentaContable
+		importeUnitario := *descuento.Importeunitario
+
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 
 	}
-	fmt.Println("Fin For Descuentos")
-	fmt.Println("Inicio For Importesnoremunerativos")
+
 	for j := 0; j < len(liquidacion.Importesnoremunerativos); j++ {
-		cuentaContable = liquidacion.Importesnoremunerativos[j].Concepto.CuentaContable
-		importeUnitario := *liquidacion.Importesnoremunerativos[j].Importeunitario
+
+		importenoremunerativo := liquidacion.Importesnoremunerativos[j]
+		concepto := obtenerConcepto(*importenoremunerativo.Conceptoid, r)
+		cuentaContable = concepto.CuentaContable
+		importeUnitario := *importenoremunerativo.Importeunitario
 
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-	fmt.Println("Fin For Importesnoremunerativos")
-	fmt.Println("Inicio For Importesremunerativos")
+
 	for k := 0; k < len(liquidacion.Importesremunerativos); k++ {
-		cuentaContable = liquidacion.Importesremunerativos[k].Concepto.CuentaContable
-		importeUnitario := *liquidacion.Importesremunerativos[k].Importeunitario
+
+		importeremunerativo := liquidacion.Importesremunerativos[k]
+		concepto := obtenerConcepto(*importeremunerativo.Conceptoid, r)
+		cuentaContable = concepto.CuentaContable
+		importeUnitario := *importeremunerativo.Importeunitario
 
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-	fmt.Println("Fin For Importesremunerativos")
-	fmt.Println("Inicio For Retenciones")
+
 	for m := 0; m < len(liquidacion.Retenciones); m++ {
-		cuentaContable = liquidacion.Retenciones[m].Concepto.CuentaContable
-		importeUnitario := *liquidacion.Retenciones[m].Importeunitario
+		retencion := liquidacion.Retenciones[m]
+		concepto := obtenerConcepto(*retencion.Conceptoid, r)
+		cuentaContable = concepto.CuentaContable
+		importeUnitario := *retencion.Importeunitario
 
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-	fmt.Println("Fin For Retenciones")
+
 }
 
 func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []strCuentaImporte {
@@ -728,6 +727,52 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 
 		framework.RespondJSON(w, http.StatusOK, resultadoDeEliminacion)
 	}
+
+}
+
+func obtenerConcepto(conceptoid int, r *http.Request) *structConcepto.Concepto {
+
+	var concepto structConcepto.Concepto
+
+	config := configuracion.GetInstance()
+
+	url := configuracion.GetUrlMicroservicio(config.Puertomicroservicioconcepto) + "concepto/conceptos/" + strconv.Itoa(conceptoid)
+
+	//url := "http://localhost:8084/conceptos/" + strconv.Itoa(conceptoid)
+
+	req, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	header := r.Header.Get("Authorization")
+
+	req.Header.Add("Authorization", header)
+
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	fmt.Println("URL:", url)
+
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+
+	str := string(body)
+
+	json.Unmarshal([]byte(str), &concepto)
+
+	return &concepto
 
 }
 
