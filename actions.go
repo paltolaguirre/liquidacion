@@ -411,6 +411,8 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 		if len(liquidaciones) > 0 {
 			if checkLiquidacionesNoContabilizadas(liquidaciones, liquidaciones_ids, db) {
 				for i := 0; i < len(liquidaciones); i++ {
+					fmt.Println("Entro al FOR para hacer iteraciones = ", len(liquidaciones))
+					fmt.Println("Mando a agrupar las cuentas de la liquidacion: ", liquidaciones[i])
 					agruparLasCuentasDeLasGrillasYSusImportes(liquidaciones[i], mapCuentasImportes)
 					fmt.Println("Las cuentas fueron agrupadas correctamente")
 				}
@@ -439,6 +441,7 @@ func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquid
 	db.Raw("SELECT COUNT(ID) AS cantidadliquidacionesnocontabilizadas FROM LIQUIDACION WHERE ID IN " + liquidaciones_ids + " AND ESTACONTABILIZADA = " + strconv.FormatBool(false)).Scan(&strCheckLiquidacionesNoContabilizadas)
 	fmt.Println("La query ejecutada: SELECT COUNT(ID) AS cantidadliquidacionesnocontabilizadas FROM LIQUIDACION WHERE ID IN " + liquidaciones_ids + " AND ESTACONTABILIZADA = " + strconv.FormatBool(false))
 	fmt.Println("La cantidad de liquidaciones contabilizadas es:" + strconv.Itoa(strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas))
+	fmt.Print("resultado de checkLiquidacionesNoContabilizadas: ", len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas)
 	return len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas
 }
 
@@ -524,9 +527,9 @@ func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liq
 }
 
 func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32) {
-
+	fmt.Println("Entro al agrupar")
 	var cuentaContable *int
-
+	fmt.Println("Inicion For Descuentos")
 	for i := 0; i < len(liquidacion.Descuentos); i++ {
 		cuentaContable = liquidacion.Descuentos[i].Concepto.CuentaContable
 		importeUnitario := *liquidacion.Descuentos[i].Importeunitario
@@ -535,7 +538,8 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 
 	}
-	fmt.Println("For Descuentos")
+	fmt.Println("Fin For Descuentos")
+	fmt.Println("Inicio For Importesnoremunerativos")
 	for j := 0; j < len(liquidacion.Importesnoremunerativos); j++ {
 		cuentaContable = liquidacion.Importesnoremunerativos[j].Concepto.CuentaContable
 		importeUnitario := *liquidacion.Importesnoremunerativos[j].Importeunitario
@@ -543,7 +547,8 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-	fmt.Println("For Importesnoremunerativos")
+	fmt.Println("Fin For Importesnoremunerativos")
+	fmt.Println("Inicio For Importesremunerativos")
 	for k := 0; k < len(liquidacion.Importesremunerativos); k++ {
 		cuentaContable = liquidacion.Importesremunerativos[k].Concepto.CuentaContable
 		importeUnitario := *liquidacion.Importesremunerativos[k].Importeunitario
@@ -551,7 +556,8 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-	fmt.Println("For Importesremunerativos")
+	fmt.Println("Fin For Importesremunerativos")
+	fmt.Println("Inicio For Retenciones")
 	for m := 0; m < len(liquidacion.Retenciones); m++ {
 		cuentaContable = liquidacion.Retenciones[m].Concepto.CuentaContable
 		importeUnitario := *liquidacion.Retenciones[m].Importeunitario
@@ -559,7 +565,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		importe := mapCuentasImportes[*cuentaContable]
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
-	fmt.Println("For Retenciones")
+	fmt.Println("Fin For Retenciones")
 }
 
 func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []strCuentaImporte {
