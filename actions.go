@@ -532,8 +532,8 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 	fmt.Println("Inicion For Descuentos")
 	for i := 0; i < len(liquidacion.Descuentos); i++ {
 		fmt.Println("La cantidad de descuentos en la grilla es: ", len(liquidacion.Descuentos))
-		fmt.Println("El concepto de descuento es: ", liquidacion.Descuentos[i].Concepto)
-		fmt.Println("La cuenta contable es: ", liquidacion.Descuentos[i].Concepto.CuentaContable)
+		fmt.Println("El concepto de descuento es: ", &liquidacion.Descuentos[i].Concepto)
+		fmt.Println("La cuenta contable es: ", &liquidacion.Descuentos[i].Concepto.CuentaContable)
 		cuentaContable = liquidacion.Descuentos[i].Concepto.CuentaContable
 		fmt.Println("La cuenta contable en la iteracion " + strconv.Itoa(i) + " es: " + strconv.Itoa(*cuentaContable))
 		importeUnitario := *liquidacion.Descuentos[i].Importeunitario
