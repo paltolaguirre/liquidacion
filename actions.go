@@ -492,7 +492,7 @@ func requestMonoliticoContabilizarDescontabilizarLiquidaciones(r *http.Request, 
 
 	url := configuracion.GetUrlMonolitico() + "ContabilizarLiquidacionServlet"
 
-	fmt.Println("URL:>", url)
+	fmt.Println("Se hace un request al monolitico con la siguiente URL:>", url)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(pagesJson))
 
 	if err != nil {
@@ -522,6 +522,7 @@ func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liq
 }
 
 func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, r *http.Request) {
+	fmt.Println("Se agrupan las cuentas para la Liquidacion: " + strconv.Itoa(liquidacion.ID))
 	var cuentaContable *int
 
 	for i := 0; i < len(liquidacion.Descuentos); i++ {
