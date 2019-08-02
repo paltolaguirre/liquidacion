@@ -13,7 +13,7 @@ type Liquidacion struct {
 	Codigo                               string                  `json:"codigo"`
 	Descripcion                          string                  `json:"descripcion"`
 	Activo                               int                     `json:"activo"`
-	Legajo                               *structLegajo.Legajo    `json:"legajo" gorm:"ForeignKey:Legajoid;association_foreignkey:ID;association_autoupdate:false"`
+	Legajo                               *structLegajo.Legajo    `json:"legajo" gorm:"ForeignKey:Legajoid;association_foreignkey:ID;association_autoupdate:false;auto_preload:true;"`
 	Legajoid                             *int                    `json:"legajoid" sql:"type:int REFERENCES Legajo(ID)"`
 	Tipo                                 *int                    `json:"tipo"` /*1-Mensual, 2-Primer Quincena, 3-Segunda Quincena, 4-Vacaciones, 5-SAC, 6-Liquidación Final*/
 	Fecha                                time.Time               `json:"fecha"`
