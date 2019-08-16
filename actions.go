@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/xubiosueldos/concepto/structConcepto"
 	"github.com/xubiosueldos/framework/configuracion"
 
 	"sueldos-liquidacion/structLiquidacion"
@@ -110,7 +109,7 @@ func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r
 	strHlprSrv.Tenant = token.Tenant
 	strHlprSrv.Token = token.Token
 	strHlprSrv.Username = token.Username
-	strHlprSrv.CuentaContable = *liquidacion_data.Cuentabanco
+	strHlprSrv.CuentaContable = *liquidacion_data.Cuentabancoid
 	pagesJson, err := json.Marshal(strHlprSrv)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
@@ -230,7 +229,7 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		var requestMono requestMono
 
-		if err := requestMono.requestMonolitico("CANQUERY", w, r, liquidacion_data, tokenAutenticacion, "cuenta").Error; err != nil {
+		if err := requestMono.requestMonolitico("CANQUERY", w, r, liquidacion_data, tokenAutenticacion, "banco").Error; err != nil {
 			framework.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -279,7 +278,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			var requestMono requestMono
 
-			if err := requestMono.requestMonolitico("CANQUERY", w, r, liquidacion_data, tokenAutenticacion, "cuenta").Error; err != nil {
+			if err := requestMono.requestMonolitico("CANQUERY", w, r, liquidacion_data, tokenAutenticacion, "banco").Error; err != nil {
 				framework.RespondError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
@@ -383,7 +382,6 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 	var mapCuentasImportes = make(map[int]float32)
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
-		fmt.Println("Token valido")
 		decoder := json.NewDecoder(r.Body)
 
 		var strIdsLiquidaciones strIdsLiquidacionesAContabilizar
@@ -528,7 +526,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 	for i := 0; i < len(liquidacion.Descuentos); i++ {
 
 		descuento := liquidacion.Descuentos[i]
-		concepto := obtenerConcepto(*descuento.Conceptoid, r)
+		concepto := descuento.Concepto
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *descuento.Importeunitario
 
@@ -540,7 +538,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 	for j := 0; j < len(liquidacion.Importesnoremunerativos); j++ {
 
 		importenoremunerativo := liquidacion.Importesnoremunerativos[j]
-		concepto := obtenerConcepto(*importenoremunerativo.Conceptoid, r)
+		concepto := importenoremunerativo.Concepto
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *importenoremunerativo.Importeunitario
 
@@ -551,7 +549,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 	for k := 0; k < len(liquidacion.Importesremunerativos); k++ {
 
 		importeremunerativo := liquidacion.Importesremunerativos[k]
-		concepto := obtenerConcepto(*importeremunerativo.Conceptoid, r)
+		concepto := importeremunerativo.Concepto
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *importeremunerativo.Importeunitario
 
@@ -561,7 +559,7 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 
 	for m := 0; m < len(liquidacion.Retenciones); m++ {
 		retencion := liquidacion.Retenciones[m]
-		concepto := obtenerConcepto(*retencion.Conceptoid, r)
+		concepto := retencion.Concepto
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *retencion.Importeunitario
 
@@ -569,6 +567,16 @@ func agruparLasCuentasDeLasGrillasYSusImportes(liquidacion structLiquidacion.Liq
 		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 	}
 
+	for n := 0; n < len(liquidacion.Aportespatronales); n++ {
+
+		aportepatronal := liquidacion.Aportespatronales[n]
+		concepto := aportepatronal.Concepto
+		cuentaContable = concepto.CuentaContable
+		importeUnitario := *aportepatronal.Importeunitario
+
+		importe := mapCuentasImportes[*cuentaContable]
+		mapCuentasImportes[*cuentaContable] = importe + importeUnitario
+	}
 }
 
 func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []strCuentaImporte {
@@ -730,61 +738,16 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func obtenerConcepto(conceptoid int, r *http.Request) *structConcepto.Concepto {
-
-	var concepto structConcepto.Concepto
-
-	config := configuracion.GetInstance()
-
-	url := configuracion.GetUrlMicroservicio(config.Puertomicroservicioconcepto) + "concepto/conceptos/" + strconv.Itoa(conceptoid)
-
-	//url := "http://localhost:8084/conceptos/" + strconv.Itoa(conceptoid)
-
-	req, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-
-	header := r.Header.Get("Authorization")
-
-	req.Header.Add("Authorization", header)
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	res, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-
-	fmt.Println("URL:", url)
-
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-
-	str := string(body)
-
-	json.Unmarshal([]byte(str), &concepto)
-
-	return &concepto
-
-}
-
 func AutomigrateTablasPrivadas(db *gorm.DB) {
 
 	//para actualizar tablas...agrega columnas e indices, pero no elimina
-	db.AutoMigrate(&structLiquidacion.Descuento{}, &structLiquidacion.Importenoremunerativo{}, &structLiquidacion.Importeremunerativo{}, &structLiquidacion.Retencion{}, &structLiquidacion.Liquidacion{})
+	db.AutoMigrate(&structLiquidacion.Descuento{}, &structLiquidacion.Importenoremunerativo{}, &structLiquidacion.Importeremunerativo{}, &structLiquidacion.Retencion{}, &structLiquidacion.Aportepatronal{}, &structLiquidacion.Liquidacion{})
 
 	db.Model(&structLiquidacion.Descuento{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
 	db.Model(&structLiquidacion.Importenoremunerativo{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
 	db.Model(&structLiquidacion.Importeremunerativo{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
 	db.Model(&structLiquidacion.Retencion{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
+	db.Model(&structLiquidacion.Aportepatronal{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
 
 }
 
