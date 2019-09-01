@@ -427,7 +427,9 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 					obtenerCuentasImportesYTipoDeGrillas(liquidaciones[i], &strCuentaImporteTipoGrillas, r)
 				}
 
-				agruparCuentas(strCuentaImporteTipoGrillas, &strCuentasImportesDebeHaber)
+				obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas, &strCuentasImportesDebeHaber)
+
+				agruparCuentas(strCuentasImportesDebeHaber, mapCuentasImportes)
 
 			} else {
 				framework.RespondError(w, http.StatusNotFound, framework.Seleccionaronliquidacionescontabilizadas)
@@ -547,9 +549,6 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *importeremunerativo.Importeunitario
 
-		//importe := mapCuentasImportes[*cuentaContable]
-		//mapCuentasImportes[*cuentaContable] = importe + importeUnitario
-
 		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 1}
 		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
 
@@ -562,8 +561,6 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *importenoremunerativo.Importeunitario
 
-		//importe := mapCuentasImportes[*cuentaContable]
-		//mapCuentasImportes[*cuentaContable] = importe + importeUnitario
 		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 2}
 		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
 	}
@@ -574,9 +571,6 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 		concepto := descuento.Concepto
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *descuento.Importeunitario
-
-		//importe := mapCuentasImportes[*cuentaContable]
-		//mapCuentasImportes[*cuentaContable] = importe - importeUnitario
 
 		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 3}
 		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
@@ -589,9 +583,6 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *retencion.Importeunitario
 
-		//importe := mapCuentasImportes[*cuentaContable]
-		//mapCuentasImportes[*cuentaContable] = importe + importeUnitario
-
 		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 4}
 		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
 	}
@@ -603,9 +594,6 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 		cuentaContable = concepto.CuentaContable
 		importeUnitario := *aportepatronal.Importeunitario
 
-		//importe := mapCuentasImportes[*cuentaContable]
-		//mapCuentasImportes[*cuentaContable] = importe + importeUnitario
-
 		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 5}
 		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
 	}
@@ -614,7 +602,7 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 
 }
 
-func agruparCuentas(strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla, strCuentasImportesDebeHaber *[]strCuentaImporteDebeHaber) {
+func obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla, strCuentasImportesDebeHaber *[]strCuentaImporteDebeHaber) {
 
 	sueldosYJornalesAPagar := -49
 	cargasSocialesAPagar := -48
@@ -661,6 +649,17 @@ func agruparCuentas(strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla, st
 			cuentaImporteHaber := strCuentaImporteDebeHaber{Cuentaid: cargasSocialesAPagar, Importecuenta: importeUnitario, Debehaber: -1}
 			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteHaber)
 		}
+	}
+}
+
+func agruparCuentas(strCuentasImportesDebeHaber []strCuentaImporteDebeHaber, mapCuentasImportes map[int]float32) {
+	for i := 0; i < len(strCuentasImportesDebeHaber); i++ {
+		cuentaContable := strCuentasImportesDebeHaber[i].Cuentaid
+		debehaber := float32(strCuentasImportesDebeHaber[i].Debehaber)
+		importeUnitario := strCuentasImportesDebeHaber[i].Importecuenta * debehaber
+
+		importe := mapCuentasImportes[cuentaContable]
+		mapCuentasImportes[cuentaContable] = importe + importeUnitario
 	}
 }
 
