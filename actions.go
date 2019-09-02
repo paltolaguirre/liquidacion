@@ -72,12 +72,6 @@ type strCuentaImporteTipoGrilla struct {
 	Tipogrilla    int     `json:"tipogrilla"`
 }
 
-type strCuentaImporteDebeHaber struct {
-	Cuentaid      int     `json:"cuentaid"`
-	Importecuenta float32 `json:"importecuenta"`
-	Debehaber     int     `json:"debehaber"`
-}
-
 type strLiquidacionContabilizarDescontabilizar struct {
 	Username                   string             `json:"username"`
 	Tenant                     string             `json:"tenant"`
@@ -393,7 +387,7 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("La URL accedida: " + r.URL.String())
 	var mapCuentasImportes = make(map[int]float32)
 	var strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla
-	var strCuentasImportesDebeHaber []strCuentaImporteDebeHaber
+	var strCuentasImportes []strCuentaImporte
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
 		decoder := json.NewDecoder(r.Body)
@@ -427,9 +421,9 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 					obtenerCuentasImportesYTipoDeGrillas(liquidaciones[i], &strCuentaImporteTipoGrillas, r)
 				}
 
-				obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas, &strCuentasImportesDebeHaber)
+				obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas, &strCuentasImportes)
 
-				agruparCuentas(strCuentasImportesDebeHaber, mapCuentasImportes)
+				agruparCuentas(strCuentasImportes, mapCuentasImportes)
 
 			} else {
 				framework.RespondError(w, http.StatusNotFound, framework.Seleccionaronliquidacionescontabilizadas)
@@ -602,7 +596,7 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 
 }
 
-func obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla, strCuentasImportesDebeHaber *[]strCuentaImporteDebeHaber) {
+func obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla, strCuentasImportes *[]strCuentaImporte) {
 
 	sueldosYJornalesAPagar := -49
 	cargasSocialesAPagar := -48
@@ -615,48 +609,47 @@ func obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas []strCuentaImpo
 
 		switch tipoGrilla {
 		case 1:
-			cuentaImporteDebe := strCuentaImporteDebeHaber{Cuentaid: cuentaID, Importecuenta: importeUnitario, Debehaber: 1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteDebe)
+			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
-			cuentaImporteHaber := strCuentaImporteDebeHaber{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario, Debehaber: -1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteHaber)
+			cuentaImporteHaber := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario * -1}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
 		case 2:
-			cuentaImporteDebe := strCuentaImporteDebeHaber{Cuentaid: cuentaID, Importecuenta: importeUnitario, Debehaber: 1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteDebe)
+			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
-			cuentaImporteHaber := strCuentaImporteDebeHaber{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario, Debehaber: -1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteHaber)
+			cuentaImporteHaber := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario * -1}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
 		case 3:
-			cuentaImporteHaber := strCuentaImporteDebeHaber{Cuentaid: cuentaID, Importecuenta: importeUnitario, Debehaber: -1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteHaber)
+			cuentaImporteHaber := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario * -1}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
-			cuentaImporteDebe := strCuentaImporteDebeHaber{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario, Debehaber: 1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteDebe)
+			cuentaImporteDebe := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
 		case 4:
-			cuentaImporteHaber := strCuentaImporteDebeHaber{Cuentaid: cuentaID, Importecuenta: importeUnitario, Debehaber: -1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteHaber)
+			cuentaImporteHaber := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario * -1}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
-			cuentaImporteDebe := strCuentaImporteDebeHaber{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario, Debehaber: 1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteDebe)
+			cuentaImporteDebe := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
 		case 5:
-			cuentaImporteDebe := strCuentaImporteDebeHaber{Cuentaid: cuentaID, Importecuenta: importeUnitario, Debehaber: 1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteDebe)
+			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
-			cuentaImporteHaber := strCuentaImporteDebeHaber{Cuentaid: cargasSocialesAPagar, Importecuenta: importeUnitario, Debehaber: -1}
-			*strCuentasImportesDebeHaber = append(*strCuentasImportesDebeHaber, cuentaImporteHaber)
+			cuentaImporteHaber := strCuentaImporte{Cuentaid: cargasSocialesAPagar, Importecuenta: importeUnitario * -1}
+			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 		}
 	}
 }
 
-func agruparCuentas(strCuentasImportesDebeHaber []strCuentaImporteDebeHaber, mapCuentasImportes map[int]float32) {
-	for i := 0; i < len(strCuentasImportesDebeHaber); i++ {
-		cuentaContable := strCuentasImportesDebeHaber[i].Cuentaid
-		debehaber := float32(strCuentasImportesDebeHaber[i].Debehaber)
-		importeUnitario := strCuentasImportesDebeHaber[i].Importecuenta * debehaber
+func agruparCuentas(strCuentasImportes []strCuentaImporte, mapCuentasImportes map[int]float32) {
+	for i := 0; i < len(strCuentasImportes); i++ {
+		cuentaContable := strCuentasImportes[i].Cuentaid
+		importeUnitario := strCuentasImportes[i].Importecuenta
 
 		importe := mapCuentasImportes[cuentaContable]
 		mapCuentasImportes[cuentaContable] = importe + importeUnitario
