@@ -421,7 +421,7 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 					obtenerCuentasImportesYTipoDeGrillas(liquidaciones[i], &strCuentaImporteTipoGrillas, r)
 				}
 
-				obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas, &strCuentasImportes)
+				obtenerCuentasImportes(strCuentaImporteTipoGrillas, &strCuentasImportes)
 
 				agruparCuentas(strCuentasImportes, mapCuentasImportes)
 
@@ -596,7 +596,7 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 
 }
 
-func obtenerCuentasImportesDebeHaber(strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla, strCuentasImportes *[]strCuentaImporte) {
+func obtenerCuentasImportes(strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla, strCuentasImportes *[]strCuentaImporte) {
 
 	sueldosYJornalesAPagar := -49
 	cargasSocialesAPagar := -48
