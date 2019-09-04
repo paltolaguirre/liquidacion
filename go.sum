@@ -185,6 +185,8 @@ github.com/xubiosueldos/legajo v1.0.1-0.20190813133318-0ac051b3c42a h1:YbW7eOnrh
 github.com/xubiosueldos/legajo v1.0.1-0.20190813133318-0ac051b3c42a/go.mod h1:nF68Bx650yALQu1yF3Ps6xaiMGS+Wqf6qTboLIeZCq8=
 github.com/xubiosueldos/legajo v1.0.1-0.20190815175426-80a2bfc03b30 h1:3u0SlDw62yS+KfLWUDWmlYcdPDeuPaj9Ijb6aFCwngU=
 github.com/xubiosueldos/legajo v1.0.1-0.20190815175426-80a2bfc03b30/go.mod h1:nF68Bx650yALQu1yF3Ps6xaiMGS+Wqf6qTboLIeZCq8=
+github.com/xubiosueldos/legajo v1.0.1-0.20190903124015-8931b1b9e065 h1:BLeXsrSlfxqGOQGk1yYr9FoV5PiRDtp5KMTdFKXDo9U=
+github.com/xubiosueldos/legajo v1.0.1-0.20190903124015-8931b1b9e065/go.mod h1:nF68Bx650yALQu1yF3Ps6xaiMGS+Wqf6qTboLIeZCq8=
 github.com/xubiosueldos/liquidacion v0.0.0-20190621192142-19b030a42496 h1:DYCYdkLP/Jo/3juy/txtRf+sj4QBWyOP2BhcRnHGPA8=
 github.com/xubiosueldos/liquidacion v0.0.0-20190621192142-19b030a42496/go.mod h1:T16oU0JZCrp9hvhxD7C9w9oOpaI9g6KLpVJRREt6lEo=
 go.opencensus.io v0.20.1/go.mod h1:6WKK9ahsWS3RSO+PY9ZHZUfv2irvY6gN279GOPZjmmk=
