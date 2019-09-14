@@ -157,12 +157,15 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 	if tokenValido {
 		queries := r.URL.Query()
 
-		versionMicroservicio := obtenerVersionLiquidacion()
+		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
 		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
 
-		//defer db.Close()
+		//defer db.Close()*/
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant)
+
 		defer apiclientconexionbd.CerrarDB(db)
 
 		var liquidaciones []structLiquidacion.Liquidacion
@@ -190,12 +193,15 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 
 		var liquidacion structLiquidacion.Liquidacion
 
-		versionMicroservicio := obtenerVersionLiquidacion()
+		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
 		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
 
-		//defer db.Close()
+		//defer db.Close()*/
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant)
+
 		defer apiclientconexionbd.CerrarDB(db)
 
 		//gorm:auto_preload se usa para que complete todos los struct con su informacion
@@ -225,12 +231,15 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer r.Body.Close()
 
-		versionMicroservicio := obtenerVersionLiquidacion()
+		/*versionMicroservicio := obtenerVersionLiquidacion()
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
 
-		//defer db.Close()
+		//defer db.Close()*/
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant)
+
 		defer apiclientconexionbd.CerrarDB(db)
 
 		var requestMono requestMono
@@ -264,9 +273,12 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
+		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)*/
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant)
+
 		defer apiclientconexionbd.CerrarDB(db)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
@@ -357,12 +369,15 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 		param_liquidacionid, _ := strconv.ParseInt(params["id"], 10, 64)
 		p_liquidacionid := int(param_liquidacionid)
 
-		versionMicroservicio := obtenerVersionLiquidacion()
+		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
 		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
 
-		//defer db.Close()
+		//defer db.Close()*/
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant)
+
 		defer apiclientconexionbd.CerrarDB(db)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
@@ -399,10 +414,13 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
+		/*versionMicroservicio := obtenerVersionLiquidacion()
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)*/
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant)
 
 		defer apiclientconexionbd.CerrarDB(db)
 		var liquidaciones_ids string
@@ -685,10 +703,13 @@ func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
+		/*versionMicroservicio := obtenerVersionLiquidacion()
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
+		*/
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant)
 
 		defer apiclientconexionbd.CerrarDB(db)
 
@@ -788,10 +809,12 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
+		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)*/
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant)
 
 		defer apiclientconexionbd.CerrarDB(db)
 
@@ -813,10 +836,4 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 		framework.RespondJSON(w, http.StatusOK, resultadoDeEliminacion)
 	}
 
-}
-
-func obtenerVersionLiquidacion() int {
-	configuracion := configuracion.GetInstance()
-
-	return configuracion.Versionliquidacion
 }
