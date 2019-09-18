@@ -11,16 +11,16 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/xubiosueldos/conexionBD"
 	"github.com/xubiosueldos/framework/configuracion"
 
-	"sueldos-liquidacion/structLiquidacion"
+	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/xubiosueldos/autenticacion/apiclientautenticacion"
-	"github.com/xubiosueldos/autenticacion/publico"
-	"github.com/xubiosueldos/conexionBD/apiclientconexionbd"
+	"github.com/xubiosueldos/conexionBD/Autenticacion/structAutenticacion"
 	"github.com/xubiosueldos/framework"
 )
 
@@ -106,7 +106,7 @@ func Healthy(writer http.ResponseWriter, request *http.Request) {
 	writer.Write([]byte("Healthy"))
 }
 
-func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r *http.Request, liquidacion_data structLiquidacion.Liquidacion, tokenAutenticacion *publico.Security, codigo string) *requestMono {
+func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r *http.Request, liquidacion_data structLiquidacion.Liquidacion, tokenAutenticacion *structAutenticacion.Security, codigo string) *requestMono {
 
 	var strHlprSrv strHlprServlet
 	token := *tokenAutenticacion
@@ -157,13 +157,10 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 	if tokenValido {
 		queries := r.URL.Query()
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		var liquidaciones []structLiquidacion.Liquidacion
 
@@ -190,13 +187,10 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 
 		var liquidacion structLiquidacion.Liquidacion
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		//gorm:auto_preload se usa para que complete todos los struct con su informacion
 		if err := db.Set("gorm:auto_preload", true).First(&liquidacion, "id = ?", liquidacion_id).Error; gorm.IsRecordNotFoundError(err) {
@@ -225,13 +219,10 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer r.Body.Close()
 
-		versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		db := conexionBD.ObtenerDB(tenant)
 
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		var requestMono requestMono
 
@@ -264,10 +255,10 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-		defer apiclientconexionbd.CerrarDB(db)
+		db := conexionBD.ObtenerDB(tenant)
+
+		defer conexionBD.CerrarDB(db)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 			decoder := json.NewDecoder(r.Body)
@@ -357,13 +348,10 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 		param_liquidacionid, _ := strconv.ParseInt(params["id"], 10, 64)
 		p_liquidacionid := int(param_liquidacionid)
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 
@@ -399,12 +387,10 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		db := conexionBD.ObtenerDB(tenant)
 
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 		var liquidaciones_ids string
 		descripcion_asiento := strIdsLiquidaciones.Descripcion
 		if len(strIdsLiquidaciones.Idsliquidacionesacontabilizar) > 0 {
@@ -451,7 +437,7 @@ func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquid
 	return len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas
 }
 
-func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *publico.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) {
+func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) {
 
 	resp := requestMonoliticoContabilizarDescontabilizarLiquidaciones(r, mapCuentasImportes, tokenAutenticacion, descripcion, asientomanualtransaccionid, db)
 
@@ -480,7 +466,7 @@ func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request,
 
 }
 
-func requestMonoliticoContabilizarDescontabilizarLiquidaciones(r *http.Request, mapCuentasImportes map[int]float32, tokenAutenticacion *publico.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) *http.Response {
+func requestMonoliticoContabilizarDescontabilizarLiquidaciones(r *http.Request, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) *http.Response {
 
 	var strLiquidacionContabilizarDescontabilizar strLiquidacionContabilizarDescontabilizar
 	token := *tokenAutenticacion
@@ -685,12 +671,10 @@ func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		db := conexionBD.ObtenerDB(tenant)
 
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		for i := 0; i < len(strTransaccionesIdsAsientosContablesManuales.Transaccionesidsasientoscontablesmanuales); i++ {
 			asientomanualtransaccionid := strTransaccionesIdsAsientosContablesManuales.Transaccionesidsasientoscontablesmanuales[i]
@@ -736,7 +720,7 @@ func buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid int,
 	return liquidaciones
 }
 
-func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, asientomanualtransaccionid int, tokenAutenticacion *publico.Security, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (int, int) {
+func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, asientomanualtransaccionid int, tokenAutenticacion *structAutenticacion.Security, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (int, int) {
 
 	resp := requestMonoliticoContabilizarDescontabilizarLiquidaciones(r, nil, tokenAutenticacion, "", asientomanualtransaccionid, db)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -788,12 +772,10 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		if len(idsEliminar.Ids) > 0 {
 			for i := 0; i < len(idsEliminar.Ids); i++ {
@@ -813,23 +795,4 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 		framework.RespondJSON(w, http.StatusOK, resultadoDeEliminacion)
 	}
 
-}
-
-func AutomigrateTablasPrivadas(db *gorm.DB) {
-
-	//para actualizar tablas...agrega columnas e indices, pero no elimina
-	db.AutoMigrate(&structLiquidacion.Descuento{}, &structLiquidacion.Importenoremunerativo{}, &structLiquidacion.Importeremunerativo{}, &structLiquidacion.Retencion{}, &structLiquidacion.Aportepatronal{}, &structLiquidacion.Liquidacion{})
-
-	db.Model(&structLiquidacion.Descuento{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-	db.Model(&structLiquidacion.Importenoremunerativo{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-	db.Model(&structLiquidacion.Importeremunerativo{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-	db.Model(&structLiquidacion.Retencion{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-	db.Model(&structLiquidacion.Aportepatronal{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-
-}
-
-func obtenerVersionLiquidacion() int {
-	configuracion := configuracion.GetInstance()
-
-	return configuracion.Versionliquidacion
 }
