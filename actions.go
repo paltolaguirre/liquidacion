@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/xubiosueldos/conexionBD"
 	"github.com/xubiosueldos/framework/configuracion"
 
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
@@ -20,7 +21,6 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/xubiosueldos/autenticacion/apiclientautenticacion"
 	"github.com/xubiosueldos/conexionBD/Autenticacion/structAutenticacion"
-	"github.com/xubiosueldos/conexionBD/apiclientconexionbd"
 	"github.com/xubiosueldos/framework"
 )
 
@@ -157,16 +157,10 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 	if tokenValido {
 		queries := r.URL.Query()
 
-		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
-
-		//defer db.Close()*/
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant)
-
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		var liquidaciones []structLiquidacion.Liquidacion
 
@@ -193,16 +187,10 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 
 		var liquidacion structLiquidacion.Liquidacion
 
-		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
-
-		//defer db.Close()*/
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant)
-
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		//gorm:auto_preload se usa para que complete todos los struct con su informacion
 		if err := db.Set("gorm:auto_preload", true).First(&liquidacion, "id = ?", liquidacion_id).Error; gorm.IsRecordNotFoundError(err) {
@@ -231,16 +219,10 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer r.Body.Close()
 
-		/*versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
+		db := conexionBD.ObtenerDB(tenant)
 
-		//defer db.Close()*/
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant)
-
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		var requestMono requestMono
 
@@ -273,13 +255,10 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)*/
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant)
+		db := conexionBD.ObtenerDB(tenant)
 
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 			decoder := json.NewDecoder(r.Body)
@@ -369,16 +348,10 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 		param_liquidacionid, _ := strconv.ParseInt(params["id"], 10, 64)
 		p_liquidacionid := int(param_liquidacionid)
 
-		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
-
-		//defer db.Close()*/
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant)
-
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 
@@ -414,15 +387,10 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		/*versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)*/
+		db := conexionBD.ObtenerDB(tenant)
 
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant)
-
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 		var liquidaciones_ids string
 		descripcion_asiento := strIdsLiquidaciones.Descripcion
 		if len(strIdsLiquidaciones.Idsliquidacionesacontabilizar) > 0 {
@@ -703,15 +671,10 @@ func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		/*versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)
-		*/
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant)
+		db := conexionBD.ObtenerDB(tenant)
 
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		for i := 0; i < len(strTransaccionesIdsAsientosContablesManuales.Transaccionesidsasientoscontablesmanuales); i++ {
 			asientomanualtransaccionid := strTransaccionesIdsAsientosContablesManuales.Transaccionesidsasientoscontablesmanuales[i]
@@ -809,14 +772,10 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		/*versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio)*/
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant)
-
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		if len(idsEliminar.Ids) > 0 {
 			for i := 0; i < len(idsEliminar.Ids); i++ {
