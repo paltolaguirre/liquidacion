@@ -829,13 +829,10 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 
 		defer r.Body.Close()
 
-		versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		db := conexionBD.ObtenerDB(tenant)
 
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		var procesamientoMasivo ResultProcesamientoMasivo
 		for index := 0; index < len(duplicarLiquidacionesData.Idstoreplicate); index++ {
