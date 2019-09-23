@@ -99,6 +99,23 @@ type strCheckLiquidacionesNoContabilizadas struct {
 	Cantidadliquidacionesnocontabilizadas int `json:"cantidadliquidacionesnocontabilizadas"`
 }
 
+type DuplicarLiquidaciones struct {
+	Liquidaciondefaultvalues structLiquidacion.Liquidacion `json:"liquidaciondefaultvalues"`
+	Idstoreplicate           []int                         `json:"idstoreplicate"`
+}
+
+type ResultProcesamientoMasivo struct {
+	Processid string                `json:"processid"`
+	Result    []ProcesamientoStatus `json:"result"`
+}
+
+type ProcesamientoStatus struct {
+	Id      int    `json:"id"`
+	Tipo    string `json:"tipo"`
+	Codigo  int    `json:"codigo"`
+	Mensaje string `json:"mensaje"`
+}
+
 var nombreMicroservicio string = "liquidacion"
 
 // Sirve para controlar si el server esta OK
@@ -832,4 +849,73 @@ func obtenerVersionLiquidacion() int {
 	configuracion := configuracion.GetInstance()
 
 	return configuracion.Versionliquidacion
+}
+
+func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
+
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		decoder := json.NewDecoder(r.Body)
+
+		var duplicarLiquidacionesData DuplicarLiquidaciones
+		if err := decoder.Decode(&duplicarLiquidacionesData); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		defer r.Body.Close()
+
+		versionMicroservicio := obtenerVersionLiquidacion()
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+
+		//defer db.Close()
+		defer apiclientconexionbd.CerrarDB(db)
+
+		var procesamientoMasivo ResultProcesamientoMasivo
+		for index := 0; index < len(duplicarLiquidacionesData.Idstoreplicate); index++ {
+			var liquidacionID = duplicarLiquidacionesData.Idstoreplicate[index]
+			var liquidacion structLiquidacion.Liquidacion
+			var procesamientoStatus ProcesamientoStatus
+
+			//gorm:auto_preload se usa para que complete todos los struct con su informacion
+			if err := db.Set("gorm:auto_preload", true).First(&liquidacion, "id = ?", liquidacionID).Error; gorm.IsRecordNotFoundError(err) {
+				procesamientoStatus.Id = liquidacionID
+				procesamientoStatus.Tipo = "ERROR"
+				procesamientoStatus.Codigo = http.StatusNotFound
+				procesamientoStatus.Mensaje = err.Error()
+				procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+			} else {
+				/* se modifica liquidacion a duplicar */
+				liquidacion.ID = 0
+				liquidacion.Tipoid = duplicarLiquidacionesData.Liquidaciondefaultvalues.Tipoid
+				liquidacion.Tipo = nil
+				liquidacion.Fecha = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fecha
+				liquidacion.Fechaultimodepositoaportejubilatorio = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaultimodepositoaportejubilatorio
+				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
+				liquidacion.Fechaperiodoliquidacion = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
+				// liquidacion.
+				fmt.Println(liquidacion.Tipoid)
+
+				if err := db.Create(&liquidacion).Error; err != nil {
+					procesamientoStatus.Id = liquidacionID
+					procesamientoStatus.Tipo = "ERROR"
+					procesamientoStatus.Codigo = http.StatusInternalServerError
+					procesamientoStatus.Mensaje = err.Error()
+					procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+				} else {
+					/* se crea la duplicacion de la liquidacion correctamente */
+					procesamientoStatus.Id = liquidacionID
+					procesamientoStatus.Tipo = "SUCCESS"
+					procesamientoStatus.Codigo = http.StatusOK
+					procesamientoStatus.Mensaje = "Duplicado correctamente."
+					procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+				}
+			}
+		}
+
+		framework.RespondJSON(w, http.StatusCreated, procesamientoMasivo)
+	}
 }

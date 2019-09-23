@@ -1,7 +1,10 @@
 package main
 
-import "github.com/gorilla/mux"
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/gorilla/mux"
+)
 
 type Route struct {
 	Name       string
@@ -80,5 +83,11 @@ var routes = Routes{
 		"DELETE",
 		"/api/liquidacion/liquidaciones",
 		LiquidacionesRemoveMasivo,
+	},
+	Route{
+		"LiquidacionDuplicarMasivo",
+		"POST",
+		"/api/liquidacion/duplicar",
+		LiquidacionDuplicarMasivo,
 	},
 }
