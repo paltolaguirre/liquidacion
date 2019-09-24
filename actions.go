@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/xubiosueldos/framework/configuracion"
 
@@ -896,8 +897,49 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				liquidacion.Fechaultimodepositoaportejubilatorio = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaultimodepositoaportejubilatorio
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
 				liquidacion.Fechaperiodoliquidacion = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
-				// liquidacion.
-				fmt.Println(liquidacion.Tipoid)
+
+				/*TODO: se deberia usar una funcion "deleteArrayIds()" para hacer esto...*/
+				for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
+					liquidacion.Importesremunerativos[index].ID = 0
+					liquidacion.Importesremunerativos[index].CreatedAt = time.Time{}
+					liquidacion.Importesremunerativos[index].UpdatedAt = time.Time{}
+					liquidacion.Importesremunerativos[index].Liquidacionid = 0
+				}
+				for index := 0; index < len(liquidacion.Importesnoremunerativos); index++ {
+					liquidacion.Importesnoremunerativos[index].ID = 0
+					liquidacion.Importesnoremunerativos[index].CreatedAt = time.Time{}
+					liquidacion.Importesnoremunerativos[index].UpdatedAt = time.Time{}
+					liquidacion.Importesnoremunerativos[index].Liquidacionid = 0
+				}
+				for index := 0; index < len(liquidacion.Descuentos); index++ {
+					liquidacion.Descuentos[index].ID = 0
+					liquidacion.Descuentos[index].CreatedAt = time.Time{}
+					liquidacion.Descuentos[index].UpdatedAt = time.Time{}
+					liquidacion.Descuentos[index].Liquidacionid = 0
+				}
+				for index := 0; index < len(liquidacion.Retenciones); index++ {
+					liquidacion.Retenciones[index].ID = 0
+					liquidacion.Retenciones[index].CreatedAt = time.Time{}
+					liquidacion.Retenciones[index].UpdatedAt = time.Time{}
+					liquidacion.Retenciones[index].Liquidacionid = 0
+				}
+				for index := 0; index < len(liquidacion.Aportespatronales); index++ {
+					liquidacion.Aportespatronales[index].ID = 0
+					liquidacion.Aportespatronales[index].CreatedAt = time.Time{}
+					liquidacion.Aportespatronales[index].UpdatedAt = time.Time{}
+					liquidacion.Aportespatronales[index].Liquidacionid = 0
+				}
+
+				/*liquidacionJSON, _ := json.Marshal(liquidacion)
+				fmt.Println(string(liquidacionJSON))*/
+
+				/*decoder2 := json.NewDecoder(strings.NewReader(string(liquidacionJSON)))
+
+				var liquidacion2 structLiquidacion.Liquidacion
+				if err := decoder2.Decode(&liquidacion2); err != nil {
+					framework.RespondError(w, http.StatusBadRequest, err.Error())
+					return
+				}*/
 
 				if err := db.Create(&liquidacion).Error; err != nil {
 					procesamientoStatus.Id = liquidacionID
@@ -917,5 +959,20 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		framework.RespondJSON(w, http.StatusCreated, procesamientoMasivo)
+	}
+}
+
+func deleteArrayIds(array interface{}) {
+	switch v := array.(type) {
+	case []structLiquidacion.Importeremunerativo:
+	case []structLiquidacion.Importenoremunerativo:
+		for index := 0; index < len(v); index++ {
+			v[index].ID = 0
+			v[index].CreatedAt = time.Time{}
+			v[index].UpdatedAt = time.Time{}
+			v[index].Liquidacionid = 0
+		}
+	default:
+		fmt.Printf("I don't know about type %T!\n", v)
 	}
 }
