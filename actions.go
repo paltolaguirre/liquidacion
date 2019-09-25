@@ -10,17 +10,18 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/xubiosueldos/conexionBD"
 	"github.com/xubiosueldos/framework/configuracion"
 
-	"sueldos-liquidacion/structLiquidacion"
+	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/xubiosueldos/autenticacion/apiclientautenticacion"
-	"github.com/xubiosueldos/autenticacion/publico"
-	"github.com/xubiosueldos/conexionBD/apiclientconexionbd"
+	"github.com/xubiosueldos/conexionBD/Autenticacion/structAutenticacion"
 	"github.com/xubiosueldos/framework"
 )
 
@@ -99,6 +100,23 @@ type strCheckLiquidacionesNoContabilizadas struct {
 	Cantidadliquidacionesnocontabilizadas int `json:"cantidadliquidacionesnocontabilizadas"`
 }
 
+type DuplicarLiquidaciones struct {
+	Liquidaciondefaultvalues structLiquidacion.Liquidacion `json:"liquidaciondefaultvalues"`
+	Idstoreplicate           []int                         `json:"idstoreplicate"`
+}
+
+type ResultProcesamientoMasivo struct {
+	Processid string                `json:"processid"`
+	Result    []ProcesamientoStatus `json:"result"`
+}
+
+type ProcesamientoStatus struct {
+	Id      int    `json:"id"`
+	Tipo    string `json:"tipo"`
+	Codigo  int    `json:"codigo"`
+	Mensaje string `json:"mensaje"`
+}
+
 var nombreMicroservicio string = "liquidacion"
 
 // Sirve para controlar si el server esta OK
@@ -106,7 +124,7 @@ func Healthy(writer http.ResponseWriter, request *http.Request) {
 	writer.Write([]byte("Healthy"))
 }
 
-func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r *http.Request, liquidacion_data structLiquidacion.Liquidacion, tokenAutenticacion *publico.Security, codigo string) *requestMono {
+func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r *http.Request, liquidacion_data structLiquidacion.Liquidacion, tokenAutenticacion *structAutenticacion.Security, codigo string) *requestMono {
 
 	var strHlprSrv strHlprServlet
 	token := *tokenAutenticacion
@@ -157,13 +175,10 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 	if tokenValido {
 		queries := r.URL.Query()
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		var liquidaciones []structLiquidacion.Liquidacion
 
@@ -190,13 +205,10 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 
 		var liquidacion structLiquidacion.Liquidacion
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		//gorm:auto_preload se usa para que complete todos los struct con su informacion
 		if err := db.Set("gorm:auto_preload", true).First(&liquidacion, "id = ?", liquidacion_id).Error; gorm.IsRecordNotFoundError(err) {
@@ -225,13 +237,10 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer r.Body.Close()
 
-		versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		db := conexionBD.ObtenerDB(tenant)
 
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		var requestMono requestMono
 
@@ -264,10 +273,10 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-		defer apiclientconexionbd.CerrarDB(db)
+		db := conexionBD.ObtenerDB(tenant)
+
+		defer conexionBD.CerrarDB(db)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 			decoder := json.NewDecoder(r.Body)
@@ -357,13 +366,10 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 		param_liquidacionid, _ := strconv.ParseInt(params["id"], 10, 64)
 		p_liquidacionid := int(param_liquidacionid)
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-
-		//defer db.Close()
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 
@@ -399,12 +405,10 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		db := conexionBD.ObtenerDB(tenant)
 
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 		var liquidaciones_ids string
 		descripcion_asiento := strIdsLiquidaciones.Descripcion
 		if len(strIdsLiquidaciones.Idsliquidacionesacontabilizar) > 0 {
@@ -451,7 +455,7 @@ func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquid
 	return len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas
 }
 
-func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *publico.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) {
+func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) {
 
 	resp := requestMonoliticoContabilizarDescontabilizarLiquidaciones(r, mapCuentasImportes, tokenAutenticacion, descripcion, asientomanualtransaccionid, db)
 
@@ -480,7 +484,7 @@ func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request,
 
 }
 
-func requestMonoliticoContabilizarDescontabilizarLiquidaciones(r *http.Request, mapCuentasImportes map[int]float32, tokenAutenticacion *publico.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) *http.Response {
+func requestMonoliticoContabilizarDescontabilizarLiquidaciones(r *http.Request, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) *http.Response {
 
 	var strLiquidacionContabilizarDescontabilizar strLiquidacionContabilizarDescontabilizar
 	token := *tokenAutenticacion
@@ -685,12 +689,10 @@ func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
-
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
+		db := conexionBD.ObtenerDB(tenant)
 
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		for i := 0; i < len(strTransaccionesIdsAsientosContablesManuales.Transaccionesidsasientoscontablesmanuales); i++ {
 			asientomanualtransaccionid := strTransaccionesIdsAsientosContablesManuales.Transaccionesidsasientoscontablesmanuales[i]
@@ -736,7 +738,7 @@ func buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid int,
 	return liquidaciones
 }
 
-func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, asientomanualtransaccionid int, tokenAutenticacion *publico.Security, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (int, int) {
+func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, asientomanualtransaccionid int, tokenAutenticacion *structAutenticacion.Security, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (int, int) {
 
 	resp := requestMonoliticoContabilizarDescontabilizarLiquidaciones(r, nil, tokenAutenticacion, "", asientomanualtransaccionid, db)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -788,12 +790,10 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		versionMicroservicio := obtenerVersionLiquidacion()
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
 
-		db := apiclientconexionbd.ObtenerDB(tenant, nombreMicroservicio, versionMicroservicio, AutomigrateTablasPrivadas)
-
-		defer apiclientconexionbd.CerrarDB(db)
+		defer conexionBD.CerrarDB(db)
 
 		if len(idsEliminar.Ids) > 0 {
 			for i := 0; i < len(idsEliminar.Ids); i++ {
@@ -815,21 +815,124 @@ func LiquidacionesRemoveMasivo(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AutomigrateTablasPrivadas(db *gorm.DB) {
+func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 
-	//para actualizar tablas...agrega columnas e indices, pero no elimina
-	db.AutoMigrate(&structLiquidacion.Descuento{}, &structLiquidacion.Importenoremunerativo{}, &structLiquidacion.Importeremunerativo{}, &structLiquidacion.Retencion{}, &structLiquidacion.Aportepatronal{}, &structLiquidacion.Liquidacion{})
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
 
-	db.Model(&structLiquidacion.Descuento{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-	db.Model(&structLiquidacion.Importenoremunerativo{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-	db.Model(&structLiquidacion.Importeremunerativo{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-	db.Model(&structLiquidacion.Retencion{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
-	db.Model(&structLiquidacion.Aportepatronal{}).AddForeignKey("liquidacionid", "liquidacion(id)", "CASCADE", "CASCADE")
+		decoder := json.NewDecoder(r.Body)
 
+		var duplicarLiquidacionesData DuplicarLiquidaciones
+		if err := decoder.Decode(&duplicarLiquidacionesData); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		defer r.Body.Close()
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
+
+		defer conexionBD.CerrarDB(db)
+
+		var procesamientoMasivo ResultProcesamientoMasivo
+		for index := 0; index < len(duplicarLiquidacionesData.Idstoreplicate); index++ {
+			var liquidacionID = duplicarLiquidacionesData.Idstoreplicate[index]
+			var liquidacion structLiquidacion.Liquidacion
+			var procesamientoStatus ProcesamientoStatus
+
+			//gorm:auto_preload se usa para que complete todos los struct con su informacion
+			if err := db.Set("gorm:auto_preload", true).First(&liquidacion, "id = ?", liquidacionID).Error; gorm.IsRecordNotFoundError(err) {
+				procesamientoStatus.Id = liquidacionID
+				procesamientoStatus.Tipo = "ERROR"
+				procesamientoStatus.Codigo = http.StatusNotFound
+				procesamientoStatus.Mensaje = err.Error()
+				procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+			} else {
+				/* se modifica liquidacion a duplicar */
+				liquidacion.ID = 0
+				liquidacion.Tipoid = duplicarLiquidacionesData.Liquidaciondefaultvalues.Tipoid
+				liquidacion.Tipo = nil
+				liquidacion.Fecha = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fecha
+				liquidacion.Fechaultimodepositoaportejubilatorio = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaultimodepositoaportejubilatorio
+				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
+				liquidacion.Fechaperiodoliquidacion = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
+
+				/*TODO: se deberia usar una funcion "deleteArrayIds()" para hacer esto...*/
+				for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
+					liquidacion.Importesremunerativos[index].ID = 0
+					liquidacion.Importesremunerativos[index].CreatedAt = time.Time{}
+					liquidacion.Importesremunerativos[index].UpdatedAt = time.Time{}
+					liquidacion.Importesremunerativos[index].Liquidacionid = 0
+				}
+				for index := 0; index < len(liquidacion.Importesnoremunerativos); index++ {
+					liquidacion.Importesnoremunerativos[index].ID = 0
+					liquidacion.Importesnoremunerativos[index].CreatedAt = time.Time{}
+					liquidacion.Importesnoremunerativos[index].UpdatedAt = time.Time{}
+					liquidacion.Importesnoremunerativos[index].Liquidacionid = 0
+				}
+				for index := 0; index < len(liquidacion.Descuentos); index++ {
+					liquidacion.Descuentos[index].ID = 0
+					liquidacion.Descuentos[index].CreatedAt = time.Time{}
+					liquidacion.Descuentos[index].UpdatedAt = time.Time{}
+					liquidacion.Descuentos[index].Liquidacionid = 0
+				}
+				for index := 0; index < len(liquidacion.Retenciones); index++ {
+					liquidacion.Retenciones[index].ID = 0
+					liquidacion.Retenciones[index].CreatedAt = time.Time{}
+					liquidacion.Retenciones[index].UpdatedAt = time.Time{}
+					liquidacion.Retenciones[index].Liquidacionid = 0
+				}
+				for index := 0; index < len(liquidacion.Aportespatronales); index++ {
+					liquidacion.Aportespatronales[index].ID = 0
+					liquidacion.Aportespatronales[index].CreatedAt = time.Time{}
+					liquidacion.Aportespatronales[index].UpdatedAt = time.Time{}
+					liquidacion.Aportespatronales[index].Liquidacionid = 0
+				}
+
+				/*liquidacionJSON, _ := json.Marshal(liquidacion)
+				fmt.Println(string(liquidacionJSON))*/
+
+				/*decoder2 := json.NewDecoder(strings.NewReader(string(liquidacionJSON)))
+
+				var liquidacion2 structLiquidacion.Liquidacion
+				if err := decoder2.Decode(&liquidacion2); err != nil {
+					framework.RespondError(w, http.StatusBadRequest, err.Error())
+					return
+				}*/
+
+				if err := db.Create(&liquidacion).Error; err != nil {
+					procesamientoStatus.Id = liquidacionID
+					procesamientoStatus.Tipo = "ERROR"
+					procesamientoStatus.Codigo = http.StatusInternalServerError
+					procesamientoStatus.Mensaje = err.Error()
+					procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+				} else {
+					/* se crea la duplicacion de la liquidacion correctamente */
+					procesamientoStatus.Id = liquidacionID
+					procesamientoStatus.Tipo = "SUCCESS"
+					procesamientoStatus.Codigo = http.StatusOK
+					procesamientoStatus.Mensaje = "Duplicado correctamente."
+					procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+				}
+			}
+		}
+
+		framework.RespondJSON(w, http.StatusCreated, procesamientoMasivo)
+	}
 }
 
-func obtenerVersionLiquidacion() int {
-	configuracion := configuracion.GetInstance()
-
-	return configuracion.Versionliquidacion
+func deleteArrayIds(array interface{}) {
+	switch v := array.(type) {
+	case []structLiquidacion.Importeremunerativo:
+	case []structLiquidacion.Importenoremunerativo:
+		for index := 0; index < len(v); index++ {
+			v[index].ID = 0
+			v[index].CreatedAt = time.Time{}
+			v[index].UpdatedAt = time.Time{}
+			v[index].Liquidacionid = 0
+		}
+	default:
+		fmt.Printf("I don't know about type %T!\n", v)
+	}
 }
