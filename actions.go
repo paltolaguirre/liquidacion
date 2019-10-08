@@ -80,6 +80,12 @@ type ProcesamientoStatus struct {
 	Mensaje string `json:"mensaje"`
 }
 
+type StrDatosAsientoContableManual struct {
+	Asientocontablemanualid     int    `json:"asientocontablemanualid"`
+	Asientocontablemanualnombre string `json:"asientocontablemanualnombre"`
+	Statuscode                  int    `json:"statuscode"`
+}
+
 var nombreMicroservicio string = "liquidacion"
 
 // Sirve para controlar si el server esta OK
@@ -132,6 +138,18 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 		if err := db.Set("gorm:auto_preload", true).First(&liquidacion, "id = ?", liquidacion_id).Error; gorm.IsRecordNotFoundError(err) {
 			framework.RespondError(w, http.StatusNotFound, err.Error())
 			return
+		}
+
+		bancoID := liquidacion.Cuentabancoid
+		if bancoID != nil {
+			cuentaBanco := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoID))
+			liquidacion.Cuentabanco = cuentaBanco
+		}
+
+		bancoaportejubilatorioID := liquidacion.Bancoaportejubilatorioid
+		if bancoaportejubilatorioID != nil {
+			bancoAporteJubilatorio := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoaportejubilatorioID))
+			liquidacion.Bancoaportejubilatorio = bancoAporteJubilatorio
 		}
 
 		framework.RespondJSON(w, http.StatusOK, liquidacion)
@@ -380,26 +398,23 @@ func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquid
 }
 
 func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) {
-	cuentasImportes := obtenerCuentasImportesLiquidacion(mapCuentasImportes)
+	var cuentasImportes []monoliticComunication.StrCuentaImporte
+	cuentasImportes = obtenerCuentasImportesLiquidacion(mapCuentasImportes)
+	datosAsientoContableManual := monoliticComunication.Generarasientomanual(w, r, cuentasImportes, tokenAutenticacion, descripcion)
 
-	/*Aca tengo que llamar a la libreria para que mande a generar el asoiento*/
-	//resp := requestMonoliticoContabilizarDescontabilizarLiquidaciones(r, mapCuentasImportes, tokenAutenticacion, descripcion, asientomanualtransaccionid, db)
-
-	/*ver si puedo hacer que devuelva el struct reqMonolitico para devolver la info*/
-	/*if resp.StatusCode == http.StatusOK {
+	if err := monoliticComunication.Checkgeneroasientomanual(datosAsientoContableManual).Error; err != nil {
+		framework.RespondError(w, http.StatusNotFound, err.Error())
+	} else {
 		marcarLiquidacionesComoContabilizadas(liquidaciones, datosAsientoContableManual, db)
 		var respuestaJson respJson
 		respuestaJson.Codigo = http.StatusOK
 		respuestaJson.Respuesta = "Se contabilizaron correctamente " + strconv.Itoa(len(liquidaciones)) + " liquidaciones"
 		framework.RespondJSON(w, http.StatusOK, respuestaJson)
-	} else {
-		str := string(body)
-		framework.RespondError(w, http.StatusNotFound, str)
-	}*/
+	}
 
 }
 
-func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liquidacion, datosAsientoContableManual StrDatosAsientoContableManual, db *gorm.DB) {
+func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liquidacion, datosAsientoContableManual *monoliticComunication.StrDatosAsientoContableManual, db *gorm.DB) {
 	for i := 0; i < len(liquidaciones); i++ {
 		db.Model(&liquidaciones[i]).Update("Estacontabilizada", true)
 		db.Model(&liquidaciones[i]).Update("Asientomanualtransaccionid", datosAsientoContableManual.Asientocontablemanualid)
@@ -531,11 +546,11 @@ func agruparCuentas(strCuentasImportes []strCuentaImporte, mapCuentasImportes ma
 	}
 }
 
-func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []strCuentaImporte {
-	var arrayStrCuentaImporte []strCuentaImporte
+func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []monoliticComunication.StrCuentaImporte {
+	var arrayStrCuentaImporte []monoliticComunication.StrCuentaImporte
 
 	for cuenta, importe := range mapCuentasImportes {
-		var strcuentaimporte strCuentaImporte
+		var strcuentaimporte monoliticComunication.StrCuentaImporte
 		strcuentaimporte.Cuentaid = cuenta
 		strcuentaimporte.Importecuenta = importe
 		arrayStrCuentaImporte = append(arrayStrCuentaImporte, strcuentaimporte)
