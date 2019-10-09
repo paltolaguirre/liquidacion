@@ -10,6 +10,6 @@ require (
 	github.com/xubiosueldos/conexionBD v0.0.0-20191009124729-d6366b16e817
 	github.com/xubiosueldos/framework v0.0.0-20191002111857-52b12ef56c62
 	github.com/xubiosueldos/legajo v1.0.1-0.20191009131602-62a6b3af39ec
-	github.com/xubiosueldos/monoliticComunication v0.0.0-20191009130034-e9e75dc548ad
+	github.com/xubiosueldos/monoliticComunication v0.0.0-20191009145026-af56165d16a7
 
 )
