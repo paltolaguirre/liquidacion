@@ -24,6 +24,7 @@ import (
 type strIdsLiquidacionesAContabilizar struct {
 	Idsliquidacionesacontabilizar []int  `json:"idsliquidacionesacontabilizar"`
 	Descripcion                   string `json:"descripcion"`
+	Fechaasiento                  string `json:"fechaasiento"`
 }
 
 type strTransaccionesIdsAsientosContablesManuales struct {
@@ -353,6 +354,7 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 		defer conexionBD.CerrarDB(db)
 		var liquidaciones_ids string
 		descripcion_asiento := strIdsLiquidaciones.Descripcion
+		fecha_asiento := strIdsLiquidaciones.Fechaasiento
 		if len(strIdsLiquidaciones.Idsliquidacionesacontabilizar) > 0 {
 			liquidaciones_ids = "(" + strings.Trim(strings.Replace(fmt.Sprint(strIdsLiquidaciones.Idsliquidacionesacontabilizar), " ", ",", -1), "[]") + ")"
 		} else {
@@ -377,7 +379,7 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		generarAsientoManualDesdeMonolitico(w, r, liquidaciones, mapCuentasImportes, tokenAutenticacion, descripcion_asiento, 0, db)
+		generarAsientoManualDesdeMonolitico(w, r, liquidaciones, mapCuentasImportes, tokenAutenticacion, descripcion_asiento, fecha_asiento, 0, db)
 
 	}
 
@@ -397,10 +399,10 @@ func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquid
 	return len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas
 }
 
-func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) {
+func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, fechaasiento string, asientomanualtransaccionid int, db *gorm.DB) {
 	var cuentasImportes []monoliticComunication.StrCuentaImporte
 	cuentasImportes = obtenerCuentasImportesLiquidacion(mapCuentasImportes)
-	datosAsientoContableManual := monoliticComunication.Generarasientomanual(w, r, cuentasImportes, tokenAutenticacion, descripcion)
+	datosAsientoContableManual := monoliticComunication.Generarasientomanual(w, r, cuentasImportes, tokenAutenticacion, descripcion, fechaasiento)
 
 	if err := monoliticComunication.Checkgeneroasientomanual(datosAsientoContableManual).Error; err != nil {
 		framework.RespondError(w, http.StatusNotFound, err.Error())
