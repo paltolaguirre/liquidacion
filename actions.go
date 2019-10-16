@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -85,6 +87,11 @@ type StrDatosAsientoContableManual struct {
 	Asientocontablemanualid     int    `json:"asientocontablemanualid"`
 	Asientocontablemanualnombre string `json:"asientocontablemanualnombre"`
 	Statuscode                  int    `json:"statuscode"`
+}
+
+type StrDatosAsientoContableManualBlanquear struct {
+	Asientocontablemanualid int    `json:"asientocontablemanualid"`
+	Tokensecurityencode     string `json:"tokensecurityencode"`
 }
 
 var nombreMicroservicio string = "liquidacion"
@@ -823,4 +830,40 @@ func deleteArrayIds(array interface{}) {
 	default:
 		fmt.Printf("I don't know about type %T!\n", v)
 	}
+}
+
+func LiquidacionAsientoManualDescontabilizar(w http.ResponseWriter, r *http.Request) {
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+
+		str := string(body)
+
+		var datosAsientoContableManualBlanquear StrDatosAsientoContableManualBlanquear
+		json.Unmarshal([]byte(str), &datosAsientoContableManualBlanquear)
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
+		defer conexionBD.CerrarDB(db)
+
+		var tokenSecurityDecode []byte = []byte("blanquearasientomanualidenlasliquidacionesquecontabilizo")
+		tokenSecurityEncode := base64.StdEncoding.EncodeToString(tokenSecurityDecode)
+
+		if tokenSecurityEncode == datosAsientoContableManualBlanquear.Tokensecurityencode {
+			asientocontablemanualid := datosAsientoContableManualBlanquear.Asientocontablemanualid
+			var liquidaciones []structLiquidacion.Liquidacion
+			db.Raw("UPDATE LIQUIDACION SET Asientomanualtransaccionid = 0, Asientomanualnombre = '', Estacontabilizada = false WHERE Asientomanualtransaccionid = " + strconv.Itoa(asientocontablemanualid)).Scan(&liquidaciones)
+
+		} else {
+			framework.RespondError(w, http.StatusInternalServerError, "Acceso denegado")
+			return
+		}
+
+	}
+	framework.RespondJSON(w, http.StatusCreated, "Liquidaciones descontabilizadas correctamente")
+
 }
