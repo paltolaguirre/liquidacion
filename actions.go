@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,7 +11,6 @@ import (
 	"time"
 
 	"github.com/xubiosueldos/conexionBD"
-	"github.com/xubiosueldos/framework/configuracion"
 
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 
@@ -23,39 +20,13 @@ import (
 	"github.com/xubiosueldos/autenticacion/apiclientautenticacion"
 	"github.com/xubiosueldos/conexionBD/Autenticacion/structAutenticacion"
 	"github.com/xubiosueldos/framework"
+	"github.com/xubiosueldos/monoliticComunication"
 )
-
-type strhelper struct {
-	//	gorm.Model
-	ID          string `json:"id"`
-	Nombre      string `json:"nombre"`
-	Codigo      string `json:"codigo"`
-	Descripcion string `json:"descripcion"`
-	//	Activo      int    `json:"activo"`
-}
-
-type strResponse struct {
-	//	gorm.Model
-	Exists string `json:"exists"`
-}
-
-type strHlprServlet struct {
-	//	gorm.Model
-	Username       string `json:"username"`
-	Tenant         string `json:"tenant"`
-	Token          string `json:"token"`
-	Options        string `json:"options"`
-	CuentaContable int    `json:"cuentacontable"`
-}
-
-type requestMono struct {
-	Value interface{}
-	Error error
-}
 
 type strIdsLiquidacionesAContabilizar struct {
 	Idsliquidacionesacontabilizar []int  `json:"idsliquidacionesacontabilizar"`
 	Descripcion                   string `json:"descripcion"`
+	Fechaasiento                  string `json:"fechaasiento"`
 }
 
 type strTransaccionesIdsAsientosContablesManuales struct {
@@ -91,11 +62,6 @@ type IdsAEliminar struct {
 	Ids []int `json:"ids"`
 }
 
-type StrDatosAsientoContableManual struct {
-	Asientocontablemanualid     int    `json:"asientocontablemanualid"`
-	Asientocontablemanualnombre string `json:"asientocontablemanualnombre"`
-}
-
 type strCheckLiquidacionesNoContabilizadas struct {
 	Cantidadliquidacionesnocontabilizadas int `json:"cantidadliquidacionesnocontabilizadas"`
 }
@@ -117,56 +83,22 @@ type ProcesamientoStatus struct {
 	Mensaje string `json:"mensaje"`
 }
 
+type StrDatosAsientoContableManual struct {
+	Asientocontablemanualid     int    `json:"asientocontablemanualid"`
+	Asientocontablemanualnombre string `json:"asientocontablemanualnombre"`
+	Statuscode                  int    `json:"statuscode"`
+}
+
+type StrDatosAsientoContableManualBlanquear struct {
+	Asientocontablemanualid int    `json:"asientocontablemanualid"`
+	Tokensecurityencode     string `json:"tokensecurityencode"`
+}
+
 var nombreMicroservicio string = "liquidacion"
 
 // Sirve para controlar si el server esta OK
 func Healthy(writer http.ResponseWriter, request *http.Request) {
 	writer.Write([]byte("Healthy"))
-}
-
-func (s *requestMono) requestMonolitico(options string, w http.ResponseWriter, r *http.Request, liquidacion_data structLiquidacion.Liquidacion, tokenAutenticacion *structAutenticacion.Security, codigo string) *requestMono {
-
-	var strHlprSrv strHlprServlet
-	token := *tokenAutenticacion
-
-	strHlprSrv.Options = options
-	strHlprSrv.Tenant = token.Tenant
-	strHlprSrv.Token = token.Token
-	strHlprSrv.Username = token.Username
-	strHlprSrv.CuentaContable = *liquidacion_data.Cuentabancoid
-	pagesJson, err := json.Marshal(strHlprSrv)
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	url := configuracion.GetUrlMonolitico() + codigo + "GoServlet"
-
-	fmt.Println("URL:>", url)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(pagesJson))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-	defer resp.Body.Close()
-
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-
-	str := string(body)
-	fmt.Println("BYTES RECIBIDOS :", len(str))
-
-	if str == "0" {
-		framework.RespondError(w, http.StatusNotFound, "Cuenta Inexistente")
-		s.Error = errors.New("Cuenta Inexistente")
-	}
-	return s
 }
 
 func LiquidacionList(w http.ResponseWriter, r *http.Request) {
@@ -216,6 +148,18 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		bancoID := liquidacion.Cuentabancoid
+		if bancoID != nil {
+			cuentaBanco := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoID))
+			liquidacion.Cuentabanco = cuentaBanco
+		}
+
+		bancoaportejubilatorioID := liquidacion.Bancoaportejubilatorioid
+		if bancoaportejubilatorioID != nil {
+			bancoAporteJubilatorio := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoaportejubilatorioID))
+			liquidacion.Bancoaportejubilatorio = bancoAporteJubilatorio
+		}
+
 		framework.RespondJSON(w, http.StatusOK, liquidacion)
 	}
 
@@ -242,9 +186,12 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer conexionBD.CerrarDB(db)
 
-		var requestMono requestMono
+		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
+			framework.RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 
-		if err := requestMono.requestMonolitico("CANQUERY", w, r, liquidacion_data, tokenAutenticacion, "banco").Error; err != nil {
+		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Bancoaportejubilatorioid)).Error; err != nil {
 			framework.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -291,9 +238,12 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			liquidacionid := liquidacion_data.ID
 
-			var requestMono requestMono
+			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
+				framework.RespondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 
-			if err := requestMono.requestMonolitico("CANQUERY", w, r, liquidacion_data, tokenAutenticacion, "banco").Error; err != nil {
+			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Bancoaportejubilatorioid)).Error; err != nil {
 				framework.RespondError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
@@ -411,6 +361,7 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 		defer conexionBD.CerrarDB(db)
 		var liquidaciones_ids string
 		descripcion_asiento := strIdsLiquidaciones.Descripcion
+		fecha_asiento := strIdsLiquidaciones.Fechaasiento
 		if len(strIdsLiquidaciones.Idsliquidacionesacontabilizar) > 0 {
 			liquidaciones_ids = "(" + strings.Trim(strings.Replace(fmt.Sprint(strIdsLiquidaciones.Idsliquidacionesacontabilizar), " ", ",", -1), "[]") + ")"
 		} else {
@@ -435,7 +386,7 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		generarAsientoManualDesdeMonolitico(w, r, liquidaciones, mapCuentasImportes, tokenAutenticacion, descripcion_asiento, 0, db)
+		generarAsientoManualDesdeMonolitico(w, r, liquidaciones, mapCuentasImportes, tokenAutenticacion, descripcion_asiento, fecha_asiento, 0, db)
 
 	}
 
@@ -455,80 +406,24 @@ func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquid
 	return len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas
 }
 
-func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) {
+func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, fechaasiento string, asientomanualtransaccionid int, db *gorm.DB) {
+	var cuentasImportes []monoliticComunication.StrCuentaImporte
+	cuentasImportes = obtenerCuentasImportesLiquidacion(mapCuentasImportes)
+	datosAsientoContableManual := monoliticComunication.Generarasientomanual(w, r, cuentasImportes, tokenAutenticacion, descripcion, fechaasiento)
 
-	resp := requestMonoliticoContabilizarDescontabilizarLiquidaciones(r, mapCuentasImportes, tokenAutenticacion, descripcion, asientomanualtransaccionid, db)
-
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-
-	var datosAsientoContableManual StrDatosAsientoContableManual
-
-	defer resp.Body.Close()
-
-	json.Unmarshal(body, &datosAsientoContableManual)
-
-	if resp.StatusCode == http.StatusOK {
+	if err := monoliticComunication.Checkgeneroasientomanual(datosAsientoContableManual).Error; err != nil {
+		framework.RespondError(w, http.StatusNotFound, err.Error())
+	} else {
 		marcarLiquidacionesComoContabilizadas(liquidaciones, datosAsientoContableManual, db)
 		var respuestaJson respJson
 		respuestaJson.Codigo = http.StatusOK
 		respuestaJson.Respuesta = "Se contabilizaron correctamente " + strconv.Itoa(len(liquidaciones)) + " liquidaciones"
 		framework.RespondJSON(w, http.StatusOK, respuestaJson)
-	} else {
-		str := string(body)
-		framework.RespondError(w, http.StatusNotFound, str)
 	}
 
 }
 
-func requestMonoliticoContabilizarDescontabilizarLiquidaciones(r *http.Request, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, asientomanualtransaccionid int, db *gorm.DB) *http.Response {
-
-	var strLiquidacionContabilizarDescontabilizar strLiquidacionContabilizarDescontabilizar
-	token := *tokenAutenticacion
-
-	strLiquidacionContabilizarDescontabilizar.Tenant = token.Tenant
-	strLiquidacionContabilizarDescontabilizar.Token = token.Token
-	strLiquidacionContabilizarDescontabilizar.Username = token.Username
-	if asientomanualtransaccionid == 0 {
-		if descripcion == "" {
-			descripcion = framework.Descripcionasientomanualcontableliquidacionescontabilizadas
-		}
-		strLiquidacionContabilizarDescontabilizar.Descripcion = descripcion
-		strLiquidacionContabilizarDescontabilizar.Cuentasimportes = obtenerCuentasImportesLiquidacion(mapCuentasImportes)
-	} else {
-		strLiquidacionContabilizarDescontabilizar.Asientomanualtransaccionid = asientomanualtransaccionid
-	}
-	pagesJson, err := json.Marshal(strLiquidacionContabilizarDescontabilizar)
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	url := configuracion.GetUrlMonolitico() + "ContabilizarLiquidacionServlet"
-
-	fmt.Println("Se hace un request al monolitico con la siguiente URL:>", url)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(pagesJson))
-
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-
-	return resp
-}
-
-func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liquidacion, datosAsientoContableManual StrDatosAsientoContableManual, db *gorm.DB) {
+func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liquidacion, datosAsientoContableManual *monoliticComunication.StrDatosAsientoContableManual, db *gorm.DB) {
 	for i := 0; i < len(liquidaciones); i++ {
 		db.Model(&liquidaciones[i]).Update("Estacontabilizada", true)
 		db.Model(&liquidaciones[i]).Update("Asientomanualtransaccionid", datosAsientoContableManual.Asientocontablemanualid)
@@ -660,11 +555,11 @@ func agruparCuentas(strCuentasImportes []strCuentaImporte, mapCuentasImportes ma
 	}
 }
 
-func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []strCuentaImporte {
-	var arrayStrCuentaImporte []strCuentaImporte
+func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []monoliticComunication.StrCuentaImporte {
+	var arrayStrCuentaImporte []monoliticComunication.StrCuentaImporte
 
 	for cuenta, importe := range mapCuentasImportes {
-		var strcuentaimporte strCuentaImporte
+		var strcuentaimporte monoliticComunication.StrCuentaImporte
 		strcuentaimporte.Cuentaid = cuenta
 		strcuentaimporte.Importecuenta = importe
 		arrayStrCuentaImporte = append(arrayStrCuentaImporte, strcuentaimporte)
@@ -673,7 +568,7 @@ func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []str
 	return arrayStrCuentaImporte
 }
 
-func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
+/*func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
 	var respuestaDescontabilizar = make(map[int]respJson)
 	var cantidadLiquidaciones int
 	var cantidadAsientoManualTransaccionID int
@@ -720,7 +615,7 @@ func LiquidacionDesContabilizar(w http.ResponseWriter, r *http.Request) {
 		framework.RespondError(w, http.StatusConflict, "El token utilizado es invalido")
 	}
 
-}
+}*/
 func checkAsientoManualTransaccionID(w http.ResponseWriter, asientomanualtransaccionid int, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (bool, []structLiquidacion.Liquidacion) {
 
 	liquidaciones := buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid, respuestaDescontabilizar, w, db)
@@ -738,7 +633,7 @@ func buscarLiquidacionesAsientoManualTransaccion(asientomanualtransaccionid int,
 	return liquidaciones
 }
 
-func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, asientomanualtransaccionid int, tokenAutenticacion *structAutenticacion.Security, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (int, int) {
+/*func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, asientomanualtransaccionid int, tokenAutenticacion *structAutenticacion.Security, respuestaDescontabilizar map[int]respJson, db *gorm.DB) (int, int) {
 
 	resp := requestMonoliticoContabilizarDescontabilizarLiquidaciones(r, nil, tokenAutenticacion, "", asientomanualtransaccionid, db)
 	body, err := ioutil.ReadAll(resp.Body)
@@ -765,7 +660,7 @@ func descontabilizarLiquidaciones(w http.ResponseWriter, r *http.Request, liquid
 
 	return cantLiquidaciones, cantAsientoManualTransaccionID
 
-}
+}*/
 
 func blanquearAsientoManualTransaccionYNombreEnLiquidaciones(w http.ResponseWriter, liquidaciones []structLiquidacion.Liquidacion, asientocontablemanualid int, db *gorm.DB) {
 
@@ -935,4 +830,40 @@ func deleteArrayIds(array interface{}) {
 	default:
 		fmt.Printf("I don't know about type %T!\n", v)
 	}
+}
+
+func LiquidacionAsientoManualDescontabilizar(w http.ResponseWriter, r *http.Request) {
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+
+		str := string(body)
+
+		var datosAsientoContableManualBlanquear StrDatosAsientoContableManualBlanquear
+		json.Unmarshal([]byte(str), &datosAsientoContableManualBlanquear)
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
+		defer conexionBD.CerrarDB(db)
+
+		var tokenSecurityDecode []byte = []byte("blanquearasientomanualidenlasliquidacionesquecontabilizo")
+		tokenSecurityEncode := base64.StdEncoding.EncodeToString(tokenSecurityDecode)
+
+		if tokenSecurityEncode == datosAsientoContableManualBlanquear.Tokensecurityencode {
+			asientocontablemanualid := datosAsientoContableManualBlanquear.Asientocontablemanualid
+			var liquidaciones []structLiquidacion.Liquidacion
+			db.Raw("UPDATE LIQUIDACION SET Asientomanualtransaccionid = 0, Asientomanualnombre = '', Estacontabilizada = false WHERE Asientomanualtransaccionid = " + strconv.Itoa(asientocontablemanualid)).Scan(&liquidaciones)
+
+		} else {
+			framework.RespondError(w, http.StatusInternalServerError, "Acceso denegado")
+			return
+		}
+
+	}
+	framework.RespondJSON(w, http.StatusCreated, "Liquidaciones descontabilizadas correctamente")
+
 }

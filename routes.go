@@ -72,11 +72,17 @@ var routes = Routes{
 		"/api/liquidacion/contabilizar",
 		LiquidacionContabilizar,
 	},
-	Route{
+	/*Route{
 		"LiquidacionDesContabilizar",
 		"POST",
 		"/api/liquidacion/descontabilizar",
 		LiquidacionDesContabilizar,
+	},*/
+	Route{
+		"LiquidacionAsientoManualDescontabilizar",
+		"POST",
+		"/api/liquidacion/asientomanualdescontabilizar",
+		LiquidacionAsientoManualDescontabilizar,
 	},
 	Route{
 		"LiquidacionesRemoveMasivo",
