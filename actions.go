@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -551,7 +552,7 @@ func agruparCuentas(strCuentasImportes []strCuentaImporte, mapCuentasImportes ma
 		importeUnitario := strCuentasImportes[i].Importecuenta
 
 		importe := mapCuentasImportes[cuentaContable]
-		mapCuentasImportes[cuentaContable] = importe + importeUnitario
+		mapCuentasImportes[cuentaContable] = roundTo(importe+importeUnitario, 4)
 	}
 }
 
@@ -866,4 +867,13 @@ func LiquidacionAsientoManualDescontabilizar(w http.ResponseWriter, r *http.Requ
 	}
 	framework.RespondJSON(w, http.StatusCreated, "Liquidaciones descontabilizadas correctamente")
 
+}
+
+func round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
+}
+
+func roundTo(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
 }
