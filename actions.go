@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,12 +36,12 @@ type strTransaccionesIdsAsientosContablesManuales struct {
 
 type strCuentaImporte struct {
 	Cuentaid      int     `json:"cuentaid"`
-	Importecuenta float32 `json:"importecuenta"`
+	Importecuenta float64 `json:"importecuenta"`
 }
 
 type strCuentaImporteTipoGrilla struct {
 	Cuentaid      int     `json:"cuentaid"`
-	Importecuenta float32 `json:"importecuenta"`
+	Importecuenta float64 `json:"importecuenta"`
 	Tipogrilla    int     `json:"tipogrilla"`
 }
 
@@ -341,7 +342,7 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 
 func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("La URL accedida: " + r.URL.String())
-	var mapCuentasImportes = make(map[int]float32)
+	var mapCuentasImportes = make(map[int]float64)
 	var strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla
 	var strCuentasImportes []strCuentaImporte
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
@@ -406,7 +407,7 @@ func checkLiquidacionesNoContabilizadas(liquidaciones []structLiquidacion.Liquid
 	return len(liquidaciones) == strCheckLiquidacionesNoContabilizadas.Cantidadliquidacionesnocontabilizadas
 }
 
-func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float32, tokenAutenticacion *structAutenticacion.Security, descripcion string, fechaasiento string, asientomanualtransaccionid int, db *gorm.DB) {
+func generarAsientoManualDesdeMonolitico(w http.ResponseWriter, r *http.Request, liquidaciones []structLiquidacion.Liquidacion, mapCuentasImportes map[int]float64, tokenAutenticacion *structAutenticacion.Security, descripcion string, fechaasiento string, asientomanualtransaccionid int, db *gorm.DB) {
 	var cuentasImportes []monoliticComunication.StrCuentaImporte
 	cuentasImportes = obtenerCuentasImportesLiquidacion(mapCuentasImportes)
 	datosAsientoContableManual := monoliticComunication.Generarasientomanual(w, r, cuentasImportes, tokenAutenticacion, descripcion, fechaasiento)
@@ -545,17 +546,17 @@ func obtenerCuentasImportes(strCuentaImporteTipoGrillas []strCuentaImporteTipoGr
 	}
 }
 
-func agruparCuentas(strCuentasImportes []strCuentaImporte, mapCuentasImportes map[int]float32) {
+func agruparCuentas(strCuentasImportes []strCuentaImporte, mapCuentasImportes map[int]float64) {
 	for i := 0; i < len(strCuentasImportes); i++ {
 		cuentaContable := strCuentasImportes[i].Cuentaid
 		importeUnitario := strCuentasImportes[i].Importecuenta
 
 		importe := mapCuentasImportes[cuentaContable]
-		mapCuentasImportes[cuentaContable] = importe + importeUnitario
+		mapCuentasImportes[cuentaContable] = roundTo(importe+importeUnitario, 4)
 	}
 }
 
-func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float32) []monoliticComunication.StrCuentaImporte {
+func obtenerCuentasImportesLiquidacion(mapCuentasImportes map[int]float64) []monoliticComunication.StrCuentaImporte {
 	var arrayStrCuentaImporte []monoliticComunication.StrCuentaImporte
 
 	for cuenta, importe := range mapCuentasImportes {
@@ -866,4 +867,13 @@ func LiquidacionAsientoManualDescontabilizar(w http.ResponseWriter, r *http.Requ
 	}
 	framework.RespondJSON(w, http.StatusCreated, "Liquidaciones descontabilizadas correctamente")
 
+}
+
+func round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
+}
+
+func roundTo(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
 }
