@@ -1,4 +1,4 @@
-module sueldos-liquidacion
+module git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion
 
 go 1.12
 
