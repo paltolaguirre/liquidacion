@@ -13,8 +13,10 @@ import (
 
 	"github.com/xubiosueldos/conexionBD"
 
+	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -93,6 +95,11 @@ type StrDatosAsientoContableManual struct {
 type StrDatosAsientoContableManualBlanquear struct {
 	Asientocontablemanualid int    `json:"asientocontablemanualid"`
 	Tokensecurityencode     string `json:"tokensecurityencode"`
+}
+
+type calculoAutomatico struct {
+	Concepto    structConcepto.Concepto       `json:"concepto"`
+	Liquidacion structLiquidacion.Liquidacion `json:"liquidacion"`
 }
 
 var nombreMicroservicio string = "liquidacion"
@@ -895,14 +902,40 @@ func roundTo(num float64, precision int) float64 {
 }
 
 func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
-
+	var calculoAutomaticoConcepto calculoAutomatico
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
+
+		decoder := json.NewDecoder(r.Body)
+
+		if err := decoder.Decode(&calculoAutomaticoConcepto); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		defer r.Body.Close()
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := conexionBD.ObtenerDB(tenant)
 
 		defer conexionBD.CerrarDB(db)
 
+		if calculoAutomaticoConcepto.Concepto.Porcentaje != nil && calculoAutomaticoConcepto.Concepto.Tipodecalculoid != nil {
+			liquidacion := calculoAutomaticoConcepto.Liquidacion
+			concepto := calculoAutomaticoConcepto.Concepto
+			importeCalculado := calculosAutomaticos.Hacercalculoautomatico(concepto, liquidacion)
+
+			for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
+				liquidacionitem := liquidacion.Liquidacionitems[i]
+				if *liquidacionitem.Conceptoid == concepto.ID {
+					liquidacionitem.Importeunitario = &importeCalculado
+				}
+			}
+
+		}
+
 	}
+
+	framework.RespondJSON(w, http.StatusOK, calculoAutomaticoConcepto)
+
 }
