@@ -920,18 +920,37 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 
 		defer conexionBD.CerrarDB(db)
 
-		if calculoAutomaticoConcepto.Concepto.Porcentaje != nil && calculoAutomaticoConcepto.Concepto.Tipodecalculoid != nil {
-			liquidacion := calculoAutomaticoConcepto.Liquidacion
-			concepto := calculoAutomaticoConcepto.Concepto
-			importeCalculado := calculosAutomaticos.Hacercalculoautomatico(concepto, liquidacion)
+		var importeCalculado float64
+		liquidacion := calculoAutomaticoConcepto.Liquidacion
+
+		if calculoAutomaticoConcepto.Concepto.ID == 0 {
 
 			for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
 				liquidacionitem := liquidacion.Liquidacionitems[i]
-				if *liquidacionitem.Conceptoid == concepto.ID {
+				concepto := *liquidacionitem.Concepto
+				if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+
+					importeCalculado = calculosAutomaticos.Hacercalculoautomatico(concepto, liquidacion)
 					liquidacionitem.Importeunitario = &importeCalculado
 				}
+
 			}
 
+		} else {
+
+			if calculoAutomaticoConcepto.Concepto.Porcentaje != nil && calculoAutomaticoConcepto.Concepto.Tipodecalculoid != nil {
+				liquidacion := calculoAutomaticoConcepto.Liquidacion
+				concepto := calculoAutomaticoConcepto.Concepto
+				importeCalculado := calculosAutomaticos.Hacercalculoautomatico(concepto, liquidacion)
+
+				for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
+					liquidacionitem := liquidacion.Liquidacionitems[i]
+					if *liquidacionitem.Conceptoid == concepto.ID {
+						liquidacionitem.Importeunitario = &importeCalculado
+					}
+				}
+
+			}
 		}
 
 	}
