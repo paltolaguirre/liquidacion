@@ -5,83 +5,81 @@ import (
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 )
 
-func Hacercalculoautomatico(concepto structConcepto.Concepto, liquidacion structLiquidacion.Liquidacion) float64 {
-	var importeCalculado float64
+var tipoConceptoRemunerativos int = -1
+var tipoConceptoNoRemunerativos int = -2
+var tipoConceptoDescuentos int = -3
 
+func Hacercalculoautomatico(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
+	var importeCalculado float64
+	var importeCalculadoPorPorcentaje float64
 	switch tipocalculo := *concepto.Tipodecalculoid; tipocalculo {
 	case -1:
 		importeCalculado = calculoRemunerativos(concepto, liquidacion)
-		return importeCalculado
+		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		return importeCalculadoPorPorcentaje
 	case -2:
 		importeCalculado = calculoNoRemunerativos(concepto, liquidacion)
-		return importeCalculado
+		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		return importeCalculadoPorPorcentaje
 	case -3:
 		importeCalculado = calculoRemunerativosMenosDescuentos(concepto, liquidacion)
-		return importeCalculado
+		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		return importeCalculadoPorPorcentaje
 	case -4:
 		importeCalculado = calculoRemunerativosMasNoRemunerativos(concepto, liquidacion)
-		return importeCalculado
+		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		return importeCalculadoPorPorcentaje
 	case -5:
 		importeCalculado = calculoRemunerativosMasNoRemunerativosMenosDescuentos(concepto, liquidacion)
-		return importeCalculado
-
+		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		return importeCalculadoPorPorcentaje
 	default:
-		return importeCalculado
+		return importeCalculadoPorPorcentaje
 	}
 
 }
 
-func calculoRemunerativos(concepto structConcepto.Concepto, liquidacion structLiquidacion.Liquidacion) float64 {
-	var tipoConceptoRemunerativos int = -1
-
-	importeCalculado := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoRemunerativos)
+func calculoRemunerativos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
+	importeCalculado := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoRemunerativos)
 
 	return importeCalculado
 }
 
-func calculoNoRemunerativos(concepto structConcepto.Concepto, liquidacion structLiquidacion.Liquidacion) float64 {
-	var tipoConceptoNoRemunerativos int = -2
+func calculoNoRemunerativos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
 
-	importeCalculado := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoNoRemunerativos)
+	importeCalculado := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoNoRemunerativos)
 	return importeCalculado
 }
 
-func calculoRemunerativosMenosDescuentos(concepto structConcepto.Concepto, liquidacion structLiquidacion.Liquidacion) float64 {
-	var tipoConceptoRemunerativos int = -1
-	var tipoConceptoDescuentos int = -3
+func calculoRemunerativosMenosDescuentos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
 
-	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoRemunerativos)
-	importeCalculadoDescuentos := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoDescuentos)
+	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoRemunerativos)
+	importeCalculadoDescuentos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoDescuentos)
 
 	importeCalculado := importeCalculadoRemunerativos - importeCalculadoDescuentos
 	return importeCalculado
 }
 
-func calculoRemunerativosMasNoRemunerativos(concepto structConcepto.Concepto, liquidacion structLiquidacion.Liquidacion) float64 {
-	var tipoConceptoRemunerativos int = -1
-	var tipoConceptoNoRemunerativos int = -2
+func calculoRemunerativosMasNoRemunerativos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
 
-	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoRemunerativos)
-	importeCalculadoNoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoNoRemunerativos)
+	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoRemunerativos)
+	importeCalculadoNoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoNoRemunerativos)
 
 	importeCalculado := importeCalculadoRemunerativos + importeCalculadoNoRemunerativos
 	return importeCalculado
 }
 
-func calculoRemunerativosMasNoRemunerativosMenosDescuentos(concepto structConcepto.Concepto, liquidacion structLiquidacion.Liquidacion) float64 {
-	var tipoConceptoRemunerativos int = -1
-	var tipoConceptoNoRemunerativos int = -2
-	var tipoConceptoDescuentos int = -3
+func calculoRemunerativosMasNoRemunerativosMenosDescuentos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
 
-	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoRemunerativos)
-	importeCalculadoNoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoNoRemunerativos)
-	importeCalculadoDescuentos := calcularImporteSegunTipoConcepto(liquidacion, *concepto.Porcentaje, tipoConceptoDescuentos)
+	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoRemunerativos)
+	importeCalculadoNoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoNoRemunerativos)
+	importeCalculadoDescuentos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoDescuentos)
 
 	importeCalculado := importeCalculadoRemunerativos + importeCalculadoNoRemunerativos - importeCalculadoDescuentos
 	return importeCalculado
 }
 
-func calcularImporteSegunTipoConcepto(liquidacion structLiquidacion.Liquidacion, porcentaje float64, tipoConcepto int) float64 {
+func calcularImporteSegunTipoConcepto(liquidacion *structLiquidacion.Liquidacion, tipoConcepto int) float64 {
 	var importeCalculado float64
 
 	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
@@ -92,5 +90,5 @@ func calcularImporteSegunTipoConcepto(liquidacion structLiquidacion.Liquidacion,
 		}
 	}
 
-	return importeCalculado * porcentaje
+	return importeCalculado
 }

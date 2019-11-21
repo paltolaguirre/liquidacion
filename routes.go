@@ -98,7 +98,7 @@ var routes = Routes{
 	},
 	Route{
 		"LiquidacionCalculoAutomatico",
-		"POST",
+		"PUT",
 		"/api/liquidacion/calculoautomatico",
 		LiquidacionCalculoAutomatico,
 	},

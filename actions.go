@@ -97,11 +97,6 @@ type StrDatosAsientoContableManualBlanquear struct {
 	Tokensecurityencode     string `json:"tokensecurityencode"`
 }
 
-type calculoAutomatico struct {
-	Concepto    structConcepto.Concepto       `json:"concepto"`
-	Liquidacion structLiquidacion.Liquidacion `json:"liquidacion"`
-}
-
 var nombreMicroservicio string = "liquidacion"
 
 // Sirve para controlar si el server esta OK
@@ -902,13 +897,13 @@ func roundTo(num float64, precision int) float64 {
 }
 
 func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
-	var calculoAutomaticoConcepto calculoAutomatico
+	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
 
-		if err := decoder.Decode(&calculoAutomaticoConcepto); err != nil {
+		if err := decoder.Decode(&liquidacionCalculoAutomatico); err != nil {
 			framework.RespondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -921,32 +916,34 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 		defer conexionBD.CerrarDB(db)
 
 		var importeCalculado float64
-		liquidacion := calculoAutomaticoConcepto.Liquidacion
 
-		if calculoAutomaticoConcepto.Concepto.ID == 0 {
+		queries := r.URL.Query()
+		if queries["conceptoid"] == nil {
 
-			for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
-				liquidacionitem := liquidacion.Liquidacionitems[i]
-				concepto := *liquidacionitem.Concepto
+			for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
 				if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 
-					importeCalculado = calculosAutomaticos.Hacercalculoautomatico(concepto, liquidacion)
-					liquidacionitem.Importeunitario = &importeCalculado
+					importeCalculado = roundTo(calculosAutomaticos.Hacercalculoautomatico(&concepto, &liquidacionCalculoAutomatico), 4)
+					liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = &importeCalculado
 				}
 
 			}
 
 		} else {
+			var conceptoid string = r.URL.Query()["conceptoid"][0]
+			var concepto structConcepto.Concepto
+			db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
+			if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 
-			if calculoAutomaticoConcepto.Concepto.Porcentaje != nil && calculoAutomaticoConcepto.Concepto.Tipodecalculoid != nil {
-				liquidacion := calculoAutomaticoConcepto.Liquidacion
-				concepto := calculoAutomaticoConcepto.Concepto
-				importeCalculado := calculosAutomaticos.Hacercalculoautomatico(concepto, liquidacion)
+				importeCalculado = roundTo(calculosAutomaticos.Hacercalculoautomatico(&concepto, &liquidacionCalculoAutomatico), 4)
 
-				for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
-					liquidacionitem := liquidacion.Liquidacionitems[i]
-					if *liquidacionitem.Conceptoid == concepto.ID {
-						liquidacionitem.Importeunitario = &importeCalculado
+				for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+					if *liquidacionCalculoAutomatico.Liquidacionitems[i].Conceptoid == concepto.ID {
+						liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = &importeCalculado
+						fmt.Println(liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario)
 					}
 				}
 
@@ -955,6 +952,6 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	framework.RespondJSON(w, http.StatusOK, calculoAutomaticoConcepto)
+	framework.RespondJSON(w, http.StatusOK, liquidacionCalculoAutomatico)
 
 }
