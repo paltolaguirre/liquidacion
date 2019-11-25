@@ -263,33 +263,38 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+				if err := tx.Model(structLiquidacion.Liquidacionitem{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Liquidacionitem{}).Error; err != nil {
+					tx.Rollback()
+					framework.RespondError(w, http.StatusInternalServerError, err.Error())
+					return
+				}
 				//despues de modificar, recorro los descuentos asociados a la liquidacion para ver si alguno fue eliminado logicamente y lo elimino de la BD
-				if err := tx.Model(structLiquidacion.Descuento{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Descuento{}).Error; err != nil {
-					tx.Rollback()
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+				/*	if err := tx.Model(structLiquidacion.Descuento{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Descuento{}).Error; err != nil {
+						tx.Rollback()
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}
 
-				//despues de modificar, recorro los importes remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-				if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
-					tx.Rollback()
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+					//despues de modificar, recorro los importes remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
+					if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
+						tx.Rollback()
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}
 
-				//despues de modificar, recorro los importes no remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-				if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
-					tx.Rollback()
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+					//despues de modificar, recorro los importes no remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
+					if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
+						tx.Rollback()
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}
 
-				//despues de modificar, recorro las retenciones asociadas a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-				if err := tx.Model(structLiquidacion.Retencion{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Retencion{}).Error; err != nil {
-					tx.Rollback()
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+					//despues de modificar, recorro las retenciones asociadas a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
+					if err := tx.Model(structLiquidacion.Retencion{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Retencion{}).Error; err != nil {
+						tx.Rollback()
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}*/
 
 				tx.Commit()
 
@@ -436,7 +441,7 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 	fmt.Println("Se obtienen las cuentas de la Liquidacion: " + strconv.Itoa(liquidacion.ID))
 	var cuentaContable *int
 
-	for i := 0; i < len(liquidacion.Importesremunerativos); i++ {
+	/*for i := 0; i < len(liquidacion.Importesremunerativos); i++ {
 
 		importeremunerativo := liquidacion.Importesremunerativos[i]
 		concepto := importeremunerativo.Concepto
@@ -491,6 +496,17 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 5}
 		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
 	}
+	*/
+
+	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
+		item := liquidacion.Liquidacionitems[i]
+		concepto := item.Concepto
+		cuentaContable = concepto.CuentaContable
+		importeUnitario := *item.Importeunitario
+
+		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: *concepto.Tipoconceptoid}
+		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
+	}
 
 	fmt.Println("Array strCuentaImporteTipoGrillas: ", *strCuentaImporteTipoGrillas)
 
@@ -508,35 +524,35 @@ func obtenerCuentasImportes(strCuentaImporteTipoGrillas []strCuentaImporteTipoGr
 		tipoGrilla := cuentaImporteTipoGrilla.Tipogrilla
 
 		switch tipoGrilla {
-		case 1:
+		case -1:
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
 			cuentaImporteHaber := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario * -1}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
-		case 2:
+		case -2:
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
 			cuentaImporteHaber := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario * -1}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
-		case 3:
+		case -3:
 			cuentaImporteHaber := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario * -1}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
-		case 4:
+		case -4:
 			cuentaImporteHaber := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario * -1}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
-		case 5:
+		case -5:
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
