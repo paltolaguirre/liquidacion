@@ -926,7 +926,7 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 				if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 
 					importeCalculado = roundTo(calculosAutomaticos.Hacercalculoautomatico(&concepto, &liquidacionCalculoAutomatico), 4)
-					liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = &importeCalculado
+					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = importeCalculado
 				}
 
 			}
