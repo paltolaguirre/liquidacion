@@ -942,7 +942,7 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 				for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 
 					if *liquidacionCalculoAutomatico.Liquidacionitems[i].Conceptoid == concepto.ID {
-						liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = &importeCalculado
+						*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = importeCalculado
 						fmt.Println(liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario)
 					}
 				}
