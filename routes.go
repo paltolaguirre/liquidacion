@@ -102,4 +102,10 @@ var routes = Routes{
 		"/api/liquidacion/calculoautomatico",
 		LiquidacionCalculoAutomatico,
 	},
+	Route{
+		"LiquidacionCalculoAutomaticoConceptoId",
+		"PUT",
+		"/api/liquidacion/calculoautomatico/{id}",
+		LiquidacionCalculoAutomaticoConceptoId,
+	},
 }
