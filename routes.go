@@ -96,4 +96,16 @@ var routes = Routes{
 		"/api/liquidacion/duplicar",
 		LiquidacionDuplicarMasivo,
 	},
+	Route{
+		"LiquidacionCalculoAutomatico",
+		"PUT",
+		"/api/liquidacion/calculoautomatico",
+		LiquidacionCalculoAutomatico,
+	},
+	Route{
+		"LiquidacionCalculoAutomaticoConceptoId",
+		"PUT",
+		"/api/liquidacion/calculoautomatico/{id}",
+		LiquidacionCalculoAutomaticoConceptoId,
+	},
 }
