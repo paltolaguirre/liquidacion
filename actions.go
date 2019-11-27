@@ -777,8 +777,14 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
 				liquidacion.Fechaperiodoliquidacion = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
 
-				/*TODO: se deberia usar una funcion "deleteArrayIds()" para hacer esto...*/
-				for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
+				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
+					liquidacion.Liquidacionitems[index].ID = 0
+					liquidacion.Liquidacionitems[index].CreatedAt = time.Time{}
+					liquidacion.Liquidacionitems[index].UpdatedAt = time.Time{}
+					liquidacion.Liquidacionitems[index].Liquidacionid = 0
+				}
+
+				/*for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
 					liquidacion.Importesremunerativos[index].ID = 0
 					liquidacion.Importesremunerativos[index].CreatedAt = time.Time{}
 					liquidacion.Importesremunerativos[index].UpdatedAt = time.Time{}
@@ -807,7 +813,7 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 					liquidacion.Aportespatronales[index].CreatedAt = time.Time{}
 					liquidacion.Aportespatronales[index].UpdatedAt = time.Time{}
 					liquidacion.Aportespatronales[index].Liquidacionid = 0
-				}
+				}*/
 
 				/*liquidacionJSON, _ := json.Marshal(liquidacion)
 				fmt.Println(string(liquidacionJSON))*/
@@ -838,21 +844,6 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		framework.RespondJSON(w, http.StatusCreated, procesamientoMasivo)
-	}
-}
-
-func deleteArrayIds(array interface{}) {
-	switch v := array.(type) {
-	case []structLiquidacion.Importeremunerativo:
-	case []structLiquidacion.Importenoremunerativo:
-		for index := 0; index < len(v); index++ {
-			v[index].ID = 0
-			v[index].CreatedAt = time.Time{}
-			v[index].UpdatedAt = time.Time{}
-			v[index].Liquidacionid = 0
-		}
-	default:
-		fmt.Printf("I don't know about type %T!\n", v)
 	}
 }
 
@@ -972,12 +963,13 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 		//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
 		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 
-			if *liquidacionCalculoAutomatico.Liquidacionitems[i].Conceptoid == conceptoid {
+			if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
 				concepto = *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
 				break
 			}
 		}
 
+		importeCalculado.Conceptoid = &conceptoid
 		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 
 			importeCalculadoConceptoID := roundTo(calculosAutomaticos.Hacercalculoautomatico(&concepto, &liquidacionCalculoAutomatico), 4)
