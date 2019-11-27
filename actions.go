@@ -13,8 +13,10 @@ import (
 
 	"github.com/xubiosueldos/conexionBD"
 
+	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -93,6 +95,11 @@ type StrDatosAsientoContableManual struct {
 type StrDatosAsientoContableManualBlanquear struct {
 	Asientocontablemanualid int    `json:"asientocontablemanualid"`
 	Tokensecurityencode     string `json:"tokensecurityencode"`
+}
+
+type StrCalculoAutomaticoConceptoId struct {
+	Conceptoid      *int     `json:"conceptoid"`
+	Importeunitario *float64 `json:"importeunitario" `
 }
 
 var nombreMicroservicio string = "liquidacion"
@@ -770,8 +777,14 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
 				liquidacion.Fechaperiodoliquidacion = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
 
-				/*TODO: se deberia usar una funcion "deleteArrayIds()" para hacer esto...*/
-				for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
+				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
+					liquidacion.Liquidacionitems[index].ID = 0
+					liquidacion.Liquidacionitems[index].CreatedAt = time.Time{}
+					liquidacion.Liquidacionitems[index].UpdatedAt = time.Time{}
+					liquidacion.Liquidacionitems[index].Liquidacionid = 0
+				}
+
+				/*for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
 					liquidacion.Importesremunerativos[index].ID = 0
 					liquidacion.Importesremunerativos[index].CreatedAt = time.Time{}
 					liquidacion.Importesremunerativos[index].UpdatedAt = time.Time{}
@@ -800,7 +813,7 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 					liquidacion.Aportespatronales[index].CreatedAt = time.Time{}
 					liquidacion.Aportespatronales[index].UpdatedAt = time.Time{}
 					liquidacion.Aportespatronales[index].Liquidacionid = 0
-				}
+				}*/
 
 				/*liquidacionJSON, _ := json.Marshal(liquidacion)
 				fmt.Println(string(liquidacionJSON))*/
@@ -831,21 +844,6 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		framework.RespondJSON(w, http.StatusCreated, procesamientoMasivo)
-	}
-}
-
-func deleteArrayIds(array interface{}) {
-	switch v := array.(type) {
-	case []structLiquidacion.Importeremunerativo:
-	case []structLiquidacion.Importenoremunerativo:
-		for index := 0; index < len(v); index++ {
-			v[index].ID = 0
-			v[index].CreatedAt = time.Time{}
-			v[index].UpdatedAt = time.Time{}
-			v[index].Liquidacionid = 0
-		}
-	default:
-		fmt.Printf("I don't know about type %T!\n", v)
 	}
 }
 
@@ -892,4 +890,94 @@ func round(num float64) int {
 func roundTo(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(round(num*output)) / output
+}
+
+func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
+	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		decoder := json.NewDecoder(r.Body)
+
+		if err := decoder.Decode(&liquidacionCalculoAutomatico); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		defer r.Body.Close()
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
+
+		defer conexionBD.CerrarDB(db)
+
+		var importeCalculado float64
+
+		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+			concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+			if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+
+				importeCalculado = roundTo(calculosAutomaticos.Hacercalculoautomatico(&concepto, &liquidacionCalculoAutomatico), 4)
+				*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = importeCalculado
+			}
+
+		}
+
+	}
+
+	framework.RespondJSON(w, http.StatusOK, liquidacionCalculoAutomatico)
+
+}
+
+func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Request) {
+	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
+	var importeCalculado StrCalculoAutomaticoConceptoId
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		decoder := json.NewDecoder(r.Body)
+
+		if err := decoder.Decode(&liquidacionCalculoAutomatico); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		defer r.Body.Close()
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
+
+		defer conexionBD.CerrarDB(db)
+
+		params := mux.Vars(r)
+		param_conceptoid, _ := strconv.ParseInt(params["id"], 10, 64)
+		conceptoid := int(param_conceptoid)
+
+		if conceptoid == 0 {
+			framework.RespondError(w, http.StatusNotFound, framework.IdParametroVacio)
+			return
+		}
+		var concepto structConcepto.Concepto
+
+		//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
+		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+			if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
+				concepto = *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+				break
+			}
+		}
+
+		importeCalculado.Conceptoid = &conceptoid
+		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+
+			importeCalculadoConceptoID := roundTo(calculosAutomaticos.Hacercalculoautomatico(&concepto, &liquidacionCalculoAutomatico), 4)
+			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID}
+		}
+
+	}
+
+	framework.RespondJSON(w, http.StatusOK, importeCalculado)
+
 }
