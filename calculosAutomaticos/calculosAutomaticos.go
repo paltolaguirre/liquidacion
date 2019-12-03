@@ -96,7 +96,7 @@ func (calculoautomatico *Calculoautomatico) calcularImporteSegunTipoConcepto(tip
 	for i := 0; i < len(calculoautomatico.Liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := calculoautomatico.Liquidacion.Liquidacionitems[i]
 
-		if *liquidacionitem.Concepto.Tipoconceptoid == tipoConcepto {
+		if *liquidacionitem.Concepto.Tipoconceptoid == tipoConcepto && liquidacionitem.Concepto.ID != calculoautomatico.Concepto.ID {
 			if liquidacionitem.Importeunitario != importeNil {
 				importeCalculado = importeCalculado + *liquidacionitem.Importeunitario
 			}
