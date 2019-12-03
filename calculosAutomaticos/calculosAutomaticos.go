@@ -12,26 +12,27 @@ var tipoConceptoDescuentos int = -3
 func Hacercalculoautomatico(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
 	var importeCalculado float64
 	var importeCalculadoPorPorcentaje float64
+	porcentaje := *concepto.Porcentaje / 100
 	switch tipocalculo := *concepto.Tipodecalculoid; tipocalculo {
 	case -1:
 		importeCalculado = calculoRemunerativos(concepto, liquidacion)
-		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
 		return importeCalculadoPorPorcentaje
 	case -2:
 		importeCalculado = calculoNoRemunerativos(concepto, liquidacion)
-		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
 		return importeCalculadoPorPorcentaje
 	case -3:
 		importeCalculado = calculoRemunerativosMenosDescuentos(concepto, liquidacion)
-		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
 		return importeCalculadoPorPorcentaje
 	case -4:
 		importeCalculado = calculoRemunerativosMasNoRemunerativos(concepto, liquidacion)
-		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
 		return importeCalculadoPorPorcentaje
 	case -5:
 		importeCalculado = calculoRemunerativosMasNoRemunerativosMenosDescuentos(concepto, liquidacion)
-		importeCalculadoPorPorcentaje = importeCalculado * *concepto.Porcentaje
+		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
 		return importeCalculadoPorPorcentaje
 	default:
 		return importeCalculadoPorPorcentaje
