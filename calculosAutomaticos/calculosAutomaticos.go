@@ -82,12 +82,14 @@ func calculoRemunerativosMasNoRemunerativosMenosDescuentos(concepto *structConce
 
 func calcularImporteSegunTipoConcepto(liquidacion *structLiquidacion.Liquidacion, tipoConcepto int) float64 {
 	var importeCalculado float64
-
+	var importeNil *float64
 	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := liquidacion.Liquidacionitems[i]
 
 		if *liquidacionitem.Concepto.Tipoconceptoid == tipoConcepto {
-			importeCalculado = importeCalculado + *liquidacionitem.Importeunitario
+			if liquidacionitem.Importeunitario != importeNil {
+				importeCalculado = importeCalculado + *liquidacionitem.Importeunitario
+			}
 		}
 	}
 
