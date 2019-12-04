@@ -911,15 +911,15 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 
 		defer conexionBD.CerrarDB(db)
 
-		var importeCalculado float64
-
 		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 
 			concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+
 			if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 
-				importeCalculado = roundTo(calculosAutomaticos.Hacercalculoautomatico(&concepto, &liquidacionCalculoAutomatico), 4)
-				*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = importeCalculado
+				calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
+				calculoAutomatico.Hacercalculoautomatico()
+				*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(calculoAutomatico.GetImporteCalculado(), 4)
 			}
 
 		}
@@ -968,11 +968,11 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 				break
 			}
 		}
-
+		calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
 		importeCalculado.Conceptoid = &conceptoid
 		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
-
-			importeCalculadoConceptoID := roundTo(calculosAutomaticos.Hacercalculoautomatico(&concepto, &liquidacionCalculoAutomatico), 4)
+			calculoAutomatico.Hacercalculoautomatico()
+			importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
 			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID}
 		}
 
