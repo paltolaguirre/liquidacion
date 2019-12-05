@@ -968,9 +968,10 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 				break
 			}
 		}
-		calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
+
 		importeCalculado.Conceptoid = &conceptoid
 		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
 			calculoAutomatico.Hacercalculoautomatico()
 			importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
 			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID}
