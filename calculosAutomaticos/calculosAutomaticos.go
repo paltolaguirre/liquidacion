@@ -5,88 +5,98 @@ import (
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 )
 
-var tipoConceptoRemunerativos int = -1
-var tipoConceptoNoRemunerativos int = -2
-var tipoConceptoDescuentos int = -3
+type Calculoautomatico struct {
+	Concepto         structConcepto.Concepto       `json:"concepto"`
+	Liquidacion      structLiquidacion.Liquidacion `json:"liquidacion"`
+	Importecalculado float64                       `json:"importecalculado"`
+}
 
-func Hacercalculoautomatico(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
+func NewCalculoAutomatico(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) *Calculoautomatico {
+	calculoAutomatico := Calculoautomatico{*concepto, *liquidacion, 0}
+	return &calculoAutomatico
+}
+
+const tipoConceptoRemunerativos int = -1
+const tipoConceptoNoRemunerativos int = -2
+const tipoConceptoDescuentos int = -3
+
+func (calculoautomatico *Calculoautomatico) Hacercalculoautomatico() {
 	var importeCalculado float64
 	var importeCalculadoPorPorcentaje float64
-	porcentaje := *concepto.Porcentaje / 100
-	switch tipocalculo := *concepto.Tipodecalculoid; tipocalculo {
+	porcentaje := *calculoautomatico.Concepto.Porcentaje / 100
+
+	switch tipocalculo := *calculoautomatico.Concepto.Tipodecalculoid; tipocalculo {
 	case -1:
-		importeCalculado = calculoRemunerativos(concepto, liquidacion)
+		importeCalculado = calculoautomatico.calculoRemunerativos()
 		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
-		return importeCalculadoPorPorcentaje
+
 	case -2:
-		importeCalculado = calculoNoRemunerativos(concepto, liquidacion)
+		importeCalculado = calculoautomatico.calculoNoRemunerativos()
 		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
-		return importeCalculadoPorPorcentaje
+
 	case -3:
-		importeCalculado = calculoRemunerativosMenosDescuentos(concepto, liquidacion)
+		importeCalculado = calculoautomatico.calculoRemunerativosMenosDescuentos()
 		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
-		return importeCalculadoPorPorcentaje
 	case -4:
-		importeCalculado = calculoRemunerativosMasNoRemunerativos(concepto, liquidacion)
+		importeCalculado = calculoautomatico.calculoRemunerativosMasNoRemunerativos()
 		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
-		return importeCalculadoPorPorcentaje
+
 	case -5:
-		importeCalculado = calculoRemunerativosMasNoRemunerativosMenosDescuentos(concepto, liquidacion)
+		importeCalculado = calculoautomatico.calculoRemunerativosMasNoRemunerativosMenosDescuentos()
 		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
-		return importeCalculadoPorPorcentaje
-	default:
-		return importeCalculadoPorPorcentaje
+
 	}
-
+	calculoautomatico.SetImporteCalculado(importeCalculadoPorPorcentaje)
 }
 
-func calculoRemunerativos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
-	importeCalculado := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoRemunerativos)
+func (calculoautomatico *Calculoautomatico) calculoRemunerativos() float64 {
+	importeCalculado := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoRemunerativos)
 
 	return importeCalculado
 }
 
-func calculoNoRemunerativos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
+func (calculoautomatico *Calculoautomatico) calculoNoRemunerativos() float64 {
 
-	importeCalculado := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoNoRemunerativos)
+	importeCalculado := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoNoRemunerativos)
 	return importeCalculado
 }
 
-func calculoRemunerativosMenosDescuentos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
+func (calculoautomatico *Calculoautomatico) calculoRemunerativosMenosDescuentos() float64 {
 
-	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoRemunerativos)
-	importeCalculadoDescuentos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoDescuentos)
+	importeCalculadoRemunerativos := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoRemunerativos)
+	importeCalculadoDescuentos := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoDescuentos)
 
 	importeCalculado := importeCalculadoRemunerativos - importeCalculadoDescuentos
 	return importeCalculado
 }
 
-func calculoRemunerativosMasNoRemunerativos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
+func (calculoautomatico *Calculoautomatico) calculoRemunerativosMasNoRemunerativos() float64 {
 
-	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoRemunerativos)
-	importeCalculadoNoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoNoRemunerativos)
+	importeCalculadoRemunerativos := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoRemunerativos)
+	importeCalculadoNoRemunerativos := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoNoRemunerativos)
 
 	importeCalculado := importeCalculadoRemunerativos + importeCalculadoNoRemunerativos
 	return importeCalculado
 }
 
-func calculoRemunerativosMasNoRemunerativosMenosDescuentos(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion) float64 {
+func (calculoautomatico *Calculoautomatico) calculoRemunerativosMasNoRemunerativosMenosDescuentos() float64 {
 
-	importeCalculadoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoRemunerativos)
-	importeCalculadoNoRemunerativos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoNoRemunerativos)
-	importeCalculadoDescuentos := calcularImporteSegunTipoConcepto(liquidacion, tipoConceptoDescuentos)
+	importeCalculadoRemunerativos := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoRemunerativos)
+	importeCalculadoNoRemunerativos := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoNoRemunerativos)
+	importeCalculadoDescuentos := calculoautomatico.calcularImporteSegunTipoConcepto(tipoConceptoDescuentos)
 
 	importeCalculado := importeCalculadoRemunerativos + importeCalculadoNoRemunerativos - importeCalculadoDescuentos
 	return importeCalculado
 }
 
-func calcularImporteSegunTipoConcepto(liquidacion *structLiquidacion.Liquidacion, tipoConcepto int) float64 {
+func (calculoautomatico *Calculoautomatico) calcularImporteSegunTipoConcepto(tipoConcepto int) float64 {
 	var importeCalculado float64
 	var importeNil *float64
-	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
-		liquidacionitem := liquidacion.Liquidacionitems[i]
 
-		if *liquidacionitem.Concepto.Tipoconceptoid == tipoConcepto {
+	for i := 0; i < len(calculoautomatico.Liquidacion.Liquidacionitems); i++ {
+		liquidacionitem := calculoautomatico.Liquidacion.Liquidacionitems[i]
+
+		if *liquidacionitem.Concepto.Tipoconceptoid == tipoConcepto && liquidacionitem.Concepto.ID != calculoautomatico.Concepto.ID {
 			if liquidacionitem.Importeunitario != importeNil {
 				importeCalculado = importeCalculado + *liquidacionitem.Importeunitario
 			}
@@ -94,4 +104,12 @@ func calcularImporteSegunTipoConcepto(liquidacion *structLiquidacion.Liquidacion
 	}
 
 	return importeCalculado
+}
+
+func (calculoautomatico *Calculoautomatico) GetImporteCalculado() float64 {
+	return calculoautomatico.Importecalculado
+}
+
+func (calculoautomatico *Calculoautomatico) SetImporteCalculado(importe float64) {
+	calculoautomatico.Importecalculado = importe
 }
