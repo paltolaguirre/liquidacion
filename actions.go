@@ -912,16 +912,17 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 		defer conexionBD.CerrarDB(db)
 
 		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+			if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt == nil {
 
-			concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
 
-			if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+				if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 
-				calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
-				calculoAutomatico.Hacercalculoautomatico()
-				*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+					calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
+					calculoAutomatico.Hacercalculoautomatico()
+					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+				}
 			}
-
 		}
 
 	}
