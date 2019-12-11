@@ -13,8 +13,10 @@ import (
 
 	"github.com/xubiosueldos/conexionBD"
 
+	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -93,6 +95,11 @@ type StrDatosAsientoContableManual struct {
 type StrDatosAsientoContableManualBlanquear struct {
 	Asientocontablemanualid int    `json:"asientocontablemanualid"`
 	Tokensecurityencode     string `json:"tokensecurityencode"`
+}
+
+type StrCalculoAutomaticoConceptoId struct {
+	Conceptoid      *int     `json:"conceptoid"`
+	Importeunitario *float64 `json:"importeunitario" `
 }
 
 var nombreMicroservicio string = "liquidacion"
@@ -263,33 +270,38 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+				if err := tx.Model(structLiquidacion.Liquidacionitem{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Liquidacionitem{}).Error; err != nil {
+					tx.Rollback()
+					framework.RespondError(w, http.StatusInternalServerError, err.Error())
+					return
+				}
 				//despues de modificar, recorro los descuentos asociados a la liquidacion para ver si alguno fue eliminado logicamente y lo elimino de la BD
-				if err := tx.Model(structLiquidacion.Descuento{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Descuento{}).Error; err != nil {
-					tx.Rollback()
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+				/*	if err := tx.Model(structLiquidacion.Descuento{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Descuento{}).Error; err != nil {
+						tx.Rollback()
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}
 
-				//despues de modificar, recorro los importes remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-				if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
-					tx.Rollback()
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+					//despues de modificar, recorro los importes remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
+					if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
+						tx.Rollback()
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}
 
-				//despues de modificar, recorro los importes no remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-				if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
-					tx.Rollback()
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+					//despues de modificar, recorro los importes no remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
+					if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
+						tx.Rollback()
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}
 
-				//despues de modificar, recorro las retenciones asociadas a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-				if err := tx.Model(structLiquidacion.Retencion{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Retencion{}).Error; err != nil {
-					tx.Rollback()
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+					//despues de modificar, recorro las retenciones asociadas a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
+					if err := tx.Model(structLiquidacion.Retencion{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Retencion{}).Error; err != nil {
+						tx.Rollback()
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}*/
 
 				tx.Commit()
 
@@ -436,7 +448,7 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 	fmt.Println("Se obtienen las cuentas de la Liquidacion: " + strconv.Itoa(liquidacion.ID))
 	var cuentaContable *int
 
-	for i := 0; i < len(liquidacion.Importesremunerativos); i++ {
+	/*for i := 0; i < len(liquidacion.Importesremunerativos); i++ {
 
 		importeremunerativo := liquidacion.Importesremunerativos[i]
 		concepto := importeremunerativo.Concepto
@@ -491,6 +503,17 @@ func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidac
 		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 5}
 		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
 	}
+	*/
+
+	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
+		item := liquidacion.Liquidacionitems[i]
+		concepto := item.Concepto
+		cuentaContable = concepto.CuentaContable
+		importeUnitario := *item.Importeunitario
+
+		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: *concepto.Tipoconceptoid}
+		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
+	}
 
 	fmt.Println("Array strCuentaImporteTipoGrillas: ", *strCuentaImporteTipoGrillas)
 
@@ -508,35 +531,35 @@ func obtenerCuentasImportes(strCuentaImporteTipoGrillas []strCuentaImporteTipoGr
 		tipoGrilla := cuentaImporteTipoGrilla.Tipogrilla
 
 		switch tipoGrilla {
-		case 1:
+		case -1:
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
 			cuentaImporteHaber := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario * -1}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
-		case 2:
+		case -2:
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
 			cuentaImporteHaber := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario * -1}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
-		case 3:
+		case -3:
 			cuentaImporteHaber := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario * -1}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
-		case 4:
+		case -4:
 			cuentaImporteHaber := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario * -1}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
 
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
-		case 5:
+		case -5:
 			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
 			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
 
@@ -754,8 +777,14 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
 				liquidacion.Fechaperiodoliquidacion = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
 
-				/*TODO: se deberia usar una funcion "deleteArrayIds()" para hacer esto...*/
-				for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
+				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
+					liquidacion.Liquidacionitems[index].ID = 0
+					liquidacion.Liquidacionitems[index].CreatedAt = time.Time{}
+					liquidacion.Liquidacionitems[index].UpdatedAt = time.Time{}
+					liquidacion.Liquidacionitems[index].Liquidacionid = 0
+				}
+
+				/*for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
 					liquidacion.Importesremunerativos[index].ID = 0
 					liquidacion.Importesremunerativos[index].CreatedAt = time.Time{}
 					liquidacion.Importesremunerativos[index].UpdatedAt = time.Time{}
@@ -784,7 +813,7 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 					liquidacion.Aportespatronales[index].CreatedAt = time.Time{}
 					liquidacion.Aportespatronales[index].UpdatedAt = time.Time{}
 					liquidacion.Aportespatronales[index].Liquidacionid = 0
-				}
+				}*/
 
 				/*liquidacionJSON, _ := json.Marshal(liquidacion)
 				fmt.Println(string(liquidacionJSON))*/
@@ -815,21 +844,6 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		framework.RespondJSON(w, http.StatusCreated, procesamientoMasivo)
-	}
-}
-
-func deleteArrayIds(array interface{}) {
-	switch v := array.(type) {
-	case []structLiquidacion.Importeremunerativo:
-	case []structLiquidacion.Importenoremunerativo:
-		for index := 0; index < len(v); index++ {
-			v[index].ID = 0
-			v[index].CreatedAt = time.Time{}
-			v[index].UpdatedAt = time.Time{}
-			v[index].Liquidacionid = 0
-		}
-	default:
-		fmt.Printf("I don't know about type %T!\n", v)
 	}
 }
 
@@ -876,4 +890,95 @@ func round(num float64) int {
 func roundTo(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(round(num*output)) / output
+}
+
+func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
+	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		decoder := json.NewDecoder(r.Body)
+
+		if err := decoder.Decode(&liquidacionCalculoAutomatico); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		defer r.Body.Close()
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
+
+		defer conexionBD.CerrarDB(db)
+
+		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+			concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+
+			if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+
+				calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
+				calculoAutomatico.Hacercalculoautomatico()
+				*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+			}
+
+		}
+
+	}
+
+	framework.RespondJSON(w, http.StatusOK, liquidacionCalculoAutomatico)
+
+}
+
+func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Request) {
+	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
+	var importeCalculado StrCalculoAutomaticoConceptoId
+	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	if tokenValido {
+
+		decoder := json.NewDecoder(r.Body)
+
+		if err := decoder.Decode(&liquidacionCalculoAutomatico); err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		defer r.Body.Close()
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
+
+		defer conexionBD.CerrarDB(db)
+
+		params := mux.Vars(r)
+		param_conceptoid, _ := strconv.ParseInt(params["id"], 10, 64)
+		conceptoid := int(param_conceptoid)
+
+		if conceptoid == 0 {
+			framework.RespondError(w, http.StatusNotFound, framework.IdParametroVacio)
+			return
+		}
+		var concepto structConcepto.Concepto
+
+		//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
+		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+			if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
+				concepto = *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+				break
+			}
+		}
+
+		importeCalculado.Conceptoid = &conceptoid
+		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
+			calculoAutomatico.Hacercalculoautomatico()
+			importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID}
+		}
+
+	}
+
+	framework.RespondJSON(w, http.StatusOK, importeCalculado)
+
 }
