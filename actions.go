@@ -776,6 +776,7 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				liquidacion.Fechaultimodepositoaportejubilatorio = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaultimodepositoaportejubilatorio
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
 				liquidacion.Fechaperiodoliquidacion = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
+				liquidacion.Estacontabilizada = false
 
 				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
 					liquidacion.Liquidacionitems[index].ID = 0
