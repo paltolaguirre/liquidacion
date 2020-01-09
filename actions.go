@@ -777,6 +777,8 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
 				liquidacion.Fechaperiodoliquidacion = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
 				liquidacion.Estacontabilizada = false
+				liquidacion.Asientomanualtransaccionid = 0
+				liquidacion.Asientomanualnombre = ""
 
 				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
 					liquidacion.Liquidacionitems[index].ID = 0
