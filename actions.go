@@ -167,7 +167,8 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 			bancoAporteJubilatorio := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoaportejubilatorioID))
 			liquidacion.Bancoaportejubilatorio = bancoAporteJubilatorio
 		}
-
+		numero := calculosAutomaticos.GetMesesAProrratear(liquidacion.Liquidacionitems[1].Concepto, &liquidacion.Fecha, db)
+		fmt.Println("mes prorrateo", numero)
 		framework.RespondJSON(w, http.StatusOK, liquidacion)
 	}
 
