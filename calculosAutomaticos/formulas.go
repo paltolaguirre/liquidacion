@@ -13,173 +13,173 @@ import (
 	"github.com/xubiosueldos/conexionBD/Siradig/structSiradig"
 )
 
-func getRemuneracionBruta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA", liquidacion, db)
+func getfgRemuneracionBruta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA", liquidacion, db)
 	return importeTotal
 }
 
-func getRemuneracionNoHabitual(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("RETRIBUCIONES_NO_HABITUALES", liquidacion, db)
+func getfgRemuneracionNoHabitual(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("RETRIBUCIONES_NO_HABITUALES", liquidacion, db)
 	return importeTotal
 }
 
-func getSacPrimerCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	correspondePrimerSemetre := getMes(&liquidacion.Fechaperiodoliquidacion) <= 6
-	importeTotal := getSacCuotas(liquidacion, correspondePrimerSemetre, db)
+func getfgSacPrimerCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	correspondePrimerSemetre := getfgMes(&liquidacion.Fechaperiodoliquidacion) <= 6
+	importeTotal := getfgSacCuotas(liquidacion, correspondePrimerSemetre, db)
 
 	return importeTotal
 
 }
 
-func getSacSegundaCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	correspondeSegundoSemetre := getMes(&liquidacion.Fechaperiodoliquidacion) > 6
-	importeTotal := getSacCuotas(liquidacion, correspondeSegundoSemetre, db)
+func getfgSacSegundaCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	correspondeSegundoSemetre := getfgMes(&liquidacion.Fechaperiodoliquidacion) > 6
+	importeTotal := getfgSacCuotas(liquidacion, correspondeSegundoSemetre, db)
 
 	return importeTotal
 }
 
-func getHorasExtrasGravadas(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("HORAS_EXTRAS_REMUNERACION_GRAVADA", liquidacion, db)
+func getfgHorasExtrasGravadas(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("HORAS_EXTRAS_REMUNERACION_GRAVADA", liquidacion, db)
 	return importeTotal
 }
 
-func getMovilidadYViaticosGravada(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("MOVILIDAD_Y_VIATICOS_REMUNERACION_GRAVADA", liquidacion, db)
+func getfgMovilidadYViaticosGravada(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("MOVILIDAD_Y_VIATICOS_REMUNERACION_GRAVADA", liquidacion, db)
 	return importeTotal
 }
 
-func getMaterialDidacticoPersonalDocenteRemuneracion(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("MATERIAL_DIDACTICO_PERSONAL_DOCENTE_REMUNERACION_GRAVADA", liquidacion, db)
+func getfgMaterialDidacticoPersonalDocenteRemuneracion(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("MATERIAL_DIDACTICO_PERSONAL_DOCENTE_REMUNERACION_GRAVADA", liquidacion, db)
 	return importeTotal
 }
 
-func getRemuneracionBrutaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteGananciasOtroEmpleoSiradig(liquidacion, "importegananciasbrutas", db)
+func getfgRemuneracionBrutaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "importegananciasbrutas", db)
 	return importeTotal
 }
 
-func getRemuneracionNoHabitualOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteGananciasOtroEmpleoSiradig(liquidacion, "importeretribucionesnohabituales", db)
+func getfgRemuneracionNoHabitualOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "importeretribucionesnohabituales", db)
 	return importeTotal
 }
 
-func getSacPrimerCuotaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSacPrimerCuotaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var importeTotal float64 = 0
-	if getMes(&liquidacion.Fechaperiodoliquidacion) <= 6 {
-		importeTotal = getImporteGananciasOtroEmpleoSiradig(liquidacion, "sac", db)
+	if getfgMes(&liquidacion.Fechaperiodoliquidacion) <= 6 {
+		importeTotal = getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "sac", db)
 	}
 	return importeTotal
 }
 
-func getSacSegundaCuotaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSacSegundaCuotaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var importeTotal float64 = 0
-	if getMes(&liquidacion.Fechaperiodoliquidacion) > 6 {
-		importeTotal = getImporteGananciasOtroEmpleoSiradig(liquidacion, "sac", db)
+	if getfgMes(&liquidacion.Fechaperiodoliquidacion) > 6 {
+		importeTotal = getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "sac", db)
 	}
 	return importeTotal
 }
 
-func getHorasExtrasGravadasOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteGananciasOtroEmpleoSiradig(liquidacion, "importehorasextrasgravadas", db)
+func getfgHorasExtrasGravadasOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "importehorasextrasgravadas", db)
 	return importeTotal
 }
 
-func getMovilidadYViaticosGravadaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteGananciasOtroEmpleoSiradig(liquidacion, "gastosmovilidad", db)
+func getfgMovilidadYViaticosGravadaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "gastosmovilidad", db)
 	return importeTotal
 }
 
-func getMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteGananciasOtroEmpleoSiradig(liquidacion, "materialdidactico", db)
+func getfgMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "materialdidactico", db)
 	return importeTotal
 }
 
-func getSubtotalIngresos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSubtotalIngresos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 
 	var arraySubtotalIngresos []float64
 	var subtotalIngresos float64
 
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getRemuneracionBruta(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getRemuneracionNoHabitual(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getSacPrimerCuota(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getSacSegundaCuota(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getHorasExtrasGravadas(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getMovilidadYViaticosGravada(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getMaterialDidacticoPersonalDocenteRemuneracion(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getRemuneracionBrutaOtrosEmpleos(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getRemuneracionNoHabitualOtrosEmpleos(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getSacPrimerCuotaOtrosEmpleos(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getSacSegundaCuotaOtrosEmpleos(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getHorasExtrasGravadasOtrosEmpleos(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getMovilidadYViaticosGravadaOtrosEmpleos(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionBruta(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionNoHabitual(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacPrimerCuota(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacSegundaCuota(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgHorasExtrasGravadas(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgMovilidadYViaticosGravada(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgMaterialDidacticoPersonalDocenteRemuneracion(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionBrutaOtrosEmpleos(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionNoHabitualOtrosEmpleos(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacPrimerCuotaOtrosEmpleos(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacSegundaCuotaOtrosEmpleos(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgHorasExtrasGravadasOtrosEmpleos(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgMovilidadYViaticosGravadaOtrosEmpleos(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion, db))
 
 	subtotalIngresos = Sum(arraySubtotalIngresos)
 	return subtotalIngresos
 }
 
-func getAportesJubilatoriosRetirosPensionesOSubsidios(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS", liquidacion, db)
+func getfgAportesJubilatoriosRetirosPensionesOSubsidios(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS", liquidacion, db)
 	return importeTotal
 }
 
-func getAportesObraSocial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("APORTES_OBRA_SOCIAL", liquidacion, db)
+func getfgAportesObraSocial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("APORTES_OBRA_SOCIAL", liquidacion, db)
 	return importeTotal
 }
 
-func getCuotaSindical(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("CUOTA_SINDICAL", liquidacion, db)
+func getfgCuotaSindical(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("CUOTA_SINDICAL", liquidacion, db)
 	return importeTotal
 }
 
-func getDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSegunTipoImpuestoGanancias("DESCUENTOS_OBLIGATORIOS_POR_LEY_NACIONAL_PROVINCIAL_MUNICIPAL", liquidacion, db)
+func getfgDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("DESCUENTOS_OBLIGATORIOS_POR_LEY_NACIONAL_PROVINCIAL_MUNICIPAL", liquidacion, db)
 	return importeTotal
 }
 
-func getGastosMovilidadViaticosAbonadosPorElEmpleador(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgGastosMovilidadViaticosAbonadosPorElEmpleador(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var arrayGastosMovilidad []float64
 	var importeTotal float64
 
-	arrayGastosMovilidad = append(arrayGastosMovilidad, getMovilidadYViaticosGravada(liquidacion, db))
-	arrayGastosMovilidad = append(arrayGastosMovilidad, getMovilidadYViaticosGravadaOtrosEmpleos(liquidacion, db))
-	arrayGastosMovilidad = append(arrayGastosMovilidad, getMaterialDidacticoPersonalDocenteRemuneracion(liquidacion, db))
-	arrayGastosMovilidad = append(arrayGastosMovilidad, getMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion, db))
+	arrayGastosMovilidad = append(arrayGastosMovilidad, getfgMovilidadYViaticosGravada(liquidacion, db))
+	arrayGastosMovilidad = append(arrayGastosMovilidad, getfgMovilidadYViaticosGravadaOtrosEmpleos(liquidacion, db))
+	arrayGastosMovilidad = append(arrayGastosMovilidad, getfgMaterialDidacticoPersonalDocenteRemuneracion(liquidacion, db))
+	arrayGastosMovilidad = append(arrayGastosMovilidad, getfgMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion, db))
 
 	importeTotal = Sum(arrayGastosMovilidad)
 	return importeTotal
 
 }
 
-func getAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteGananciasOtroEmpleoSiradig(liquidacion, "aporteseguridadsocial", db)
+func getfgAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "aporteseguridadsocial", db)
 	return importeTotal
 }
 
-func getAportesObraSocialOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteGananciasOtroEmpleoSiradig(liquidacion, "aporteobrasocial", db)
+func getfgAportesObraSocialOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "aporteobrasocial", db)
 	return importeTotal
 }
 
-func getCuotaSindicalOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteGananciasOtroEmpleoSiradig(liquidacion, "aportesindical", db)
+func getfgCuotaSindicalOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "aportesindical", db)
 	return importeTotal
 }
 
-func getPrimasDeSeguroParaCasoDeMuerte(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgPrimasDeSeguroParaCasoDeMuerte(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	return 0
 }
 
-func getSeguroMuerteMixtosSujetosAlControlSSN(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSeguroMuerteMixtosSujetosAlControlSSN(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	return 0
 }
 
-func getSegurosRetirosPrivadosSujetosAlControlSSN(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSegurosRetirosPrivadosSujetosAlControlSSN(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	return 0
 }
 
-func getImporteTotalSiradigSegunTipoGrilla(liquidacion *structLiquidacion.Liquidacion, columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string, db *gorm.DB) float64 {
+func getfgImporteTotalSiradigSegunTipoGrilla(liquidacion *structLiquidacion.Liquidacion, columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string, db *gorm.DB) float64 {
 	var importeTotal float64
 	fechaliquidacion := liquidacion.Fechaperiodoliquidacion.Format("2006-01-02")
 
@@ -190,199 +190,199 @@ func getImporteTotalSiradigSegunTipoGrilla(liquidacion *structLiquidacion.Liquid
 	return importeTotal
 }
 
-func getGastosSepelio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_DE_SEPELIO", "deducciondesgravacionsiradig", db)
-	importeTope := getValorFijoImpuestoGanancia(liquidacion, "topemaximodescuento", "topesepelio", db)
-	importeTotal = getImporteTotalTope(importeTotal, importeTope)
+func getfgGastosSepelio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_DE_SEPELIO", "deducciondesgravacionsiradig", db)
+	importeTope := getfgValorFijoImpuestoGanancia(liquidacion, "topemaximodescuento", "topesepelio", db)
+	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	return importeTotal
 }
 
-func getGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_DE_REPRESENTACION_E_INTERESES_DE_CORREDORES_Y_VIAJANTES_DE_COMERCIO", "deducciondesgravacionsiradig", db)
+func getfgGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_DE_REPRESENTACION_E_INTERESES_DE_CORREDORES_Y_VIAJANTES_DE_COMERCIO", "deducciondesgravacionsiradig", db)
 	return importeTotal
 }
 
-func getInteresesCreditosHipotecarios(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "INTERESES_PRESTAMO_HIPOTECARIO", "deducciondesgravacionsiradig", db)
-	importeTope := getValorFijoImpuestoGanancia(liquidacion, "topemaximodescuento", "topehipotecarios", db)
-	importeTotal = getImporteTotalTope(importeTotal, importeTope)
+func getfgInteresesCreditosHipotecarios(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "INTERESES_PRESTAMO_HIPOTECARIO", "deducciondesgravacionsiradig", db)
+	importeTope := getfgValorFijoImpuestoGanancia(liquidacion, "topemaximodescuento", "topehipotecarios", db)
+	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	return importeTotal
 }
 
-func getAportesCapSocFondoRiesgoSociosProtectoresSGR(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "Montoreintegrar + Montoreintegrar3", "REINTEGRO_DE_APORTES_DE_SOCIOS_PROTECTORES_A_SOCIEDADES_DE_GARANTIA_RECIPROCA", "ajustesiradig", db)
+func getfgAportesCapSocFondoRiesgoSociosProtectoresSGR(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "Montoreintegrar + Montoreintegrar3", "REINTEGRO_DE_APORTES_DE_SOCIOS_PROTECTORES_A_SOCIEDADES_DE_GARANTIA_RECIPROCA", "ajustesiradig", db)
 	return importeTotal
 }
 
-func getAlquileresInmueblesDestinadosASuCasaHabitacion(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "ALQUILER_INMUEBLES_DESTINADOS_A_CASA_HABITACION", "deducciondesgravacionsiradig", db)
-	importeTope := 11 / 0.4 /*es el 40% de MNI(40)*/
-	importeTotal = getImporteTotalTope(importeTotal, importeTope)
+func getfgAlquileresInmueblesDestinadosASuCasaHabitacion(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "ALQUILER_INMUEBLES_DESTINADOS_A_CASA_HABITACION", "deducciondesgravacionsiradig", db)
+	importeTope := 100 * 0.4 /*es el 40% de MNI(40)*/
+	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	return importeTotal
 }
 
-func getEmpleadosServicioDomestico(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "contribucion + retribucion", "DEDUCCION_DEL_PERSONAL_DOMESTICO", "deducciondesgravacionsiradig", db)
+func getfgEmpleadosServicioDomestico(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "contribucion + retribucion", "DEDUCCION_DEL_PERSONAL_DOMESTICO", "deducciondesgravacionsiradig", db)
 	importeTope := float64(11) /*es el MNI(40)*/
-	importeTotal = getImporteTotalTope(importeTotal, importeTope)
+	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	return importeTotal
 }
 
-func getIndumentariaEquipamientoCaracterObligatorio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_ADQUISICION_INDUMENTARIA_Y_EQUIPAMIENTO_PARA_USO_EXCLUSIVO_EN_EL_LUGAR_DE_TRABAJO", "deducciondesgravacionsiradig", db)
+func getfgIndumentariaEquipamientoCaracterObligatorio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_ADQUISICION_INDUMENTARIA_Y_EQUIPAMIENTO_PARA_USO_EXCLUSIVO_EN_EL_LUGAR_DE_TRABAJO", "deducciondesgravacionsiradig", db)
 	return importeTotal
 }
 
-func getOtrasDeducciones(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "OTRAS", "deducciondesgravacionsiradig", db)
+func getfgOtrasDeducciones(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "OTRAS", "deducciondesgravacionsiradig", db)
 	return importeTotal
 }
 
-func getSubtotal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSubtotal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var arraySubtotal []float64
 	var subTotal float64
 
-	arraySubtotal = append(arraySubtotal, getAportesJubilatoriosRetirosPensionesOSubsidios(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getAportesObraSocial(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getCuotaSindical(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getGastosMovilidadViaticosAbonadosPorElEmpleador(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getAportesObraSocialOtrosEmpleos(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getCuotaSindicalOtrosEmpleos(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getPrimasDeSeguroParaCasoDeMuerte(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getSeguroMuerteMixtosSujetosAlControlSSN(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getSegurosRetirosPrivadosSujetosAlControlSSN(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getGastosSepelio(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getInteresesCreditosHipotecarios(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getAportesCapSocFondoRiesgoSociosProtectoresSGR(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getAlquileresInmueblesDestinadosASuCasaHabitacion(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getEmpleadosServicioDomestico(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getIndumentariaEquipamientoCaracterObligatorio(liquidacion, db))
-	arraySubtotal = append(arraySubtotal, getOtrasDeducciones(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgAportesJubilatoriosRetirosPensionesOSubsidios(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgAportesObraSocial(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgCuotaSindical(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgGastosMovilidadViaticosAbonadosPorElEmpleador(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgAportesObraSocialOtrosEmpleos(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgCuotaSindicalOtrosEmpleos(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgPrimasDeSeguroParaCasoDeMuerte(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgSeguroMuerteMixtosSujetosAlControlSSN(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgSegurosRetirosPrivadosSujetosAlControlSSN(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgGastosSepelio(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgInteresesCreditosHipotecarios(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgAportesCapSocFondoRiesgoSociosProtectoresSGR(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgAlquileresInmueblesDestinadosASuCasaHabitacion(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgEmpleadosServicioDomestico(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgIndumentariaEquipamientoCaracterObligatorio(liquidacion, db))
+	arraySubtotal = append(arraySubtotal, getfgOtrasDeducciones(liquidacion, db))
 
-	subTotal = getSubtotalIngresos(liquidacion, db) - Sum(arraySubtotal)
+	subTotal = getfgSubtotalIngresos(liquidacion, db) - Sum(arraySubtotal)
 
 	return subTotal
 }
 
-func getCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "CUOTA_MEDICA_ASISTENCIAL", "deducciondesgravacionsiradig", db)
-	importeTope := getSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
-	importeTotal = getImporteTotalTope(importeTotal, importeTope)
+func getfgCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "CUOTA_MEDICA_ASISTENCIAL", "deducciondesgravacionsiradig", db)
+	importeTope := getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
+	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	return importeTotal
 }
 
-func getDonacionFiscosNacProvMunArt20(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "DONACIONES", "deducciondesgravacionsiradig", db)
-	importeTope := getSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
-	importeTotal = getImporteTotalTope(importeTotal, importeTope)
+func getfgDonacionFiscosNacProvMunArt20(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "DONACIONES", "deducciondesgravacionsiradig", db)
+	importeTope := getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
+	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	return importeTotal
 }
 
-func getGananciaNeta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgGananciaNeta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var arrayGananciaNeta []float64
 	var gananciaNeta float64
 
-	arrayGananciaNeta = append(arrayGananciaNeta, getCuotaMedicoAsistencial(liquidacion, db))
-	arrayGananciaNeta = append(arrayGananciaNeta, getDonacionFiscosNacProvMunArt20(liquidacion, db))
+	arrayGananciaNeta = append(arrayGananciaNeta, getfgCuotaMedicoAsistencial(liquidacion, db))
+	arrayGananciaNeta = append(arrayGananciaNeta, getfgDonacionFiscosNacProvMunArt20(liquidacion, db))
 
-	gananciaNeta = getSubtotal(liquidacion, db) - Sum(arrayGananciaNeta)
+	gananciaNeta = getfgSubtotal(liquidacion, db) - Sum(arrayGananciaNeta)
 
 	return gananciaNeta
 }
 
-func getConyuge(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getDetalleCargoFamiliar(liquidacion, "conyugeid", "valorfijoconyuge", 1, db)
+func getfgConyuge(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgDetalleCargoFamiliar(liquidacion, "conyugeid", "valorfijoconyuge", 1, db)
 	return importeTotal
 }
 
-func getHijos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgHijos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var importeTotal float64 = 0
 	var detallescargofamiliarsiradig []structSiradig.Detallecargofamiliarsiradig
 
-	valorfijoMNI := getValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijomni", db)
+	valorfijoMNI := getfgValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijomni", db)
 	sql := "SELECT * FROM detallecargofamiliar WHERE hijoid NOT NULL AND estaacargo = true AND montoanual < " + strconv.FormatFloat(valorfijoMNI, 'f', 5, 64)
 	db.Raw(sql).Scan(&detallescargofamiliarsiradig)
 
 	for i := 0; i < len(detallescargofamiliarsiradig); i++ {
 		porcentaje := detallescargofamiliarsiradig[i].Porcentaje
-		importeTotal = importeTotal + getDetalleCargoFamiliar(liquidacion, "hijoid", "valorfijohijo", *porcentaje, db)
+		importeTotal = importeTotal + getfgDetalleCargoFamiliar(liquidacion, "hijoid", "valorfijohijo", *porcentaje, db)
 	}
 
 	return importeTotal
 }
 
-func getMinimoNoImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	valorfijoMNI := getValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijomni", db)
-	mesperiodoliquidacion := getMes(&liquidacion.Fechaperiodoliquidacion)
+func getfgMinimoNoImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	valorfijoMNI := getfgValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijomni", db)
+	mesperiodoliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 	importeTotal := (valorfijoMNI / 12) * float64(mesperiodoliquidacion)
 	return importeTotal
 }
 
-func getDeduccionEspecial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	valorfijoMNI := getValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijoddei", db)
-	mesperiodoliquidacion := getMes(&liquidacion.Fechaperiodoliquidacion)
+func getfgDeduccionEspecial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	valorfijoMNI := getfgValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijoddei", db)
+	mesperiodoliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 	importeTotal := (valorfijoMNI / 12) * float64(mesperiodoliquidacion)
 	return importeTotal
 }
 
-func getSubtotalDeduccionesPersonales(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSubtotalDeduccionesPersonales(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var arraySubtotalDeduccionesPersonales []float64
 	var subTotalDeduccionesPersonales float64
 
-	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getConyuge(liquidacion, db))
-	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getHijos(liquidacion, db))
-	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getMinimoNoImponible(liquidacion, db))
-	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getDeduccionEspecial(liquidacion, db))
+	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getfgConyuge(liquidacion, db))
+	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getfgHijos(liquidacion, db))
+	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getfgMinimoNoImponible(liquidacion, db))
+	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getfgDeduccionEspecial(liquidacion, db))
 
 	subTotalDeduccionesPersonales = Sum(arraySubtotalDeduccionesPersonales)
 	return subTotalDeduccionesPersonales
 }
 
-func getDeduccionesAComputar(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getSubtotalDeduccionesPersonales(liquidacion, db)
+func getfgDeduccionesAComputar(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgSubtotalDeduccionesPersonales(liquidacion, db)
 	return importeTotal
 }
 
-func getGananciaNetaAcumSujetaAImp(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgGananciaNetaAcumSujetaAImp(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	//Ver con Rodri como manejar este caso
 	return 0.6
 }
 
-func getDeduccionesPersonales(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getDeduccionesAComputar(liquidacion, db)
+func getfgDeduccionesPersonales(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	importeTotal := getfgDeduccionesAComputar(liquidacion, db)
 	return importeTotal * -1
 }
 
-func getBaseImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgBaseImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var arrayBaseImponible []float64
 	var importeTotal float64
 
-	arrayBaseImponible = append(arrayBaseImponible, getGananciaNetaAcumSujetaAImp(liquidacion, db))
-	arrayBaseImponible = append(arrayBaseImponible, getDeduccionesPersonales(liquidacion, db))
+	arrayBaseImponible = append(arrayBaseImponible, getfgGananciaNetaAcumSujetaAImp(liquidacion, db))
+	arrayBaseImponible = append(arrayBaseImponible, getfgDeduccionesPersonales(liquidacion, db))
 
 	importeTotal = Sum(arrayBaseImponible)
 	return importeTotal
 }
 
-func getTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 
-	cuotaSindical := getCuotaSindical(liquidacion, db)
-	obraSocial := getAportesObraSocial(liquidacion, db)
-	aportesJubilatorios := getAportesJubilatoriosRetirosPensionesOSubsidios(liquidacion, db)
+	cuotaSindical := getfgCuotaSindical(liquidacion, db)
+	obraSocial := getfgAportesObraSocial(liquidacion, db)
+	aportesJubilatorios := getfgAportesJubilatoriosRetirosPensionesOSubsidios(liquidacion, db)
 	remunerativosMenosDescuentos := obtenerRemunerativosMenosDescuentos(liquidacion)
-	cuotaSindicalOtros := getCuotaSindicalOtrosEmpleos(liquidacion, db)
-	obraSocialOtros := getAportesObraSocialOtrosEmpleos(liquidacion, db)
-	aportesJubilatoriosOtros := getAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion, db)
+	cuotaSindicalOtros := getfgCuotaSindicalOtrosEmpleos(liquidacion, db)
+	obraSocialOtros := getfgAportesObraSocialOtrosEmpleos(liquidacion, db)
+	aportesJubilatoriosOtros := getfgAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion, db)
 	remunerativosOtros := obtenerRemunerativosOtros(liquidacion, db)
 
 	var uno float64 = 1
 	porcentaje := uno - (cuotaSindical/remunerativosMenosDescuentos + obraSocial/remunerativosMenosDescuentos + aportesJubilatorios/remunerativosMenosDescuentos)
 	porcentajeOtrosEmp := uno - (cuotaSindicalOtros/remunerativosOtros + obraSocialOtros/remunerativosOtros + aportesJubilatoriosOtros/remunerativosOtros)
 
-	importeTotal := getBaseImponible(liquidacion, db) - (getHorasExtrasGravadas(liquidacion, db)*porcentaje + getHorasExtrasGravadasOtrosEmpleos(liquidacion, db)*porcentajeOtrosEmp)
+	importeTotal := getfgBaseImponible(liquidacion, db) - (getfgHorasExtrasGravadas(liquidacion, db)*porcentaje + getfgHorasExtrasGravadasOtrosEmpleos(liquidacion, db)*porcentajeOtrosEmp)
 	return importeTotal
 }
 
@@ -407,10 +407,10 @@ func obtenerRemunerativosOtros(liquidacion *structLiquidacion.Liquidacion, db *g
 	var arrayRemunerativosOtros []float64
 	var totalRemunerativosOtros float64
 
-	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getRemuneracionBrutaOtrosEmpleos(liquidacion, db))
-	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getSacPrimerCuotaOtrosEmpleos(liquidacion, db))
-	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getSacSegundaCuotaOtrosEmpleos(liquidacion, db))
-	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getHorasExtrasGravadasOtrosEmpleos(liquidacion, db))
+	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getfgRemuneracionBrutaOtrosEmpleos(liquidacion, db))
+	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getfgSacPrimerCuotaOtrosEmpleos(liquidacion, db))
+	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getfgSacSegundaCuotaOtrosEmpleos(liquidacion, db))
+	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getfgHorasExtrasGravadasOtrosEmpleos(liquidacion, db))
 
 	totalRemunerativosOtros = Sum(arrayRemunerativosOtros)
 	return totalRemunerativosOtros
@@ -424,11 +424,11 @@ type strEscalaimpuestoaplicable struct {
 	Mesanio        string  `json:"mesanio"`
 }
 
-func getEscalaImpuestoAplicable(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) *[]strEscalaimpuestoaplicable {
+func getfgEscalaImpuestoAplicable(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) *[]strEscalaimpuestoaplicable {
 	var strescalaimpuestoaplicable []strEscalaimpuestoaplicable
 
 	anioLiquidacion := liquidacion.Fechaperiodoliquidacion.Year()
-	mesLiquidacion := getMes(&liquidacion.Fechaperiodoliquidacion)
+	mesLiquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 
 	mesAnioLiquidacion := strconv.Itoa(mesLiquidacion) + "/" + strconv.Itoa(anioLiquidacion)
 
@@ -439,10 +439,10 @@ func getEscalaImpuestoAplicable(liquidacion *structLiquidacion.Liquidacion, db *
 
 }
 
-func getDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var importeTotal float64 = 0
-	strescalaimpuestoaplicable := *getEscalaImpuestoAplicable(liquidacion, db)
-	totalganancianeta := getTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db)
+	strescalaimpuestoaplicable := *getfgEscalaImpuestoAplicable(liquidacion, db)
+	totalganancianeta := getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db)
 
 	for i := 0; i < len(strescalaimpuestoaplicable); i++ {
 		escalaimpuestoaplicable := strescalaimpuestoaplicable[i]
@@ -453,11 +453,11 @@ func getDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db
 	return importeTotal
 }
 
-func getDeterminacionImpuestoPorEscala(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgDeterminacionImpuestoPorEscala(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var importeTotal float64 = 0
-	strescalaimpuestoaplicable := *getEscalaImpuestoAplicable(liquidacion, db)
-	totalganancianeta := getTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db)
-	baseimponible := getBaseImponible(liquidacion, db)
+	strescalaimpuestoaplicable := *getfgEscalaImpuestoAplicable(liquidacion, db)
+	totalganancianeta := getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db)
+	baseimponible := getfgBaseImponible(liquidacion, db)
 	for i := 0; i < len(strescalaimpuestoaplicable); i++ {
 		escalaimpuestoaplicable := strescalaimpuestoaplicable[i]
 		if totalganancianeta > escalaimpuestoaplicable.Limiteinferior && totalganancianeta <= escalaimpuestoaplicable.Limitesuperior {
@@ -468,18 +468,18 @@ func getDeterminacionImpuestoPorEscala(liquidacion *structLiquidacion.Liquidacio
 	return importeTotal
 }
 
-func getTotalRetener(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgTotalRetener(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var arrayTotalRetener []float64
 	var totalRetener float64
 
-	arrayTotalRetener = append(arrayTotalRetener, getDeterminacionImpuestoFijo(liquidacion, db))
-	arrayTotalRetener = append(arrayTotalRetener, getDeterminacionImpuestoPorEscala(liquidacion, db))
+	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoFijo(liquidacion, db))
+	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoPorEscala(liquidacion, db))
 
 	totalRetener = Sum(arrayTotalRetener)
 	return totalRetener
 }
 
-func getRetencionAcumulada(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgRetencionAcumulada(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	anioperiodoliquidacion := liquidacion.Fechaperiodoliquidacion.Year()
 	var totalconceptosimpuestoganancias float64
 	sql := "SELECT SUM(li.importeunitario) FROM siradig s INNER JOIN legajo le ON le.id = s.legajoid INNER JOIN liquidacion l ON le.id = l.legajoid INNER JOIN liquidacionitem li ON l.id = li.liquidacionid INNER JOIN  concepto c ON c.id = li.conceptoid WHERE c.codigo = 'IMPUESTO_GANANCIAS' AND to_char(s.periodosiradig, 'YYYY') = ' " + strconv.Itoa(anioperiodoliquidacion)
@@ -488,18 +488,18 @@ func getRetencionAcumulada(liquidacion *structLiquidacion.Liquidacion, db *gorm.
 	return totalconceptosimpuestoganancias
 }
 
-func getRetencionMes(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	totalRetener := getTotalRetener(liquidacion, db)
-	retencionAcumulada := getRetencionAcumulada(liquidacion, db)
+func getfgRetencionMes(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	totalRetener := getfgTotalRetener(liquidacion, db)
+	retencionAcumulada := getfgRetencionAcumulada(liquidacion, db)
 
 	return totalRetener - retencionAcumulada
 }
 
-func getDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, columnaDetalleCargoFamiliar string, valorfijocolumna string, porcentaje float64, db *gorm.DB) float64 {
+func getfgDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, columnaDetalleCargoFamiliar string, valorfijocolumna string, porcentaje float64, db *gorm.DB) float64 {
 	var importeTotal float64
 	var tienevalorbeneficio bool
 	anioperiodoliquidacion := liquidacion.Fechaperiodoliquidacion.Year()
-	mesperiodoliquidacion := getMes(&liquidacion.Fechaperiodoliquidacion)
+	mesperiodoliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 
 	var detallecargofamiliar *structSiradig.Detallecargofamiliarsiradig
 	sql := "SELECT dcfs.* FROM siradig s INNER JOIN detallecargofamiliarsiradig dcfs ON s.id = dcfs.siradigid where to_char(periodosiradig, 'YYYY') = ' " + strconv.Itoa(anioperiodoliquidacion) + "' AND dcfs." + columnaDetalleCargoFamiliar + " NOTNULL AND s.legajoid = " + strconv.Itoa(*liquidacion.Legajoid)
@@ -510,9 +510,9 @@ func getDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, columna
 
 	if detallecargofamiliar.ID != 0 {
 
-		mesdadobaja := getMes(detallecargofamiliar.Meshasta)
-		mesdadoalta := getMes(detallecargofamiliar.Mesdesde)
-		valorfijo := getValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", valorfijocolumna, db)
+		mesdadobaja := getfgMes(detallecargofamiliar.Meshasta)
+		mesdadoalta := getfgMes(detallecargofamiliar.Mesdesde)
+		valorfijo := getfgValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", valorfijocolumna, db)
 
 		if tienevalorbeneficio == false {
 			valorfijo = valorfijo * 1.22
@@ -534,7 +534,7 @@ func getDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, columna
 	return importeTotal
 }
 
-func getImporteTotalTope(importeTotal float64, tope float64) float64 {
+func getfgImporteTotalTope(importeTotal float64, tope float64) float64 {
 	if importeTotal > tope {
 		return tope
 	} else {
@@ -542,7 +542,7 @@ func getImporteTotalTope(importeTotal float64, tope float64) float64 {
 	}
 }
 
-func getValorFijoImpuestoGanancia(liquidacion *structLiquidacion.Liquidacion, nombretabla string, nombrecolumna string, db *gorm.DB) float64 {
+func getfgValorFijoImpuestoGanancia(liquidacion *structLiquidacion.Liquidacion, nombretabla string, nombrecolumna string, db *gorm.DB) float64 {
 	var importeTope float64
 	anioLiquidacion := liquidacion.Fechaperiodoliquidacion.Year()
 	sql := "SELECT" + nombrecolumna + "FROM " + nombretabla + " WHERE anio = " + strconv.Itoa(anioLiquidacion)
@@ -551,19 +551,19 @@ func getValorFijoImpuestoGanancia(liquidacion *structLiquidacion.Liquidacion, no
 	return importeTope
 }
 
-func getMesesAProrratear(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) int {
+func getfgMesesAProrratear(concepto *structConcepto.Concepto, liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) int {
 	fechadesde := strconv.Itoa(liquidacion.Fechaperiodoliquidacion.Year()) + "-01-01"
 	fechahasta := liquidacion.Fechaperiodoliquidacion.Format("2006-01-02")
 	var fechaliquidacionmasantigua *time.Time
 	var sql string
-	mesAProrratear := getMes(&liquidacion.Fechaperiodoliquidacion)
+	mesAProrratear := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 
 	sql = "SELECT l.fechaperiodoliquidacion FROM liquidacion l INNER JOIN liquidacionitem li ON l.id = li.liquidacionid INNER JOIN  concepto c ON c.id = li.conceptoid INNER JOIN legajo le ON le.id = l.legajoid WHERE c.id = " + strconv.Itoa(concepto.ID) + " AND l.fechaperiodoliquidacion BETWEEN '" + fechadesde + "' AND '" + fechahasta + "' AND le.id = " + strconv.Itoa(*liquidacion.Legajoid) + " ORDER BY fechaperiodoliquidacion ASC LIMIT 1"
 	fmt.Println("sql:", sql)
 	db.Raw(sql).Row().Scan(&fechaliquidacionmasantigua)
 
 	if fechaliquidacionmasantigua != nil {
-		mesLiquidacionBD := getMes(fechaliquidacionmasantigua)
+		mesLiquidacionBD := getfgMes(fechaliquidacionmasantigua)
 
 		if mesLiquidacionBD < mesAProrratear {
 			mesAProrratear = mesLiquidacionBD
@@ -574,12 +574,12 @@ func getMesesAProrratear(concepto *structConcepto.Concepto, liquidacion *structL
 
 }
 
-func getMes(fecha *time.Time) int {
+func getfgMes(fecha *time.Time) int {
 	mes, _ := strconv.Atoi(s.Split(fecha.String(), "-")[1])
 	return mes
 }
 
-func getImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string, liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string, liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var mes float64 = 1
 	var importeTotal, importeConcepto float64
 
@@ -588,7 +588,7 @@ func getImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string,
 		concepto := liquidacionitem.Concepto
 		if concepto.Codigo == tipoImpuestoALasGanancias {
 			if concepto.Prorrateo == true {
-				mes = float64(getMesesAProrratear(concepto, liquidacion, db))
+				mes = float64(getfgMesesAProrratear(concepto, liquidacion, db))
 			}
 			importeConcepto = *liquidacionitem.Importeunitario / mes
 			importeTotal = importeTotal + importeConcepto
@@ -597,7 +597,7 @@ func getImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string,
 	return importeTotal
 }
 
-func getSacCuotas(liquidacion *structLiquidacion.Liquidacion, correspondeSemestre bool, db *gorm.DB) float64 {
+func getfgSacCuotas(liquidacion *structLiquidacion.Liquidacion, correspondeSemestre bool, db *gorm.DB) float64 {
 	var mes float64 = 1
 	var importeTotal, importeConcepto float64
 
@@ -606,7 +606,7 @@ func getSacCuotas(liquidacion *structLiquidacion.Liquidacion, correspondeSemestr
 		concepto := liquidacionitem.Concepto
 		if correspondeSemestre && concepto.Basesac == true {
 			if concepto.Prorrateo == true {
-				mes = float64(getMesesAProrratear(concepto, liquidacion, db))
+				mes = float64(getfgMesesAProrratear(concepto, liquidacion, db))
 			}
 			importeConcepto = *liquidacionitem.Importeunitario / mes
 			importeTotal = importeTotal + importeConcepto
@@ -615,7 +615,7 @@ func getSacCuotas(liquidacion *structLiquidacion.Liquidacion, correspondeSemestr
 	return importeTotal / 12
 }
 
-func getImporteGananciasOtroEmpleoSiradig(liquidacion *structLiquidacion.Liquidacion, columnaimportegananciasotroempleosiradig string, db *gorm.DB) float64 {
+func getfgImporteGananciasOtroEmpleoSiradig(liquidacion *structLiquidacion.Liquidacion, columnaimportegananciasotroempleosiradig string, db *gorm.DB) float64 {
 	var importeTotal float64
 	fechaliquidacion := liquidacion.Fechaperiodoliquidacion.Format("2006-01-02")
 
