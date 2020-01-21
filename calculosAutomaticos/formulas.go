@@ -488,7 +488,7 @@ func getfgRetencionAcumulada(liquidacion *structLiquidacion.Liquidacion, db *gor
 	return totalconceptosimpuestoganancias
 }
 
-func getfgRetencionMes(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func GetfgRetencionMes(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	totalRetener := getfgTotalRetener(liquidacion, db)
 	retencionAcumulada := getfgRetencionAcumulada(liquidacion, db)
 
