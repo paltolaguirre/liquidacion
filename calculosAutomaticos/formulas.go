@@ -253,10 +253,10 @@ func getfgSegurosRetirosPrivadosSujetosAlControlSSN(liquidacion *structLiquidaci
 
 func getfgImporteTotalSiradigSegunTipoGrilla(liquidacion *structLiquidacion.Liquidacion, columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string, db *gorm.DB) float64 {
 	var importeTotal float64
-	fechaliquidacion := liquidacion.Fechaperiodoliquidacion.Format("2006-01-02")
+	mesliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 
-	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid WHERE '" + fechaliquidacion + "' >= mes AND stg.codigo = '" + tipodeducciondesgravacionsiradig + "'"
-
+	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid WHERE to_number(to_char(mes, 'MM'),'99') < = " + strconv.Itoa(mesliquidacion) + " AND stg.codigo = '" + tipodeducciondesgravacionsiradig + "'"
+	fmt.Println("importe siradig", sql)
 	db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
@@ -432,8 +432,7 @@ func getfgHijos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64
 	var detallescargofamiliarsiradig []structSiradig.Detallecargofamiliarsiradig
 
 	valorfijoMNI := getfgValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijomni", db)
-	sql := "SELECT * FROM detallecargofamiliar WHERE hijoid NOT NULL AND estaacargo = true AND montoanual < " + strconv.FormatFloat(valorfijoMNI, 'f', 5, 64)
-	fmt.Println("hijos", sql)
+	sql := "SELECT * FROM detallecargofamiliarsiradig WHERE hijoid NOTNULL AND estaacargo = true AND montoanual < " + strconv.FormatFloat(valorfijoMNI, 'f', 5, 64)
 	db.Raw(sql).Scan(&detallescargofamiliarsiradig)
 
 	for i := 0; i < len(detallescargofamiliarsiradig); i++ {
@@ -476,12 +475,20 @@ func getfgDeduccionesAComputar(liquidacion *structLiquidacion.Liquidacion, db *g
 	return importeTotal
 }
 
-func getfgGananciaNetaAcumSujetaAImp(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func obtenerLiquidacionesIgualAnioLegajoMenorMes(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) *[]structLiquidacion.Liquidacion {
 	var liquidaciones []structLiquidacion.Liquidacion
-	var importeTotal float64 = 0
 	anioperiodoliquidacion := liquidacion.Fechaperiodoliquidacion.Year()
-	sql := "SELECT l.* FROM liquidacion l INNER JOIN legajo le ON le.id = l.legajoid WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = ' " + strconv.Itoa(anioperiodoliquidacion) + "' AND le.ID = " + strconv.Itoa(*liquidacion.Legajoid)
-	db.Raw(sql).Scan(&liquidaciones)
+	mesliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
+	db.Set("gorm:auto_preload", true).Find(&liquidaciones, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", mesliquidacion, strconv.Itoa(anioperiodoliquidacion), *liquidacion.Legajoid)
+
+	return &liquidaciones
+}
+
+func getfgGananciaNetaAcumSujetaAImp(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+	var importeTotal float64 = 0
+
+	liquidaciones := *obtenerLiquidacionesIgualAnioLegajoMenorMes(liquidacion, db)
+	importeTotal = importeTotal + getfgGananciaNeta(liquidacion, db)
 
 	for i := 0; i < len(liquidaciones); i++ {
 		importeTotal = importeTotal + getfgGananciaNeta(&liquidaciones[i], db)
@@ -490,7 +497,7 @@ func getfgGananciaNetaAcumSujetaAImp(liquidacion *structLiquidacion.Liquidacion,
 	return importeTotal
 }
 
-func GetfgDeduccionesPersonales(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgDeduccionesPersonales(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgDeduccionesAComputar(liquidacion, db)
 	return importeTotal * -1
 }
@@ -500,7 +507,7 @@ func getfgBaseImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB)
 	var importeTotal float64
 
 	arrayBaseImponible = append(arrayBaseImponible, getfgGananciaNetaAcumSujetaAImp(liquidacion, db))
-	arrayBaseImponible = append(arrayBaseImponible, GetfgDeduccionesPersonales(liquidacion, db))
+	arrayBaseImponible = append(arrayBaseImponible, getfgDeduccionesPersonales(liquidacion, db))
 
 	importeTotal = Sum(arrayBaseImponible)
 	return importeTotal
@@ -518,10 +525,30 @@ func getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion *structL
 	remunerativosOtros := obtenerRemunerativosOtros(liquidacion, db)
 
 	var uno float64 = 1
-	porcentaje := uno - (cuotaSindical/remunerativosMenosDescuentos + obraSocial/remunerativosMenosDescuentos + aportesJubilatorios/remunerativosMenosDescuentos)
-	porcentajeOtrosEmp := uno - (cuotaSindicalOtros/remunerativosOtros + obraSocialOtros/remunerativosOtros + aportesJubilatoriosOtros/remunerativosOtros)
+	var porcentaje float64 = 1
+	var porcentajeOtrosEmp float64 = 1
 
-	importeTotal := getfgBaseImponible(liquidacion, db) - (getfgHorasExtrasGravadas(liquidacion, db)*porcentaje + getfgHorasExtrasGravadasOtrosEmpleos(liquidacion, db)*porcentajeOtrosEmp)
+	if remunerativosMenosDescuentos != 0 {
+		porcentaje = uno - (cuotaSindical/remunerativosMenosDescuentos + obraSocial/remunerativosMenosDescuentos + aportesJubilatorios/remunerativosMenosDescuentos)
+	}
+	if remunerativosOtros != 0 {
+		porcentajeOtrosEmp = uno - (cuotaSindicalOtros/remunerativosOtros + obraSocialOtros/remunerativosOtros + aportesJubilatoriosOtros/remunerativosOtros)
+	}
+
+	var importeTotalHorasExtrasGravadas float64 = 0
+	var importeTotalHorasExtrasGravadasOtrosEmpleos float64 = 0
+
+	liquidaciones := *obtenerLiquidacionesIgualAnioLegajoMenorMes(liquidacion, db)
+
+	importeTotalHorasExtrasGravadas = importeTotalHorasExtrasGravadas + getfgHorasExtrasGravadas(liquidacion, db)
+	importeTotalHorasExtrasGravadasOtrosEmpleos = importeTotalHorasExtrasGravadasOtrosEmpleos + getfgHorasExtrasGravadasOtrosEmpleos(liquidacion, db)
+
+	for i := 0; i < len(liquidaciones); i++ {
+		importeTotalHorasExtrasGravadas = importeTotalHorasExtrasGravadas + getfgHorasExtrasGravadas(&liquidaciones[i], db)
+		importeTotalHorasExtrasGravadasOtrosEmpleos = importeTotalHorasExtrasGravadasOtrosEmpleos + getfgHorasExtrasGravadasOtrosEmpleos(&liquidaciones[i], db)
+	}
+
+	importeTotal := getfgBaseImponible(liquidacion, db) - (importeTotalHorasExtrasGravadas*porcentaje + importeTotalHorasExtrasGravadasOtrosEmpleos*porcentajeOtrosEmp)
 	return importeTotal
 }
 
@@ -572,13 +599,14 @@ func getfgEscalaImpuestoAplicable(liquidacion *structLiquidacion.Liquidacion, db
 	mesAnioLiquidacion := strconv.Itoa(mesLiquidacion) + "/" + strconv.Itoa(anioLiquidacion)
 
 	sql := "SELECT limiteinferior,limitesuperior,valorfijo,valorvariable,mesanio FROM escalaimpuestoaplicable where mesanio = '" + mesAnioLiquidacion + "'"
+	fmt.Println("escala:", sql)
 	db.Raw(sql).Scan(&strescalaimpuestoaplicable)
 
 	return &strescalaimpuestoaplicable
 
 }
 
-func getfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func GetfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var importeTotal float64 = 0
 	strescalaimpuestoaplicable := *getfgEscalaImpuestoAplicable(liquidacion, db)
 	totalganancianeta := getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db)
@@ -611,7 +639,7 @@ func getfgTotalRetener(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) 
 	var arrayTotalRetener []float64
 	var totalRetener float64
 
-	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoFijo(liquidacion, db))
+	arrayTotalRetener = append(arrayTotalRetener, GetfgDeterminacionImpuestoFijo(liquidacion, db))
 	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoPorEscala(liquidacion, db))
 
 	totalRetener = Sum(arrayTotalRetener)
