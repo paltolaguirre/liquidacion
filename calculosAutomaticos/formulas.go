@@ -43,7 +43,7 @@ func getfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias strin
 		liquidacionitem := liquidacion.Liquidacionitems[i]
 		concepto := liquidacionitem.Concepto
 		tipoimpuesto := concepto.Tipoimpuestoganancias.Codigo
-		if tipoimpuesto == tipoImpuestoALasGanancias {
+		if tipoimpuesto == tipoImpuestoALasGanancias && concepto.Codigo != "IMPUESTO_GANANCIAS" && concepto.Codigo != "IMPUESTO_GANANCIAS_DEVOLUCION" {
 			if concepto.Prorrateo == true {
 				mes = float64(getfgMesesAProrratear(concepto, liquidacion, db))
 			}
@@ -594,9 +594,9 @@ func getfgEscalaImpuestoAplicable(liquidacion *structLiquidacion.Liquidacion, db
 	var strescalaimpuestoaplicable []strEscalaimpuestoaplicable
 
 	anioLiquidacion := liquidacion.Fechaperiodoliquidacion.Year()
-	mesLiquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
+	mesLiquidacion := s.Split(liquidacion.Fechaperiodoliquidacion.String(), "-")[1]
 
-	mesAnioLiquidacion := strconv.Itoa(mesLiquidacion) + "/" + strconv.Itoa(anioLiquidacion)
+	mesAnioLiquidacion := mesLiquidacion + "/" + strconv.Itoa(anioLiquidacion)
 
 	sql := "SELECT limiteinferior,limitesuperior,valorfijo,valorvariable,mesanio FROM escalaimpuestoaplicable where mesanio = '" + mesAnioLiquidacion + "'"
 	fmt.Println("escala:", sql)
@@ -606,7 +606,7 @@ func getfgEscalaImpuestoAplicable(liquidacion *structLiquidacion.Liquidacion, db
 
 }
 
-func GetfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var importeTotal float64 = 0
 	strescalaimpuestoaplicable := *getfgEscalaImpuestoAplicable(liquidacion, db)
 	totalganancianeta := getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db)
@@ -639,7 +639,7 @@ func getfgTotalRetener(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) 
 	var arrayTotalRetener []float64
 	var totalRetener float64
 
-	arrayTotalRetener = append(arrayTotalRetener, GetfgDeterminacionImpuestoFijo(liquidacion, db))
+	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoFijo(liquidacion, db))
 	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoPorEscala(liquidacion, db))
 
 	totalRetener = Sum(arrayTotalRetener)
@@ -648,11 +648,17 @@ func getfgTotalRetener(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) 
 
 func getfgRetencionAcumulada(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	anioperiodoliquidacion := liquidacion.Fechaperiodoliquidacion.Year()
+	mesliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 	var totalconceptosimpuestoganancias float64
-	sql := "SELECT SUM(li.importeunitario) FROM siradig s INNER JOIN legajo le ON le.id = s.legajoid INNER JOIN liquidacion l ON le.id = l.legajoid INNER JOIN liquidacionitem li ON l.id = li.liquidacionid INNER JOIN  concepto c ON c.id = li.conceptoid WHERE c.codigo = 'IMPUESTO_GANANCIAS' AND to_char(s.periodosiradig, 'YYYY') = ' " + strconv.Itoa(anioperiodoliquidacion)
+	var totalconceptosimpuestogananciasdevolucion float64
+
+	sql := "SELECT SUM(li.importeunitario) FROM liquidacion l INNER JOIN liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') < " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS'"
 	db.Raw(sql).Row().Scan(&totalconceptosimpuestoganancias)
 
-	return totalconceptosimpuestoganancias
+	sql = "SELECT SUM(li.importeunitario) FROM liquidacion l INNER JOIN liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') < " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS_DEVOLUCION'"
+	db.Raw(sql).Row().Scan(&totalconceptosimpuestogananciasdevolucion)
+
+	return totalconceptosimpuestoganancias - totalconceptosimpuestogananciasdevolucion
 }
 
 func GetfgRetencionMes(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {

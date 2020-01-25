@@ -156,7 +156,7 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		/*bancoID := liquidacion.Cuentabancoid
+		bancoID := liquidacion.Cuentabancoid
 		if bancoID != nil {
 			cuentaBanco := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoID))
 			liquidacion.Cuentabanco = cuentaBanco
@@ -166,9 +166,7 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 		if bancoaportejubilatorioID != nil {
 			bancoAporteJubilatorio := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoaportejubilatorioID))
 			liquidacion.Bancoaportejubilatorio = bancoAporteJubilatorio
-		}*/
-		numero := roundTo(calculosAutomaticos.GetfgDeterminacionImpuestoFijo(&liquidacion, db), 4)
-		fmt.Println("numero", numero)
+		}
 		framework.RespondJSON(w, http.StatusOK, liquidacion)
 	}
 
