@@ -1,7 +1,6 @@
 package calculosAutomaticos
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -42,7 +41,8 @@ func getfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias strin
 	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := liquidacion.Liquidacionitems[i]
 		concepto := liquidacionitem.Concepto
-		tipoimpuesto := concepto.Tipoimpuestoganancias.Codigo
+		tipoimpuesto := obtenerTipoImpuesto(concepto, db)
+
 		if tipoimpuesto == tipoImpuestoALasGanancias && concepto.Codigo != "IMPUESTO_GANANCIAS" && concepto.Codigo != "IMPUESTO_GANANCIAS_DEVOLUCION" {
 			if concepto.Prorrateo == true {
 				mes = float64(getfgMesesAProrratear(concepto, liquidacion, db))
@@ -54,6 +54,18 @@ func getfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias strin
 	return importeTotal
 }
 
+func obtenerTipoImpuesto(concepto *structConcepto.Concepto, db *gorm.DB) string {
+	var tipoimpuesto string
+	if concepto.Tipoimpuestoganancias != nil {
+		tipoimpuesto = concepto.Tipoimpuestoganancias.Codigo
+	} else {
+		sql := "SELECT codigo FROM tipoimpuestoganancias WHERE id = " + strconv.Itoa(*concepto.Tipoimpuestogananciasid)
+		db.Raw(sql).Row().Scan(&tipoimpuesto)
+
+	}
+
+	return tipoimpuesto
+}
 func getfgRemuneracionBruta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA", liquidacion, db)
 	return importeTotal
@@ -256,7 +268,6 @@ func getfgImporteTotalSiradigSegunTipoGrilla(liquidacion *structLiquidacion.Liqu
 	mesliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 
 	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid WHERE to_number(to_char(mes, 'MM'),'99') < = " + strconv.Itoa(mesliquidacion) + " AND stg.codigo = '" + tipodeducciondesgravacionsiradig + "'"
-	fmt.Println("importe siradig", sql)
 	db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
@@ -274,7 +285,6 @@ func getfgValorFijoImpuestoGanancia(liquidacion *structLiquidacion.Liquidacion, 
 	var importeTope float64
 	anioLiquidacion := liquidacion.Fechaperiodoliquidacion.Year()
 	sql := "SELECT " + nombrecolumna + " FROM " + nombretabla + " WHERE anio = " + strconv.Itoa(anioLiquidacion)
-	fmt.Println("valor fijo:", sql)
 	db.Raw(sql).Row().Scan(&importeTope)
 
 	return importeTope
@@ -599,7 +609,6 @@ func getfgEscalaImpuestoAplicable(liquidacion *structLiquidacion.Liquidacion, db
 	mesAnioLiquidacion := mesLiquidacion + "/" + strconv.Itoa(anioLiquidacion)
 
 	sql := "SELECT limiteinferior,limitesuperior,valorfijo,valorvariable,mesanio FROM escalaimpuestoaplicable where mesanio = '" + mesAnioLiquidacion + "'"
-	fmt.Println("escala:", sql)
 	db.Raw(sql).Scan(&strescalaimpuestoaplicable)
 
 	return &strescalaimpuestoaplicable

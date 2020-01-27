@@ -916,9 +916,9 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 			if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt == nil {
 				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
-				if concepto.Codigo == "IMPUESTO_GANANCIA" || concepto.Codigo == "IMPUESTO_GANANCIA_DEVOLUCION" {
+				if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 					importeCalculoImpuestoGanancias := calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db)
-					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = importeCalculoImpuestoGanancias
+					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(importeCalculoImpuestoGanancias, 4)
 
 				} else {
 					if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
@@ -977,7 +977,7 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 		}
 
 		importeCalculado.Conceptoid = &conceptoid
-		if concepto.Codigo == "IMPUESTO_GANANCIA" || concepto.Codigo == "IMPUESTO_GANANCIA_DEVOLUCION" {
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 			importeCalculoImpuestoGanancias := roundTo(calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db), 4)
 			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculoImpuestoGanancias}
 
