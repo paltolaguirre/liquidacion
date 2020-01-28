@@ -47,7 +47,10 @@ func getfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias strin
 			if concepto.Prorrateo == true {
 				mes = float64(getfgMesesAProrratear(concepto, liquidacion, db))
 			}
-			importeConcepto = *liquidacionitem.Importeunitario / mes
+			importeLiquidacionitem := liquidacionitem.Importeunitario
+			if importeLiquidacionitem != nil {
+				importeConcepto = *importeLiquidacionitem / mes
+			}
 			importeTotal = importeTotal + importeConcepto
 		}
 	}
@@ -87,7 +90,11 @@ func getfgSacCuotas(liquidacion *structLiquidacion.Liquidacion, correspondeSemes
 			if concepto.Prorrateo == true {
 				mes = float64(getfgMesesAProrratear(concepto, liquidacion, db))
 			}
-			importeConcepto = *liquidacionitem.Importeunitario / mes
+			importeLiquidacionitem := liquidacionitem.Importeunitario
+			if importeLiquidacionitem != nil {
+				importeConcepto = *importeLiquidacionitem / mes
+			}
+
 			if *concepto.Tipoconceptoid == -4 {
 				importeConcepto = importeConcepto * -1
 			}
@@ -567,14 +574,16 @@ func obtenerRemunerativosMenosDescuentos(liquidacion *structLiquidacion.Liquidac
 	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := liquidacion.Liquidacionitems[i]
 		tipoconcepto := *liquidacionitem.Concepto.Tipoconceptoid
-		importeconcepto := *liquidacionitem.Importeunitario
-		if tipoconcepto == -1 {
-			totalRemunerativos = totalRemunerativos + importeconcepto
-		}
-		if tipoconcepto == -3 {
-			totalDescuentos = totalDescuentos + importeconcepto
-		}
+		importeconcepto := liquidacionitem.Importeunitario
+		if importeconcepto != nil {
 
+			if tipoconcepto == -1 {
+				totalRemunerativos = totalRemunerativos + *importeconcepto
+			}
+			if tipoconcepto == -3 {
+				totalDescuentos = totalDescuentos + *importeconcepto
+			}
+		}
 	}
 	return totalRemunerativos - totalDescuentos
 }
