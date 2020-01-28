@@ -167,7 +167,6 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 			bancoAporteJubilatorio := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoaportejubilatorioID))
 			liquidacion.Bancoaportejubilatorio = bancoAporteJubilatorio
 		}
-
 		framework.RespondJSON(w, http.StatusOK, liquidacion)
 	}
 
@@ -916,14 +915,18 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 
 		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 			if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt == nil {
-
 				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+				if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+					importeCalculoImpuestoGanancias := calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db)
+					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(math.Abs(importeCalculoImpuestoGanancias), 4)
 
-				if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+				} else {
+					if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 
-					calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
-					calculoAutomatico.Hacercalculoautomatico()
-					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+						calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
+						calculoAutomatico.Hacercalculoautomatico()
+						*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+					}
 				}
 			}
 		}
@@ -974,11 +977,17 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 		}
 
 		importeCalculado.Conceptoid = &conceptoid
-		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
-			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
-			calculoAutomatico.Hacercalculoautomatico()
-			importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
-			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID}
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+			importeCalculoImpuestoGanancias := roundTo(math.Abs(calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db)), 4)
+			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculoImpuestoGanancias}
+
+		} else {
+			if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+				calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
+				calculoAutomatico.Hacercalculoautomatico()
+				importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+				importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID}
+			}
 		}
 
 	}
