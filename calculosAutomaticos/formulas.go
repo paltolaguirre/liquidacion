@@ -1,10 +1,10 @@
 package calculosAutomaticos
 
 import (
+	"fmt"
 	"strconv"
-	"time"
-
 	s "strings"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
@@ -29,7 +29,7 @@ func getfgMesesAProrratear(concepto *structConcepto.Concepto, liquidacion *struc
 			mesAProrratear = mesLiquidacionBD
 		}
 	}
-
+	fmt.Println("Calculos Automaticos - Mes a Prorratear:", 13-mesAProrratear)
 	return 13 - mesAProrratear
 
 }
@@ -71,11 +71,13 @@ func obtenerTipoImpuesto(concepto *structConcepto.Concepto, db *gorm.DB) string 
 }
 func getfgRemuneracionBruta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Remuneracion Bruta:", importeTotal)
 	return importeTotal
 }
 
 func getfgRemuneracionNoHabitual(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("RETRIBUCIONES_NO_HABITUALES", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Remuneracion No Habitual:", importeTotal)
 	return importeTotal
 }
 
@@ -107,7 +109,7 @@ func getfgSacCuotas(liquidacion *structLiquidacion.Liquidacion, correspondeSemes
 func getfgSacPrimerCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	correspondePrimerSemetre := getfgMes(&liquidacion.Fechaperiodoliquidacion) <= 6
 	importeTotal := getfgSacCuotas(liquidacion, correspondePrimerSemetre, db)
-
+	fmt.Println("Calculos Automaticos - Sac Primer Cuota:", importeTotal)
 	return importeTotal
 
 }
@@ -115,22 +117,25 @@ func getfgSacPrimerCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB
 func getfgSacSegundaCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	correspondeSegundoSemetre := getfgMes(&liquidacion.Fechaperiodoliquidacion) > 6
 	importeTotal := getfgSacCuotas(liquidacion, correspondeSegundoSemetre, db)
-
+	fmt.Println("Calculos Automaticos - Sac Segunda Cuota:", importeTotal)
 	return importeTotal
 }
 
 func getfgHorasExtrasGravadas(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("HORAS_EXTRAS_REMUNERACION_GRAVADA", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Horas Extras Gravadas:", importeTotal)
 	return importeTotal
 }
 
 func getfgMovilidadYViaticosGravada(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("MOVILIDAD_Y_VIATICOS_REMUNERACION_GRAVADA", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Movilidad y Viaticos Gravada:", importeTotal)
 	return importeTotal
 }
 
 func getfgMaterialDidacticoPersonalDocenteRemuneracion(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("MATERIAL_DIDACTICO_PERSONAL_DOCENTE_REMUNERACION_GRAVADA", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Material Didactico Personal Docente Remuneracion:", importeTotal)
 	return importeTotal
 }
 
@@ -146,11 +151,13 @@ func getfgImporteGananciasOtroEmpleoSiradig(liquidacion *structLiquidacion.Liqui
 
 func getfgRemuneracionBrutaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "importegananciasbrutas", db)
+	fmt.Println("Calculos Automaticos - Remuneracion Bruta Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
 func getfgRemuneracionNoHabitualOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "importeretribucionesnohabituales", db)
+	fmt.Println("Calculos Automaticos - Remuneracion No Habitual Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
@@ -159,6 +166,7 @@ func getfgSacPrimerCuotaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion,
 	if getfgMes(&liquidacion.Fechaperiodoliquidacion) <= 6 {
 		importeTotal = getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "sac", db)
 	}
+	fmt.Println("Calculos Automaticos - Sac Primer Cuota Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
@@ -167,16 +175,19 @@ func getfgSacSegundaCuotaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion
 	if getfgMes(&liquidacion.Fechaperiodoliquidacion) > 6 {
 		importeTotal = getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "sac", db)
 	}
+	fmt.Println("Calculos Automaticos - Sac Segunda Cuota Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
 func getfgHorasExtrasGravadasOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "importehorasextrasgravadas", db)
+	fmt.Println("Calculos Automaticos - Horas Extras Gravadas Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
 func getfgMovilidadYViaticosGravadaOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "gastosmovilidad", db)
+	fmt.Println("Calculos Automaticos - Movilidad y Viaticos Gravada Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
@@ -206,26 +217,31 @@ func getfgSubtotalIngresos(liquidacion *structLiquidacion.Liquidacion, db *gorm.
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion, db))
 
 	subtotalIngresos = Sum(arraySubtotalIngresos)
+	fmt.Println("Calculos Automaticos - Subtotal Ingresos:", subtotalIngresos)
 	return subtotalIngresos
 }
 
 func getfgAportesJubilatoriosRetirosPensionesOSubsidios(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Aportes Jubilatorios Retiros, Pensiones o Subsidios:", importeTotal)
 	return importeTotal
 }
 
 func getfgAportesObraSocial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("APORTES_OBRA_SOCIAL", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Aportes Obra Social:", importeTotal)
 	return importeTotal
 }
 
 func getfgCuotaSindical(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("CUOTA_SINDICAL", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Cuota Sindical:", importeTotal)
 	return importeTotal
 }
 
 func getfgDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("DESCUENTOS_OBLIGATORIOS_POR_LEY_NACIONAL_PROVINCIAL_MUNICIPAL", liquidacion, db)
+	fmt.Println("Calculos Automaticos - Descuentos Obligatorios por ley Nacional, Provincial o Municipal:", importeTotal)
 	return importeTotal
 }
 
@@ -239,22 +255,26 @@ func getfgGastosMovilidadViaticosAbonadosPorElEmpleador(liquidacion *structLiqui
 	arrayGastosMovilidad = append(arrayGastosMovilidad, getfgMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion, db))
 
 	importeTotal = Sum(arrayGastosMovilidad)
+	fmt.Println("Calculos Automaticos - Gastos Movilidad Viaticos Abonados por el Empleador:", importeTotal)
 	return importeTotal
 
 }
 
 func getfgAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "aporteseguridadsocial", db)
+	fmt.Println("Calculos Automaticos - Aportes Jubilatorios Retiros Pensiones o Subsidios Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
 func getfgAportesObraSocialOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "aporteobrasocial", db)
+	fmt.Println("Calculos Automaticos - Aportes Obra Social Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
 func getfgCuotaSindicalOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteGananciasOtroEmpleoSiradig(liquidacion, "aportesindical", db)
+	fmt.Println("Calculos Automaticos - Cuota Sindical Otros Empleos:", importeTotal)
 	return importeTotal
 }
 
@@ -301,11 +321,13 @@ func getfgGastosSepelio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB)
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_DE_SEPELIO", "deducciondesgravacionsiradig", db)
 	importeTope := getfgValorFijoImpuestoGanancia(liquidacion, "topemaximodescuento", "topesepelio", db)
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
+	fmt.Println("Calculos Automaticos - Gastos Sepelio:", importeTotal)
 	return importeTotal
 }
 
 func getfgGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_DE_REPRESENTACION_E_INTERESES_DE_CORREDORES_Y_VIAJANTES_DE_COMERCIO", "deducciondesgravacionsiradig", db)
+	fmt.Println("Calculos Automaticos - Gastos Amortizacion e Intereses Corredores y Viajantes de Comercio:", importeTotal)
 	return importeTotal
 }
 
@@ -313,11 +335,13 @@ func getfgInteresesCreditosHipotecarios(liquidacion *structLiquidacion.Liquidaci
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "INTERESES_PRESTAMO_HIPOTECARIO", "deducciondesgravacionsiradig", db)
 	importeTope := getfgValorFijoImpuestoGanancia(liquidacion, "topemaximodescuento", "topehipotecarios", db)
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
+	fmt.Println("Calculos Automaticos - Intereses Creditos Hipotecarios:", importeTotal)
 	return importeTotal
 }
 
 func getfgAportesCapSocFondoRiesgoSociosProtectoresSGR(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "Montoreintegrar + Montoreintegrar3", "REINTEGRO_DE_APORTES_DE_SOCIOS_PROTECTORES_A_SOCIEDADES_DE_GARANTIA_RECIPROCA", "ajustesiradig", db)
+	fmt.Println("Calculos Automaticos - Aportes Cap. Soc. Fondo Riesgo Socios Protectores SGR:", importeTotal)
 	return importeTotal
 }
 
@@ -325,6 +349,7 @@ func getfgAlquileresInmueblesDestinadosASuCasaHabitacion(liquidacion *structLiqu
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "ALQUILER_INMUEBLES_DESTINADOS_A_CASA_HABITACION", "deducciondesgravacionsiradig", db)
 	importeTope := getfgMinimoNoImponible(liquidacion, db) * 0.4 /*es el 40% de MNI(40)*/
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
+	fmt.Println("Calculos Automaticos - Alquileres Inmuebles Casa Habitacion:", importeTotal)
 	return importeTotal
 }
 
@@ -332,16 +357,19 @@ func getfgEmpleadosServicioDomestico(liquidacion *structLiquidacion.Liquidacion,
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "contribucion + retribucion", "DEDUCCION_DEL_PERSONAL_DOMESTICO", "deducciondesgravacionsiradig", db)
 	importeTope := getfgMinimoNoImponible(liquidacion, db) /*es el MNI(40)*/
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
+	fmt.Println("Calculos Automaticos - Empleados Servicio Domestico:", importeTotal)
 	return importeTotal
 }
 
 func getfgIndumentariaEquipamientoCaracterObligatorio(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "GASTOS_ADQUISICION_INDUMENTARIA_Y_EQUIPAMIENTO_PARA_USO_EXCLUSIVO_EN_EL_LUGAR_DE_TRABAJO", "deducciondesgravacionsiradig", db)
+	fmt.Println("Calculos Automaticos - Indumentaria Equipamiento Caracter Obligatorio:", importeTotal)
 	return importeTotal
 }
 
 func getfgOtrasDeducciones(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "OTRAS", "deducciondesgravacionsiradig", db)
+	fmt.Println("Calculos Automaticos - Otras Deducciones:", importeTotal)
 	return importeTotal
 }
 
@@ -370,7 +398,7 @@ func getfgSubtotal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) floa
 	arraySubtotal = append(arraySubtotal, getfgOtrasDeducciones(liquidacion, db))
 
 	subTotal = getfgSubtotalIngresos(liquidacion, db) - Sum(arraySubtotal)
-
+	fmt.Println("Calculos Automaticos - Subtotal:", subTotal)
 	return subTotal
 }
 
@@ -378,6 +406,7 @@ func getfgCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db 
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "CUOTA_MEDICA_ASISTENCIAL", "deducciondesgravacionsiradig", db)
 	importeTope := getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
+	fmt.Println("Calculos Automaticos - Cuota Medico Asistencial:", importeTotal)
 	return importeTotal
 }
 
@@ -385,6 +414,7 @@ func getfgDonacionFiscosNacProvMunArt20(liquidacion *structLiquidacion.Liquidaci
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "DONACIONES", "deducciondesgravacionsiradig", db)
 	importeTope := getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
+	fmt.Println("Calculos Automaticos - Donacion Fisico Nac, Prov, Munic art. 20:", importeTotal)
 	return importeTotal
 }
 
@@ -396,7 +426,7 @@ func getfgGananciaNeta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) 
 	arrayGananciaNeta = append(arrayGananciaNeta, getfgDonacionFiscosNacProvMunArt20(liquidacion, db))
 
 	gananciaNeta = getfgSubtotal(liquidacion, db) - Sum(arrayGananciaNeta)
-
+	fmt.Println("Calculos Automaticos - Ganancia Neta:", gananciaNeta)
 	return gananciaNeta
 }
 
@@ -441,6 +471,7 @@ func getfgDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, colum
 
 func getfgConyuge(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgDetalleCargoFamiliar(liquidacion, "conyugeid", "valorfijoconyuge", 1, db)
+	fmt.Println("Calculos Automaticos - Conyuge:", importeTotal)
 	return importeTotal
 }
 
@@ -456,7 +487,7 @@ func getfgHijos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64
 		porcentaje := detallescargofamiliarsiradig[i].Porcentaje
 		importeTotal = importeTotal + getfgDetalleCargoFamiliar(liquidacion, "hijoid", "valorfijohijo", *porcentaje, db)
 	}
-
+	fmt.Println("Calculos Automaticos - Hijos:", importeTotal)
 	return importeTotal
 }
 
@@ -464,6 +495,7 @@ func getfgMinimoNoImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm
 	valorfijoMNI := getfgValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijomni", db)
 	mesperiodoliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 	importeTotal := (valorfijoMNI / 12) * float64(mesperiodoliquidacion)
+	fmt.Println("Calculos Automaticos - Minimo No Imponible:", importeTotal)
 	return importeTotal
 }
 
@@ -471,6 +503,7 @@ func getfgDeduccionEspecial(liquidacion *structLiquidacion.Liquidacion, db *gorm
 	valorfijoMNI := getfgValorFijoImpuestoGanancia(liquidacion, "deduccionespersonales", "valorfijoddei", db)
 	mesperiodoliquidacion := getfgMes(&liquidacion.Fechaperiodoliquidacion)
 	importeTotal := (valorfijoMNI / 12) * float64(mesperiodoliquidacion)
+	fmt.Println("Calculos Automaticos - Deduccion Especial:", importeTotal)
 	return importeTotal
 }
 
@@ -484,11 +517,13 @@ func getfgSubtotalDeduccionesPersonales(liquidacion *structLiquidacion.Liquidaci
 	arraySubtotalDeduccionesPersonales = append(arraySubtotalDeduccionesPersonales, getfgDeduccionEspecial(liquidacion, db))
 
 	subTotalDeduccionesPersonales = Sum(arraySubtotalDeduccionesPersonales)
+	fmt.Println("Calculos Automaticos - Subtotal Deducciones Personales:", subTotalDeduccionesPersonales)
 	return subTotalDeduccionesPersonales
 }
 
 func getfgDeduccionesAComputar(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgSubtotalDeduccionesPersonales(liquidacion, db)
+	fmt.Println("Calculos Automaticos - Deducciones a Computar:", importeTotal)
 	return importeTotal
 }
 
@@ -510,12 +545,13 @@ func getfgGananciaNetaAcumSujetaAImp(liquidacion *structLiquidacion.Liquidacion,
 	for i := 0; i < len(liquidaciones); i++ {
 		importeTotal = importeTotal + getfgGananciaNeta(&liquidaciones[i], db)
 	}
-
+	fmt.Println("Calculos Automaticos - Ganancia Neta Acum. Sujeta a Impuestos:", importeTotal)
 	return importeTotal
 }
 
 func getfgDeduccionesPersonales(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgDeduccionesAComputar(liquidacion, db)
+	fmt.Println("Calculos Automaticos - Deducciones Personales:", importeTotal)
 	return importeTotal * -1
 }
 
@@ -527,6 +563,7 @@ func getfgBaseImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB)
 	arrayBaseImponible = append(arrayBaseImponible, getfgDeduccionesPersonales(liquidacion, db))
 
 	importeTotal = Sum(arrayBaseImponible)
+	fmt.Println("Calculos Automaticos - Base Imponible:", importeTotal)
 	return importeTotal
 }
 
@@ -566,6 +603,9 @@ func getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion *structL
 	}
 
 	importeTotal := getfgBaseImponible(liquidacion, db) - (importeTotalHorasExtrasGravadas*porcentaje + importeTotalHorasExtrasGravadasOtrosEmpleos*porcentajeOtrosEmp)
+	fmt.Println("Calculos Automaticos - Total Ganancia Neta Imponible Acumulada sin Horas Extras:", importeTotal)
+	fmt.Println("Calculos Automaticos - Importe Horas Extras Gravadas en Total Ganancia Neta Acum:", importeTotalHorasExtrasGravadas)
+	fmt.Println("Calculos Automaticos - Importe Horas Extras Gravadas Otros Empleos en Total Ganancia Neta Acum:", importeTotalHorasExtrasGravadasOtrosEmpleos)
 	return importeTotal
 }
 
@@ -585,6 +625,7 @@ func obtenerRemunerativosMenosDescuentos(liquidacion *structLiquidacion.Liquidac
 			}
 		}
 	}
+	fmt.Println("Calculos Automaticos - RemunerativosMenosDescuentos:", totalRemunerativos-totalDescuentos)
 	return totalRemunerativos - totalDescuentos
 }
 
@@ -598,6 +639,7 @@ func obtenerRemunerativosOtros(liquidacion *structLiquidacion.Liquidacion, db *g
 	arrayRemunerativosOtros = append(arrayRemunerativosOtros, getfgHorasExtrasGravadasOtrosEmpleos(liquidacion, db))
 
 	totalRemunerativosOtros = Sum(arrayRemunerativosOtros)
+	fmt.Println("Calculos Automaticos - Remunerativos Otros:", totalRemunerativosOtros)
 	return totalRemunerativosOtros
 }
 
@@ -635,6 +677,7 @@ func getfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, 
 			importeTotal = escalaimpuestoaplicable.Valorfijo
 		}
 	}
+	fmt.Println("Calculos Automaticos - Determinacion Impuesto Fijo:", importeTotal)
 	return importeTotal
 }
 
@@ -650,6 +693,7 @@ func getfgDeterminacionImpuestoPorEscala(liquidacion *structLiquidacion.Liquidac
 			importeTotal = (baseimponible - escalaimpuestoaplicable.Limiteinferior) * escalaimpuestoaplicable.Valorvariable
 		}
 	}
+	fmt.Println("Calculos Automaticos - Determinacion Impuesto por Escala:", importeTotal)
 	return importeTotal
 }
 
@@ -661,6 +705,7 @@ func getfgTotalRetener(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) 
 	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoPorEscala(liquidacion, db))
 
 	totalRetener = Sum(arrayTotalRetener)
+	fmt.Println("Calculos Automaticos - Total a Retener:", totalRetener)
 	return totalRetener
 }
 
@@ -675,7 +720,7 @@ func getfgRetencionAcumulada(liquidacion *structLiquidacion.Liquidacion, db *gor
 
 	sql = "SELECT SUM(li.importeunitario) FROM liquidacion l INNER JOIN liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') < " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS_DEVOLUCION'"
 	db.Raw(sql).Row().Scan(&totalconceptosimpuestogananciasdevolucion)
-
+	fmt.Println("Calculos Automaticos - Retencion acumulada:", totalconceptosimpuestoganancias-totalconceptosimpuestogananciasdevolucion)
 	return totalconceptosimpuestoganancias - totalconceptosimpuestogananciasdevolucion
 }
 
