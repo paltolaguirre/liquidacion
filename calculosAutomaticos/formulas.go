@@ -141,9 +141,11 @@ func getfgMaterialDidacticoPersonalDocenteRemuneracion(liquidacion *structLiquid
 
 func getfgImporteGananciasOtroEmpleoSiradig(liquidacion *structLiquidacion.Liquidacion, columnaimportegananciasotroempleosiradig string, db *gorm.DB) float64 {
 	var importeTotal float64
-	fechaliquidacion := liquidacion.Fechaperiodoliquidacion.Format("2006-01-02")
-
-	sql := "SELECT SUM(" + columnaimportegananciasotroempleosiradig + ") FROM importegananciasotroempleosiradig WHERE '" + fechaliquidacion + "' >= mes"
+	anoLiquidacion := liquidacion.Fechaperiodoliquidacion.Format("2006")
+	mesLiquidacion := liquidacion.Fechaperiodoliquidacion.Format("01")
+	legajoid := strconv.Itoa(*liquidacion.Legajoid)
+	sql := "SELECT SUM(" + columnaimportegananciasotroempleosiradig + ") FROM importegananciasotroempleosiradig WHERE '" + anoLiquidacion + "' = extract(YEAR from mes) and '" + mesLiquidacion +"' = extract(MONTH from mes) " +
+		"and siradigid in (SELECT id from siradig where legajoid = " + legajoid + " )"
 	db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
