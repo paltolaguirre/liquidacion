@@ -85,25 +85,36 @@ func getfgSacCuotas(liquidacion *structLiquidacion.Liquidacion, correspondeSemes
 	var mes float64 = 1
 	var importeTotal, importeConcepto float64
 
-	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
-		liquidacionitem := liquidacion.Liquidacionitems[i]
-		concepto := liquidacionitem.Concepto
-		if correspondeSemestre && concepto.Basesac == true {
-			if concepto.Prorrateo == true {
-				mes = float64(getfgMesesAProrratear(concepto, liquidacion, db))
-			}
-			importeLiquidacionitem := liquidacionitem.Importeunitario
-			if importeLiquidacionitem != nil {
-				importeConcepto = *importeLiquidacionitem / mes
-			}
+	if (correspondeSemestre){
+		for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
+			liquidacionitem := liquidacion.Liquidacionitems[i]
+			concepto := liquidacionitem.Concepto
+			if concepto.Basesac == true {
+				if concepto.Prorrateo == true {
+					mes = float64(getfgMesesAProrratear(concepto, liquidacion, db))
+				}
+				importeLiquidacionitem := liquidacionitem.Importeunitario
+				if importeLiquidacionitem != nil {
+					importeConcepto = *importeLiquidacionitem / mes
+				}
 
-			if *concepto.Tipoconceptoid == -4 {
-				importeConcepto = importeConcepto * -1
+				if *concepto.Tipoconceptoid == -4 {
+					importeConcepto = importeConcepto * -1
+				}
+				importeTotal = importeTotal + importeConcepto
 			}
-			importeTotal = importeTotal + importeConcepto
 		}
+
+		importeTotal = importeTotal + getfgBaseSacOtrosEmpleos(liquidacion, db)
 	}
+
+
 	return importeTotal / 12
+}
+
+func getfgBaseSacOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+
+	return getfgRemuneracionBrutaOtrosEmpleos(liquidacion, db) + getfgRemuneracionNoHabitualOtrosEmpleos(liquidacion, db) + getfgHorasExtrasGravadasOtrosEmpleos(liquidacion, db) + getfgMovilidadYViaticosGravadaOtrosEmpleos(liquidacion, db) + getfgMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion, db) - getfgAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion, db) - getfgAportesObraSocialOtrosEmpleos(liquidacion, db) - getfgCuotaSindicalOtrosEmpleos(liquidacion, db)
 }
 
 func getfgSacPrimerCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
