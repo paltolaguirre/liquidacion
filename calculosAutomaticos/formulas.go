@@ -452,7 +452,6 @@ func getfgDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, colum
 	var detallecargofamiliar structSiradig.Detallecargofamiliarsiradig
 	sql := "SELECT dcfs.* FROM siradig s INNER JOIN detallecargofamiliarsiradig dcfs ON s.id = dcfs.siradigid where to_char(periodosiradig, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND dcfs." + columnaDetalleCargoFamiliar + " NOTNULL AND s.legajoid = " + strconv.Itoa(*liquidacion.Legajoid)
 	db.Raw(sql).Scan(&detallecargofamiliar)
-
 	sql = "SELECT valor FROM siradig s INNER JOIN beneficiosiradig bs ON s.id = bs.siradigid WHERE to_number(to_char(bs.mesdesde, 'MM'),'99') <= " + strconv.Itoa(mesperiodoliquidacion) + " AND to_number(to_char(bs.meshasta, 'MM'), '99') > " + strconv.Itoa(mesperiodoliquidacion) + " AND bs.siradigtipogrillaid = -24 AND to_char(s.periodosiradig, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "'"
 	db.Raw(sql).Row().Scan(&tienevalorbeneficio)
 
@@ -467,13 +466,13 @@ func getfgDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, colum
 		}
 
 		if mesdadobaja == 0 {
-			importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-mesdadoalta) * porcentaje
+			importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
 		} else {
 			if mesdadobaja <= mesperiodoliquidacion {
-				importeTotal = (valorfijo / 12) * float64(mesdadobaja-mesdadoalta) * porcentaje
+				importeTotal = (valorfijo / 12) * float64(mesdadobaja-mesdadoalta) * (porcentaje / 100)
 			} else {
 				if mesdadobaja > mesperiodoliquidacion {
-					importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-mesdadoalta) * porcentaje
+					importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
 				}
 			}
 		}
@@ -483,7 +482,7 @@ func getfgDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, colum
 }
 
 func getfgConyuge(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getfgDetalleCargoFamiliar(liquidacion, "conyugeid", "valorfijoconyuge", 1, db)
+	importeTotal := getfgDetalleCargoFamiliar(liquidacion, "conyugeid", "valorfijoconyuge", 100, db)
 	fmt.Println("Calculos Automaticos - Conyuge:", importeTotal)
 	return importeTotal
 }
