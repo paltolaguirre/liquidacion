@@ -314,6 +314,16 @@ func getfgImporteTotalSiradigSegunTipoGrilla(liquidacion *structLiquidacion.Liqu
 	return importeTotal
 }
 
+func getfgImporteTotalSiradigSegunTipoGrillaSinMes(liquidacion *structLiquidacion.Liquidacion, columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string, db *gorm.DB) float64 {
+	var importeTotal float64
+	anoliquidacion := liquidacion.Fechaperiodoliquidacion.Year()
+
+	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anoliquidacion) + "';"
+	db.Raw(sql).Row().Scan(&importeTotal)
+
+	return importeTotal
+}
+
 func getfgImporteTotalTope(importeTotal float64, tope float64) float64 {
 	if importeTotal > tope {
 		return tope
@@ -416,8 +426,10 @@ func getfgSubtotal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) floa
 	return subTotal
 }
 
+/*Estos dos se utilizan sin mes ya que se toma el acumulado anual y luego se le saca el tope, Cualquier cosa consultar con DIEGO*/
+
 func getfgCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "CUOTA_MEDICA_ASISTENCIAL", "deducciondesgravacionsiradig", db)
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrillaSinMes(liquidacion, "importe", "CUOTA_MEDICA_ASISTENCIAL", "deducciondesgravacionsiradig", db)
 	importeTope := getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	fmt.Println("Calculos Automaticos - Cuota Medico Asistencial:", importeTotal)
@@ -425,12 +437,14 @@ func getfgCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db 
 }
 
 func getfgDonacionFiscosNacProvMunArt20(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getfgImporteTotalSiradigSegunTipoGrilla(liquidacion, "importe", "DONACIONES", "deducciondesgravacionsiradig", db)
+	importeTotal := getfgImporteTotalSiradigSegunTipoGrillaSinMes(liquidacion, "importe", "DONACIONES", "deducciondesgravacionsiradig", db)
 	importeTope := getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	fmt.Println("Calculos Automaticos - Donacion Fisico Nac, Prov, Munic art. 20:", importeTotal)
 	return importeTotal
 }
+
+/**/
 
 func getfgGananciaNeta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var arrayGananciaNeta []float64
