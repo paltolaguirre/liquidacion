@@ -149,6 +149,7 @@ github.com/xubiosueldos/autenticacion v0.0.0-20191206141340-ce5f574e1001 h1:WIpa
 github.com/xubiosueldos/autenticacion v0.0.0-20191206141340-ce5f574e1001/go.mod h1:WZkAhNuN3H3FONUfgW1AnQKUinoraNCv2RWulAE5AQ4=
 github.com/xubiosueldos/autenticacion v0.0.0-20191209174402-489df0cc8177 h1:zQqVzDPt9ZoP3EbGJjXRzuEMtJDiuYLJ1uQGAg0fK84=
 github.com/xubiosueldos/autenticacion v0.0.0-20191209174402-489df0cc8177/go.mod h1:K1hwon8gCp01xCrhDwnlI11afxe80YsntpKuCcL1hVc=
+github.com/xubiosueldos/autenticacion v0.0.0-20200210181826-3bcd88ff84d0/go.mod h1:hf379mBi5jCvxVh7KeCHoqewBhZmt7l9WjLWshT0Y7g=
 github.com/xubiosueldos/concepto v0.0.0-20190618142910-769c449b9abf h1:y1HDPSOs5GdP3cD8KIoMrQQU2cbxiMpyTV/OQFAxCf0=
 github.com/xubiosueldos/concepto v0.0.0-20190618142910-769c449b9abf/go.mod h1:Mbq5LlqCvBbB/f4wtYeV/78gUFOotETAB0+SXx2Ntf8=
 github.com/xubiosueldos/concepto v0.0.0-20190624175911-abf4e51f3b3f h1:sgCs0n5P10w6mGoQQ7bfUxGz1wKvtZUVFZveuhJU70c=
@@ -230,6 +231,8 @@ github.com/xubiosueldos/conexionBD v0.0.0-20191209172543-525bfbe44f3f h1:twsesKc
 github.com/xubiosueldos/conexionBD v0.0.0-20191209172543-525bfbe44f3f/go.mod h1:jeo57E+wvI5Q21kKt/DhqL0fWzFNOuU5xlsmtO504zg=
 github.com/xubiosueldos/conexionBD v0.0.0-20200114130946-240ebc65e5be h1:5sEHuBgaW3YjxhKf3H4jnsB41OPyxH2bEvghnPvxUAM=
 github.com/xubiosueldos/conexionBD v0.0.0-20200114130946-240ebc65e5be/go.mod h1:EfsxARhkjHg9kvDCMrdvhN/0fCo+OYyFwg1LOuvYrjY=
+github.com/xubiosueldos/conexionBD v0.0.0-20200207142051-9eb241ea69c1/go.mod h1:EfsxARhkjHg9kvDCMrdvhN/0fCo+OYyFwg1LOuvYrjY=
+github.com/xubiosueldos/conexionBD v0.0.0-20200210172205-12bdd9e9de23/go.mod h1:EfsxARhkjHg9kvDCMrdvhN/0fCo+OYyFwg1LOuvYrjY=
 github.com/xubiosueldos/framework v0.0.0-20190502133422-d53dd93b5196/go.mod h1:txPj3GVjVoZeJnObRIBrzNFVDT7baf2VEpK3kCkpDWg=
 github.com/xubiosueldos/framework v0.0.0-20190509132521-6f92aa67ddd1 h1:fX9zh5Q1VyY9dQIaekRTNUla7ZS6nl5rsuTqhe+PmKs=
 github.com/xubiosueldos/framework v0.0.0-20190509132521-6f92aa67ddd1/go.mod h1:txPj3GVjVoZeJnObRIBrzNFVDT7baf2VEpK3kCkpDWg=
