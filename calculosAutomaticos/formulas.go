@@ -69,24 +69,24 @@ func obtenerTipoImpuesto(concepto *structConcepto.Concepto, db *gorm.DB) string 
 
 	return tipoimpuesto
 }
-func getfgRemuneracionBruta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
+func getResultado(nombre string, codigo string, orden int, liquidacionitem *structLiquidacion.Liquidacionitem, formula iformula) float64 {
 
 	var importeTotal float64
 	var importePuntero *float64
 	for _, acumulador := range liquidacionitem.Acumuladores {
-		if acumulador.Codigo == "REMUNERACION_BRUTA" {
+		if acumulador.Codigo == codigo {
 			importePuntero = acumulador.Importe
 		}
 	}
 	if importePuntero == nil {
-		importeTotal = getfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA", liquidacion, db)
+		importeTotal = formula.getResult()
 		fmt.Println("Calculos Automaticos - Remuneracion Bruta:", importeTotal)
 		importePuntero = &importeTotal
 		acumuladorRembruta := structLiquidacion.Acumulador{
-			Nombre:            "Remuneracion Bruta",
-			Codigo:            "REMUNERACION_BRUTA",
+			Nombre:            nombre,
+			Codigo:            codigo,
 			Descripcion:       "",
-			Orden:             1,
+			Orden:             orden,
 			Importe:           importePuntero,
 			Tope:              nil,
 			Liquidacionitemid: liquidacionitem.ID,
@@ -237,7 +237,7 @@ func getfgSubtotalIngresos(liquidacion *structLiquidacion.Liquidacion, db *gorm.
 	var arraySubtotalIngresos []float64
 	var subtotalIngresos float64
 
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionBruta(liquidacion, db, liquidacionitem))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getResultado("Remuneracion Bruta", "REMUNERACION_BRUTA", 1, liquidacionitem, &RemuneracionBruta{liquidacion: liquidacion, db: db}))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionNoHabitual(liquidacion, db))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacPrimerCuota(liquidacion, db))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacSegundaCuota(liquidacion, db))
