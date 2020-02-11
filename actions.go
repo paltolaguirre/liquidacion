@@ -917,7 +917,8 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 			if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt == nil {
 				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
 				if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-					importeCalculoImpuestoGanancias := calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db)
+					liquidacionCalculoAutomatico.Liquidacionitems[i].Acumuladores = nil
+					importeCalculoImpuestoGanancias := calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db, &liquidacionCalculoAutomatico.Liquidacionitems[i])
 					if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION"{
 						importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1;
 					}
@@ -968,6 +969,8 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 			framework.RespondError(w, http.StatusNotFound, framework.IdParametroVacio)
 			return
 		}
+
+		var liquidacionitem *structLiquidacion.Liquidacionitem
 		var concepto structConcepto.Concepto
 
 		//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
@@ -975,13 +978,14 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 
 			if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
 				concepto = *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+				liquidacionitem = &liquidacionCalculoAutomatico.Liquidacionitems[i]
 				break
 			}
 		}
 
 		importeCalculado.Conceptoid = &conceptoid
 		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-			importeCalculoImpuestoGanancias := roundTo(math.Abs(calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db)), 2)
+			importeCalculoImpuestoGanancias := roundTo(math.Abs(calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db, liquidacionitem)), 2)
 			if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 				importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
 			}

@@ -69,9 +69,32 @@ func obtenerTipoImpuesto(concepto *structConcepto.Concepto, db *gorm.DB) string 
 
 	return tipoimpuesto
 }
-func getfgRemuneracionBruta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA", liquidacion, db)
-	fmt.Println("Calculos Automaticos - Remuneracion Bruta:", importeTotal)
+func getfgRemuneracionBruta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
+
+	var importeTotal float64
+	var importePuntero *float64
+	for _, acumulador := range liquidacionitem.Acumuladores {
+		if acumulador.Codigo == "REMUNERACION_BRUTA" {
+			importePuntero = acumulador.Importe
+		}
+	}
+	if importePuntero == nil {
+		importeTotal = getfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA", liquidacion, db)
+		fmt.Println("Calculos Automaticos - Remuneracion Bruta:", importeTotal)
+		importePuntero = &importeTotal
+		acumuladorRembruta := structLiquidacion.Acumulador{
+			Nombre:            "Remuneracion Bruta",
+			Codigo:            "REMUNERACION_BRUTA",
+			Descripcion:       "",
+			Orden:             1,
+			Importe:           importePuntero,
+			Tope:              nil,
+			Liquidacionitemid: liquidacionitem.ID,
+		}
+		liquidacionitem.Acumuladores = append(liquidacionitem.Acumuladores, acumuladorRembruta)
+	} else {
+		importeTotal = *importePuntero
+	}
 	return importeTotal
 }
 
@@ -209,12 +232,12 @@ func getfgMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion *
 	return importeTotal
 }
 
-func getfgSubtotalIngresos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSubtotalIngresos(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 
 	var arraySubtotalIngresos []float64
 	var subtotalIngresos float64
 
-	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionBruta(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionBruta(liquidacion, db, liquidacionitem))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionNoHabitual(liquidacion, db))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacPrimerCuota(liquidacion, db))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacSegundaCuota(liquidacion, db))
@@ -397,7 +420,7 @@ func getfgOtrasDeducciones(liquidacion *structLiquidacion.Liquidacion, db *gorm.
 	return importeTotal
 }
 
-func getfgSubtotal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSubtotal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	var arraySubtotal []float64
 	var subTotal float64
 
@@ -421,18 +444,18 @@ func getfgSubtotal(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) floa
 	arraySubtotal = append(arraySubtotal, getfgIndumentariaEquipamientoCaracterObligatorio(liquidacion, db))
 	arraySubtotal = append(arraySubtotal, getfgOtrasDeducciones(liquidacion, db))
 
-	subTotal = getfgSubtotalIngresos(liquidacion, db) - Sum(arraySubtotal)
+	subTotal = getfgSubtotalIngresos(liquidacion, db, liquidacionitem) - Sum(arraySubtotal)
 	fmt.Println("Calculos Automaticos - Subtotal:", subTotal)
 	return subTotal
 }
 
 /*Estos dos se utilizan sin mes ya que se toma el acumulado anual y luego se le saca el tope, Cualquier cosa consultar con DIEGO*/
 
-func getfgCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrillaSinMes(liquidacion, "importe", "CUOTA_MEDICA_ASISTENCIAL", "deducciondesgravacionsiradig", db)
 	var importeTope float64
 	if importeTotal != 0 {
-		importeTope = getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
+		importeTope = getfgSubtotal(liquidacion, db, liquidacionitem) * 0.05 //5% de Subtotal
 	}
 
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
@@ -440,11 +463,11 @@ func getfgCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db 
 	return importeTotal
 }
 
-func getfgDonacionFiscosNacProvMunArt20(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgDonacionFiscosNacProvMunArt20(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	importeTotal := getfgImporteTotalSiradigSegunTipoGrillaSinMes(liquidacion, "importe", "DONACIONES", "deducciondesgravacionsiradig", db)
 	var importeTope float64
 	if importeTotal != 0 {
-		importeTope = getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
+		importeTope = getfgSubtotal(liquidacion, db, liquidacionitem) * 0.05 //5% de Subtotal
 	}
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
 	fmt.Println("Calculos Automaticos - Donacion Fisico Nac, Prov, Munic art. 20:", importeTotal)
@@ -453,14 +476,14 @@ func getfgDonacionFiscosNacProvMunArt20(liquidacion *structLiquidacion.Liquidaci
 
 /**/
 
-func getfgGananciaNeta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgGananciaNeta(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	var arrayGananciaNeta []float64
 	var gananciaNeta float64
 
-	arrayGananciaNeta = append(arrayGananciaNeta, getfgCuotaMedicoAsistencial(liquidacion, db))
-	arrayGananciaNeta = append(arrayGananciaNeta, getfgDonacionFiscosNacProvMunArt20(liquidacion, db))
+	arrayGananciaNeta = append(arrayGananciaNeta, getfgCuotaMedicoAsistencial(liquidacion, db, liquidacionitem))
+	arrayGananciaNeta = append(arrayGananciaNeta, getfgDonacionFiscosNacProvMunArt20(liquidacion, db, liquidacionitem))
 
-	gananciaNeta = getfgSubtotal(liquidacion, db) - Sum(arrayGananciaNeta)
+	gananciaNeta = getfgSubtotal(liquidacion, db, liquidacionitem) - Sum(arrayGananciaNeta)
 	fmt.Println("Calculos Automaticos - Ganancia Neta:", gananciaNeta)
 	return gananciaNeta
 }
@@ -570,14 +593,14 @@ func obtenerLiquidacionesIgualAnioLegajoMenorMes(liquidacion *structLiquidacion.
 	return &liquidaciones
 }
 
-func getfgGananciaNetaAcumSujetaAImp(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgGananciaNetaAcumSujetaAImp(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	var importeTotal float64 = 0
 
 	liquidaciones := *obtenerLiquidacionesIgualAnioLegajoMenorMes(liquidacion, db)
-	importeTotal = importeTotal + getfgGananciaNeta(liquidacion, db)
+	importeTotal = importeTotal + getfgGananciaNeta(liquidacion, db, liquidacionitem)
 
 	for i := 0; i < len(liquidaciones); i++ {
-		importeTotal = importeTotal + getfgGananciaNeta(&liquidaciones[i], db)
+		importeTotal = importeTotal + getfgGananciaNeta(&liquidaciones[i], db, liquidacionitem)
 	}
 	fmt.Println("Calculos Automaticos - Ganancia Neta Acum. Sujeta a Impuestos:", importeTotal)
 	return importeTotal
@@ -589,11 +612,11 @@ func getfgDeduccionesPersonales(liquidacion *structLiquidacion.Liquidacion, db *
 	return importeTotal * -1
 }
 
-func getfgBaseImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgBaseImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	var arrayBaseImponible []float64
 	var importeTotal float64
 
-	arrayBaseImponible = append(arrayBaseImponible, getfgGananciaNetaAcumSujetaAImp(liquidacion, db))
+	arrayBaseImponible = append(arrayBaseImponible, getfgGananciaNetaAcumSujetaAImp(liquidacion, db, liquidacionitem))
 	arrayBaseImponible = append(arrayBaseImponible, getfgDeduccionesPersonales(liquidacion, db))
 
 	importeTotal = Sum(arrayBaseImponible)
@@ -601,7 +624,7 @@ func getfgBaseImponible(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB)
 	return importeTotal
 }
 
-func getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 
 	cuotaSindical := getfgCuotaSindical(liquidacion, db)
 	obraSocial := getfgAportesObraSocial(liquidacion, db)
@@ -636,7 +659,7 @@ func getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion *structL
 		importeTotalHorasExtrasGravadasOtrosEmpleos = importeTotalHorasExtrasGravadasOtrosEmpleos + getfgHorasExtrasGravadasOtrosEmpleos(&liquidaciones[i], db)
 	}
 
-	importeTotal := getfgBaseImponible(liquidacion, db) - (importeTotalHorasExtrasGravadas*porcentaje + importeTotalHorasExtrasGravadasOtrosEmpleos*porcentajeOtrosEmp)
+	importeTotal := getfgBaseImponible(liquidacion, db, liquidacionitem) - (importeTotalHorasExtrasGravadas*porcentaje + importeTotalHorasExtrasGravadasOtrosEmpleos*porcentajeOtrosEmp)
 	fmt.Println("Calculos Automaticos - Total Ganancia Neta Imponible Acumulada sin Horas Extras:", importeTotal)
 	fmt.Println("Calculos Automaticos - Importe Horas Extras Gravadas en Total Ganancia Neta Acum:", importeTotalHorasExtrasGravadas)
 	fmt.Println("Calculos Automaticos - Importe Horas Extras Gravadas Otros Empleos en Total Ganancia Neta Acum:", importeTotalHorasExtrasGravadasOtrosEmpleos)
@@ -700,10 +723,10 @@ func getfgEscalaImpuestoAplicable(liquidacion *structLiquidacion.Liquidacion, db
 
 }
 
-func getfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	var importeTotal float64 = 0
 	strescalaimpuestoaplicable := *getfgEscalaImpuestoAplicable(liquidacion, db)
-	totalganancianeta := getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db)
+	totalganancianeta := getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db, liquidacionitem)
 
 	for i := 0; i < len(strescalaimpuestoaplicable); i++ {
 		escalaimpuestoaplicable := strescalaimpuestoaplicable[i]
@@ -715,11 +738,11 @@ func getfgDeterminacionImpuestoFijo(liquidacion *structLiquidacion.Liquidacion, 
 	return importeTotal
 }
 
-func getfgDeterminacionImpuestoPorEscala(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgDeterminacionImpuestoPorEscala(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	var importeTotal float64 = 0
 	strescalaimpuestoaplicable := *getfgEscalaImpuestoAplicable(liquidacion, db)
-	totalganancianeta := getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db)
-	baseimponible := getfgBaseImponible(liquidacion, db)
+	totalganancianeta := getfgTotalGananciaNetaImponibleAcumuladaSinHorasExtras(liquidacion, db, liquidacionitem)
+	baseimponible := getfgBaseImponible(liquidacion, db, liquidacionitem)
 	for i := 0; i < len(strescalaimpuestoaplicable); i++ {
 		escalaimpuestoaplicable := strescalaimpuestoaplicable[i]
 		if totalganancianeta > escalaimpuestoaplicable.Limiteinferior && totalganancianeta <= escalaimpuestoaplicable.Limitesuperior {
@@ -731,12 +754,12 @@ func getfgDeterminacionImpuestoPorEscala(liquidacion *structLiquidacion.Liquidac
 	return importeTotal
 }
 
-func getfgTotalRetener(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgTotalRetener(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
 	var arrayTotalRetener []float64
 	var totalRetener float64
 
-	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoFijo(liquidacion, db))
-	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoPorEscala(liquidacion, db))
+	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoFijo(liquidacion, db, liquidacionitem))
+	arrayTotalRetener = append(arrayTotalRetener, getfgDeterminacionImpuestoPorEscala(liquidacion, db, liquidacionitem))
 
 	totalRetener = Sum(arrayTotalRetener)
 	fmt.Println("Calculos Automaticos - Total a Retener:", totalRetener)
@@ -758,8 +781,8 @@ func getfgRetencionAcumulada(liquidacion *structLiquidacion.Liquidacion, db *gor
 	return totalconceptosimpuestoganancias - totalconceptosimpuestogananciasdevolucion
 }
 
-func GetfgRetencionMes(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
-	totalRetener := getfgTotalRetener(liquidacion, db)
+func GetfgRetencionMes(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB, liquidacionitem *structLiquidacion.Liquidacionitem) float64 {
+	totalRetener := getfgTotalRetener(liquidacion, db, liquidacionitem)
 	retencionAcumulada := getfgRetencionAcumulada(liquidacion, db)
 
 	return totalRetener - retencionAcumulada
