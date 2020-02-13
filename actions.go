@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -98,8 +99,9 @@ type StrDatosAsientoContableManualBlanquear struct {
 }
 
 type StrCalculoAutomaticoConceptoId struct {
-	Conceptoid      *int     `json:"conceptoid"`
-	Importeunitario *float64 `json:"importeunitario" `
+	Conceptoid      *int                           `json:"conceptoid"`
+	Importeunitario *float64                       `json:"importeunitario" `
+	Acumuladores    []structLiquidacion.Acumulador `json:"acumuladores"`
 }
 
 var nombreMicroservicio string = "liquidacion"
@@ -918,9 +920,9 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
 				if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 					liquidacionCalculoAutomatico.Liquidacionitems[i].Acumuladores = nil
-					importeCalculoImpuestoGanancias := calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db, &liquidacionCalculoAutomatico.Liquidacionitems[i])
-					if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION"{
-						importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1;
+					importeCalculoImpuestoGanancias := (&Ganancias.CalculoGanancias{&liquidacionCalculoAutomatico.Liquidacionitems[i], &liquidacionCalculoAutomatico, db}).Calculate()
+					if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+						importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
 					}
 					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(importeCalculoImpuestoGanancias, 2)
 
@@ -985,18 +987,18 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 
 		importeCalculado.Conceptoid = &conceptoid
 		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-			importeCalculoImpuestoGanancias := roundTo(math.Abs(calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db, liquidacionitem)), 2)
+			importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, &liquidacionCalculoAutomatico, db}).Calculate(), 2)
 			if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 				importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
 			}
-			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculoImpuestoGanancias}
+			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculoImpuestoGanancias, liquidacionitem.Acumuladores}
 
 		} else {
 			if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 				calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
 				calculoAutomatico.Hacercalculoautomatico()
 				importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
-				importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID}
+				importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID, liquidacionitem.Acumuladores}
 			}
 		}
 
