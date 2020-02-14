@@ -257,12 +257,27 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+
 			if p_liquidacionid == liquidacionid || liquidacionid == 0 {
 
 				liquidacion_data.ID = p_liquidacionid
 
 				//abro una transacción para que si hay un error no persista en la DB
 				tx := db.Begin()
+
+				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
+				for _, liquidacionItem := range liquidacion_data.Liquidacionitems {
+					if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+						for _ , acumulador := range liquidacionItem.Acumuladores {
+							acumulador.ID = 0
+						}
+						if err := tx.Model(structLiquidacion.Acumulador{}).Unscoped().Where("liquidacionitemid = ?", liquidacionItem.ID).Delete(structLiquidacion.Acumulador{}).Error; err != nil {
+							tx.Rollback()
+							framework.RespondError(w, http.StatusInternalServerError, err.Error())
+							return
+						}
+					}
+				}
 
 				//modifico el legajo de acuerdo a lo enviado en el json
 				if err := tx.Save(&liquidacion_data).Error; err != nil {
@@ -276,6 +291,8 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 					framework.RespondError(w, http.StatusInternalServerError, err.Error())
 					return
 				}
+
+
 				//despues de modificar, recorro los descuentos asociados a la liquidacion para ver si alguno fue eliminado logicamente y lo elimino de la BD
 				/*	if err := tx.Model(structLiquidacion.Descuento{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Descuento{}).Error; err != nil {
 						tx.Rollback()
