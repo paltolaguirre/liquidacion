@@ -16,6 +16,10 @@ func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getResultInterna
 }
 
 func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Gastos Movilidad Viaticos Abonados por el Empleador (-)", "GASTOS_MOVILIDAD_VIATICOS_ABONADOS_POR_EL_EMPLEADOR", 47, cg)
+	return cg.getResultOnDemandTemplate("Gastos Movilidad Viaticos Abonados por el Empleador (-)", "GASTOS_MOVILIDAD_VIATICOS_ABONADOS_POR_EL_EMPLEADOR", 20, cg)
 }
 
+func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getTope() *float64 {
+	//ESTE TIENE TOPE PERO AUN NO SE TIENE EN CUENTA POR DEFINICION TODO
+	return nil
+}

@@ -1,0 +1,18 @@
+package Ganancias
+
+type CalculoRetencionDelMes struct {
+	CalculoGanancias
+}
+
+func (cg *CalculoRetencionDelMes) getResultInternal() float64 {
+
+	return (&CalculoTotalARetener{cg.CalculoGanancias}).getResult() - (&CalculoRetencionAcumulada{cg.CalculoGanancias}).getResult()
+}
+
+func (cg *CalculoRetencionDelMes) getResult() float64 {
+	return cg.getResultOnDemandTemplate("Retencion del mes", "RETENCION_DEL_MES", 53, cg)
+}
+
+func (cg *CalculoRetencionDelMes) getTope() *float64 {
+	return nil
+}

@@ -26,6 +26,9 @@ func (cg *CalculoSubtotalIngresos) getResultInternal() float64 {
 }
 
 func (cg *CalculoSubtotalIngresos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Subtotal Ingresos", "SUBTOTAL_INGRESOS", 53, cg)
+	return cg.getResultOnDemandTemplate("Subtotal Ingresos", "SUBTOTAL_INGRESOS", 15, cg)
 }
 
+func (cg *CalculoSubtotalIngresos) getTope() *float64 {
+	return nil
+}

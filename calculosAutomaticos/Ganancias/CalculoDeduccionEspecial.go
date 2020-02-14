@@ -11,5 +11,9 @@ func (cg *CalculoDeduccionEspecial) getResultInternal() float64 {
 }
 
 func (cg *CalculoDeduccionEspecial) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Deducción especial", "DEDUCCION_ESPECIAL", 41, cg)
+	return cg.getResultOnDemandTemplate("Deducción especial", "DEDUCCION_ESPECIAL", 42, cg)
+}
+
+func (cg *CalculoDeduccionEspecial) getTope() *float64 {
+	return nil
 }

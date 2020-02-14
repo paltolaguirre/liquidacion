@@ -20,15 +20,18 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(nombre string, codigo stri
 
 	var importeTotal float64
 	var importePuntero *float64
+	var topePuntero *float64
 
 	for _, acumulador := range cg.Liquidacionitem.Acumuladores {
 		if acumulador.Codigo == codigo {
 			importePuntero = acumulador.Importe
+			topePuntero = acumulador.Tope
 		}
 	}
 
 	if importePuntero == nil {
 		importeTotal = formula.getResultInternal()
+		topePuntero = formula.getTope()
 		fmt.Println("Calculos Automaticos -", nombre+":", importeTotal)
 		importePuntero = &importeTotal
 		acumuladorRembruta := structLiquidacion.Acumulador{
@@ -37,7 +40,7 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(nombre string, codigo stri
 			Descripcion: "",
 			Orden:       orden,
 			Importe:     importePuntero,
-			Tope:        nil,
+			Tope:        topePuntero,
 		}
 		cg.Liquidacionitem.Acumuladores = append(cg.Liquidacionitem.Acumuladores, acumuladorRembruta)
 	} else {
@@ -48,7 +51,7 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(nombre string, codigo stri
 
 func (cg *CalculoGanancias) Calculate() float64 {
 
-	return (&CalculoTotalARetener{*cg}).getResult() - (&CalculoRetencionAcumulada{*cg}).getResult()
+	return (&CalculoRetencionDelMes{*cg}).getResult()
 }
 
 func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {

@@ -9,5 +9,9 @@ func (cg *CalculoRemuneracionBrutaOtrosEmpleos) getResultInternal() float64 {
 }
 
 func (cg *CalculoRemuneracionBrutaOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Remuneración Bruta Otros Empleos (+)", "REMUNERACION_BRUTA_OTROS_EMPLEOS", 7, cg)
+	return cg.getResultOnDemandTemplate("Remuneración Bruta Otros Empleos (+)", "REMUNERACION_BRUTA_OTROS_EMPLEOS", 8, cg)
+}
+
+func (cg *CalculoRemuneracionBrutaOtrosEmpleos) getTope() *float64 {
+	return nil
 }

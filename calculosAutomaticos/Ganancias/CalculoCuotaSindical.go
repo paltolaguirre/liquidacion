@@ -9,5 +9,9 @@ func (cg *CalculoCuotaSindical) getResultInternal() float64{
 }
 
 func (cg *CalculoCuotaSindical) getResult() float64{
-	return cg.getResultOnDemandTemplate("Cuota Sindical", "CUOTA_SINDICAL", 16, cg)
+	return cg.getResultOnDemandTemplate("Cuota Sindical", "CUOTA_SINDICAL", 18, cg)
+}
+
+func (cg *CalculoCuotaSindical) getTope() *float64 {
+	return nil
 }

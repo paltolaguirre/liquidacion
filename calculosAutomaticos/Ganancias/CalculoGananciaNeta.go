@@ -19,6 +19,9 @@ func (cg *CalculoGananciaNeta) getResultInternal() float64 {
 }
 
 func (cg *CalculoGananciaNeta) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Ganancia Neta", "GANANCIA_NETA", 36, cg)
+	return cg.getResultOnDemandTemplate("Ganancia Neta", "GANANCIA_NETA", 38, cg)
 }
 
+func (cg *CalculoGananciaNeta) getTope() *float64 {
+	return nil
+}

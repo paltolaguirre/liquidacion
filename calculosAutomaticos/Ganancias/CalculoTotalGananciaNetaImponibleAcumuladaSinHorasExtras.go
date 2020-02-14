@@ -50,5 +50,9 @@ func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getResultInt
 
 func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getResult() float64 {
 	//cg.CalculoGanancias.formula = cg
-	return cg.getResultOnDemandTemplate("Total Ganancia Neta Imponible Acumulada Sin Horas Extras", "TOTAL_GANANCIA_NETA_IMPONIBLE_ACUMULADA_SIN_HORAS_EXTRAS", 49, cg)
+	return cg.getResultOnDemandTemplate("Total Ganancia Neta Imponible Acumulada Sin Horas Extras", "TOTAL_GANANCIA_NETA_IMPONIBLE_ACUMULADA_SIN_HORAS_EXTRAS", 48, cg)
+}
+
+func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getTope() *float64 {
+	return nil
 }

@@ -9,5 +9,9 @@ func (cg *CalculoHorasExtrasGravadasOtrosEmpleos) getResultInternal() float64 {
 }
 
 func (cg *CalculoHorasExtrasGravadasOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Horas Extras Gravadas Otros Empleos (+)", "HORAS_EXTRAS_GRAVADAS_OTROS_EMPLEOS", 11, cg)
+	return cg.getResultOnDemandTemplate("Horas Extras Gravadas Otros Empleos (+)", "HORAS_EXTRAS_GRAVADAS_OTROS_EMPLEOS", 12, cg)
+}
+
+func (cg *CalculoHorasExtrasGravadasOtrosEmpleos) getTope() *float64 {
+	return nil
 }

@@ -9,5 +9,9 @@ func (cg *CalculoAportesCapSocFondoRiesgoSociosProtectoresSGR) getResultInternal
 }
 
 func (cg *CalculoAportesCapSocFondoRiesgoSociosProtectoresSGR) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Aportes cap. Soc. / Fondo de riesgo de socios protectores de SGR (-)", "APORTES_CAP_SOC_FONDO_RIESGO_SOCIOS_PROTECTORES_SGR", 39, cg)
+	return cg.getResultOnDemandTemplate("Aportes cap. Soc. / Fondo de riesgo de socios protectores de SGR (-)", "APORTES_CAP_SOC_FONDO_RIESGO_SOCIOS_PROTECTORES_SGR", 30, cg)
+}
+
+func (cg *CalculoAportesCapSocFondoRiesgoSociosProtectoresSGR) getTope() *float64 {
+	return nil
 }

@@ -9,5 +9,9 @@ func (cg *CalculoIndumentariaEquipamientoCaracterObligatorio) getResultInternal(
 }
 
 func (cg *CalculoIndumentariaEquipamientoCaracterObligatorio) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Indumentaria/Equipamiento – uso exclusivo – carácter obligatorio (-)", "INDUMENTARIA_EQUIPAMIENTO_CARACTER_OBLIGATORIO", 39, cg)
+	return cg.getResultOnDemandTemplate("Indumentaria/Equipamiento – uso exclusivo – carácter obligatorio (-)", "INDUMENTARIA_EQUIPAMIENTO_CARACTER_OBLIGATORIO", 33, cg)
+}
+
+func (cg *CalculoIndumentariaEquipamientoCaracterObligatorio) getTope() *float64 {
+	return nil
 }

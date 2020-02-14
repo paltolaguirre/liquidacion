@@ -9,5 +9,9 @@ func (cg *CalculoOtrasDeducciones) getResultInternal() float64 {
 }
 
 func (cg *CalculoOtrasDeducciones) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Otras Deducciones", "OTRAS_DEDUCCIONES", 39, cg)
+	return cg.getResultOnDemandTemplate("Otras Deducciones", "OTRAS_DEDUCCIONES", 34, cg)
+}
+
+func (cg *CalculoOtrasDeducciones) getTope() *float64 {
+	return nil
 }

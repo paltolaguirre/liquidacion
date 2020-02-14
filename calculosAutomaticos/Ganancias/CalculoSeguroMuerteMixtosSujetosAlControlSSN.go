@@ -9,5 +9,10 @@ func (cg *CalculoSeguroMuerteMixtosSujetosAlControlSSN) getResultInternal() floa
 }
 
 func (cg *CalculoSeguroMuerteMixtosSujetosAlControlSSN) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Seguro muerte/mixtos sujetos al control de la SSN (-)", "SEGURO_MUERTE_MIXTOS_SUJETOS_AL_CONTROL_SSN", 1, cg)
+	return cg.getResultOnDemandTemplate("Seguro muerte/mixtos sujetos al control de la SSN (-)", "SEGURO_MUERTE_MIXTOS_SUJETOS_AL_CONTROL_SSN", 25, cg)
+}
+
+func (cg *CalculoSeguroMuerteMixtosSujetosAlControlSSN) getTope() *float64 {
+	//ESTO TIENE TOPE PERO AUN NO SE IMPLEMENTO TODO
+	return nil
 }

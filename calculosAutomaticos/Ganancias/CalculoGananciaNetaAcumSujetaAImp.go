@@ -19,5 +19,9 @@ func (cg *CalculoGananciaNetaAcumSujetaAImp) getResultInternal() float64 {
 }
 
 func (cg *CalculoGananciaNetaAcumSujetaAImp) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Ganancia neta acum. sujeta a Imp.", "GANANCIA_NETA_ACUM_SUJETA_A_IMP", 1, cg)
+	return cg.getResultOnDemandTemplate("Ganancia neta acum. sujeta a Imp.", "GANANCIA_NETA_ACUM_SUJETA_A_IMP", 45, cg)
+}
+
+func (cg *CalculoGananciaNetaAcumSujetaAImp) getTope() *float64 {
+	return nil
 }

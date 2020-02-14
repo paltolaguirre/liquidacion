@@ -13,6 +13,9 @@ func (cg *CalculoSACPrimerCuotaOtrosEmpleos) getResultInternal() float64 {
 }
 
 func (cg *CalculoSACPrimerCuotaOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("SAC Primer Cuota Otros Empleos (+)", "SAC_PRIMER_CUOTA_OTROS_EMPLEOS", 3, cg)
+	return cg.getResultOnDemandTemplate("SAC Primer Cuota Otros Empleos (+)", "SAC_PRIMER_CUOTA_OTROS_EMPLEOS", 10, cg)
 }
 
+func (cg *CalculoSACPrimerCuotaOtrosEmpleos) getTope() *float64 {
+	return nil
+}

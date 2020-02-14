@@ -12,3 +12,7 @@ func (cg *CalculoSACPrimerCuota) getResultInternal() float64 {
 func (cg *CalculoSACPrimerCuota) getResult() float64 {
 	return cg.getResultOnDemandTemplate("SAC Primer Cuota (+)", "SAC_PRIMER_CUOTA", 3, cg)
 }
+
+func (cg *CalculoSACPrimerCuota) getTope() *float64 {
+	return nil
+}
