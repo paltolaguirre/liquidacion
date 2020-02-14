@@ -13,9 +13,13 @@ func (cg *CalculoSACSegundaCuotaOtrosEmpleos) getResultInternal() float64 {
 }
 
 func (cg *CalculoSACSegundaCuotaOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("SAC Segunda Cuota Otros Empleos (+)", "SAC_SEGUNDA_CUOTA_OTROS_EMPLEOS", 11, cg)
+	return cg.getResultOnDemandTemplate("SAC_SEGUNDA_CUOTA_OTROS_EMPLEOS", 11, cg)
 }
 
 func (cg *CalculoSACSegundaCuotaOtrosEmpleos) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoSACSegundaCuotaOtrosEmpleos) getNombre() string {
+	return "SAC Segunda Cuota Otros Empleos (+)"
 }

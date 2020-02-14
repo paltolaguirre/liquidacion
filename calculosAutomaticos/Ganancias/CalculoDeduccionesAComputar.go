@@ -9,9 +9,13 @@ func (cg *CalculoDeduccionesAComputar) getResultInternal() float64{
 }
 
 func (cg *CalculoDeduccionesAComputar) getResult() float64{
-	return cg.getResultOnDemandTemplate("Deducciones a Computar", "DEDUCCIONES_A_COMPUTAR", 44, cg)
+	return cg.getResultOnDemandTemplate("DEDUCCIONES_A_COMPUTAR", 44, cg)
 }
 
 func (cg *CalculoDeduccionesAComputar) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoDeduccionesAComputar) getNombre() string {
+	return "Deducciones a Computar"
 }

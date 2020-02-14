@@ -9,9 +9,13 @@ func (cg *CalculoAportesObraSocialOtrosEmpleos) getResultInternal() float64{
 }
 
 func (cg *CalculoAportesObraSocialOtrosEmpleos) getResult() float64{
-	return cg.getResultOnDemandTemplate("Aportes obra social – Otros empleos (-)", "APORTES_OBRA_SOCIAL_OTROS_EMPLEOS", 22, cg)
+	return cg.getResultOnDemandTemplate("APORTES_OBRA_SOCIAL_OTROS_EMPLEOS", 22, cg)
 }
 
 func (cg *CalculoAportesObraSocialOtrosEmpleos) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoAportesObraSocialOtrosEmpleos) getNombre() string {
+	return "Aportes obra social – Otros empleos (-)"
 }

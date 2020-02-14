@@ -20,9 +20,13 @@ func (cg *CalculoImpuestoPorEscala) getResultInternal() float64 {
 }
 
 func (cg *CalculoImpuestoPorEscala) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Determinacion de Impuesto por Escala", "DETERMINACION_IMPUESTO_POR_ESCALA", 50, cg)
+	return cg.getResultOnDemandTemplate("DETERMINACION_IMPUESTO_POR_ESCALA", 50, cg)
 }
 
 func (cg *CalculoImpuestoPorEscala) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoImpuestoPorEscala) getNombre() string {
+	return "Determinacion de Impuesto por Escala"
 }

@@ -10,9 +10,13 @@ func (cg *CalculoSACSegundaCuota) getResultInternal() float64 {
 }
 
 func (cg *CalculoSACSegundaCuota) getResult() float64 {
-	return cg.getResultOnDemandTemplate("SAC Segunda Cuota (+)", "SAC_SEGUNDA_CUOTA", 4, cg)
+	return cg.getResultOnDemandTemplate("SAC_SEGUNDA_CUOTA", 4, cg)
 }
 
 func (cg *CalculoSACSegundaCuota) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoSACSegundaCuota) getNombre() string {
+	return "SAC Segunda Cuota (+)"
 }

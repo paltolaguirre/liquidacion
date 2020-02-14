@@ -9,9 +9,13 @@ func (cg *CalculoDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal) getRe
 }
 
 func (cg *CalculoDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Descuentos obligatorios por ley nacional, provincial o municipal (-)", "DESCUENTOS_OBLIGATORIOS_POR_LEY_NACIONAL_PROVINCIAL_MUNICIPAL", 19, cg)
+	return cg.getResultOnDemandTemplate("DESCUENTOS_OBLIGATORIOS_POR_LEY_NACIONAL_PROVINCIAL_MUNICIPAL", 19, cg)
 }
 
 func (cg *CalculoDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal) getNombre() string {
+	return "Descuentos obligatorios por ley nacional, provincial o municipal (-)"
 }

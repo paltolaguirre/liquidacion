@@ -14,10 +14,14 @@ func (cg *CalculoDonacionFisicosNacProvMunArt20) getResultInternal() float64 {
 }
 
 func (cg *CalculoDonacionFisicosNacProvMunArt20) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Donación a los fiscos nac, prov, mun, inst. art. 20 inc. e) y f) LIG (-)", "DONACION_FISICOS_NAC_PROV_MUN_ART_20", 37, cg)
+	return cg.getResultOnDemandTemplate("DONACION_FISICOS_NAC_PROV_MUN_ART_20", 37, cg)
 }
 
 func (cg *CalculoDonacionFisicosNacProvMunArt20) getTope() *float64 {
 	importeTope := (&CalculoSubtotal{cg.CalculoGanancias}).getResult() * 0.05 //5% de Subtotal
 	return &importeTope
+}
+
+func (cg *CalculoDonacionFisicosNacProvMunArt20) getNombre() string {
+	return "Donación a los fiscos nac, prov, mun, inst. art. 20 inc. e) y f) LIG (-)"
 }

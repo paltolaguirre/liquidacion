@@ -16,9 +16,13 @@ func (cg *CalculoTotalARetener) getResultInternal() float64 {
 }
 
 func (cg *CalculoTotalARetener) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Total a Retener", "TOTAL_A_RETENER", 51, cg)
+	return cg.getResultOnDemandTemplate("TOTAL_A_RETENER", 51, cg)
 }
 
 func (cg *CalculoTotalARetener) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoTotalARetener) getNombre() string {
+	return "Total a Retener"
 }

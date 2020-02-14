@@ -11,10 +11,14 @@ func (cg *CalculoGastosSepelio) getResultInternal() float64 {
 }
 
 func (cg *CalculoGastosSepelio) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Gastos de sepelio", "GASTOS_SEPELIO", 27, cg)
+	return cg.getResultOnDemandTemplate("GASTOS_SEPELIO", 27, cg)
 }
 
 func (cg *CalculoGastosSepelio) getTope() *float64 {
 	importeTope := cg.getfgValorFijoImpuestoGanancia("topemaximodescuento", "topesepelio")
 	return &importeTope
+}
+
+func (cg *CalculoGastosSepelio) getNombre() string {
+	return "Gastos de sepelio"
 }

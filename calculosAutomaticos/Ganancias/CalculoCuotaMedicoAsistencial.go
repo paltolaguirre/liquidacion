@@ -15,7 +15,7 @@ func (cg *CalculoCuotaMedicoAsistencial) getResultInternal() float64{
 }
 
 func (cg *CalculoCuotaMedicoAsistencial) getResult() float64{
-	return cg.getResultOnDemandTemplate("Cuota médico asistencial (-)", "CUOTA_MEDICO_ASISTENCIAL", 36, cg)
+	return cg.getResultOnDemandTemplate( "CUOTA_MEDICO_ASISTENCIAL", 36, cg)
 }
 
 func (cg *CalculoCuotaMedicoAsistencial) getTope() *float64 {
@@ -23,3 +23,6 @@ func (cg *CalculoCuotaMedicoAsistencial) getTope() *float64 {
 	return &importeTope
 }
 
+func (cg *CalculoCuotaMedicoAsistencial) getNombre() string {
+	return "Cuota médico asistencial (-)"
+}

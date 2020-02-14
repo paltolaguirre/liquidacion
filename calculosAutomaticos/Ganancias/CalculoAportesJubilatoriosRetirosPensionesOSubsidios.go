@@ -10,9 +10,13 @@ func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidios) getResultInterna
 }
 
 func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidios) getResult() float64{
-	return cg.getResultOnDemandTemplate("Aportes Jubilatorios Retiros, Pensiones o Subsidios", "APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS", 16, cg)
+	return cg.getResultOnDemandTemplate("APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS", 16, cg)
 }
 
 func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidios) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidios) getNombre() string {
+	return "Aportes Jubilatorios Retiros, Pensiones o Subsidios"
 }

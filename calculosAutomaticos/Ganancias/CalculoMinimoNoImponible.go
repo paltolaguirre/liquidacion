@@ -11,9 +11,13 @@ func (cg *CalculoMinimoNoImponible) getResultInternal() float64 {
 }
 
 func (cg *CalculoMinimoNoImponible) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Mínimo no Imponible", "MINIMO_NO_IMPONIBLE", 41, cg)
+	return cg.getResultOnDemandTemplate("MINIMO_NO_IMPONIBLE", 41, cg)
 }
 
 func (cg *CalculoMinimoNoImponible) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoMinimoNoImponible) getNombre() string {
+	return "Mínimo no Imponible"
 }

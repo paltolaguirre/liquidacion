@@ -24,9 +24,13 @@ func (cg *CalculoRetencionAcumulada) getResultInternal() float64 {
 }
 
 func (cg *CalculoRetencionAcumulada) getResult() float64 {
-	return cg.getResultOnDemandTemplate("RetencionAcumulada", "RETENCION_ACUMULADA", 52, cg)
+	return cg.getResultOnDemandTemplate("RETENCION_ACUMULADA", 52, cg)
 }
 
 func (cg *CalculoRetencionAcumulada) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoRetencionAcumulada) getNombre() string {
+	return "RetencionAcumulada"
 }

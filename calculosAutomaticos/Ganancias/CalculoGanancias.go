@@ -16,7 +16,7 @@ type CalculoGanancias struct {
 	Db              *gorm.DB
 }
 
-func (cg *CalculoGanancias) getResultOnDemandTemplate(nombre string, codigo string, orden int, formula iformula) float64 {
+func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, formula iformula) float64 {
 
 	var importeTotal float64
 	var importePuntero *float64
@@ -32,10 +32,10 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(nombre string, codigo stri
 	if importePuntero == nil {
 		importeTotal = formula.getResultInternal()
 		topePuntero = formula.getTope()
-		fmt.Println("Calculos Automaticos -", nombre+":", importeTotal)
+		fmt.Println("Calculos Automaticos -", formula.getNombre() +":", importeTotal)
 		importePuntero = &importeTotal
 		acumuladorRembruta := structLiquidacion.Acumulador{
-			Nombre:      nombre,
+			Nombre:      formula.getNombre(),
 			Codigo:      codigo,
 			Descripcion: "",
 			Orden:       orden,

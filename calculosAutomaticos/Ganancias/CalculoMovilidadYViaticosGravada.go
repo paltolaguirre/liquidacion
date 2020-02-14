@@ -10,9 +10,13 @@ func (cg *CalculoMovilidadYViaticosGravada) getResultInternal() float64 {
 }
 
 func (cg *CalculoMovilidadYViaticosGravada) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Movilidad y Viáticos Gravada (+)", "MOVILIDAD_Y_VIATICOS_GRAVADA", 6, cg)
+	return cg.getResultOnDemandTemplate("MOVILIDAD_Y_VIATICOS_GRAVADA", 6, cg)
 }
 
 func (cg *CalculoMovilidadYViaticosGravada) getTope() *float64 {
 	return nil
+}
+
+func (cg *CalculoMovilidadYViaticosGravada) getNombre() string {
+	return "Movilidad y Viáticos Gravada (+)"
 }

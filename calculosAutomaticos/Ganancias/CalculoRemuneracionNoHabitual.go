@@ -9,10 +9,13 @@ func (cg *CalculoRemuneracionNoHabitual) getResultInternal() float64 {
 }
 
 func (cg *CalculoRemuneracionNoHabitual) getResult() float64 {
-	return cg.getResultOnDemandTemplate("Remuneracion No Habitual", "RETRIBUCIONES_NO_HABITUALES", 2, cg)
+	return cg.getResultOnDemandTemplate("RETRIBUCIONES_NO_HABITUALES", 2, cg)
 }
 
 func (cg *CalculoRemuneracionNoHabitual) getTope() *float64 {
 	return nil
 }
 
+func (cg *CalculoRemuneracionNoHabitual) getNombre() string {
+	return "Remuneracion No Habitual"
+}
