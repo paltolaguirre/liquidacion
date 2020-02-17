@@ -932,14 +932,24 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 
 		defer conexionBD.CerrarDB(db)
 
+		defer func() {
+			if r := recover(); r != nil {
+				err := r.(error)
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+			}
+		}()
+
 		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 			if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt == nil {
 				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
 				if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 					liquidacionCalculoAutomatico.Liquidacionitems[i].Acumuladores = nil
-					importeCalculoImpuestoGanancias := (&Ganancias.CalculoGanancias{&liquidacionCalculoAutomatico.Liquidacionitems[i], &liquidacionCalculoAutomatico, db}).Calculate()
+					importeCalculoImpuestoGanancias := (&Ganancias.CalculoGanancias{&liquidacionCalculoAutomatico.Liquidacionitems[i], &liquidacionCalculoAutomatico, db, true}).Calculate()
 					if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 						importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
+					}
+					if liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario == nil {
+						liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = new(float64)
 					}
 					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(importeCalculoImpuestoGanancias, 2)
 
@@ -1001,10 +1011,15 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 				break
 			}
 		}
-
+		defer func() {
+			if r := recover(); r != nil {
+				err := r.(error)
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+			}
+		}()
 		importeCalculado.Conceptoid = &conceptoid
 		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-			importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, &liquidacionCalculoAutomatico, db}).Calculate(), 2)
+			importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, &liquidacionCalculoAutomatico, db, true}).Calculate(), 2)
 			if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 				importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
 			}

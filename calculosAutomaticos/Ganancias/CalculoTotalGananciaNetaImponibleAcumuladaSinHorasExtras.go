@@ -1,5 +1,7 @@
 package Ganancias
 
+import "github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
+
 type CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras struct {
 	CalculoGanancias
 
@@ -39,7 +41,10 @@ func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getResultInt
 
 	for i := 0; i < len(liquidaciones); i++ {
 		itemGanancias := obtenerItemGananciaFromLiquidacion(&liquidaciones[i])
-		calculoGananciasAnterior := CalculoGanancias{itemGanancias, &liquidaciones[i], cg.Db}
+		if itemGanancias == nil {
+			itemGanancias = &structLiquidacion.Liquidacionitem{}
+		}
+		calculoGananciasAnterior := CalculoGanancias{itemGanancias, &liquidaciones[i], cg.Db, true}
 		importeTotalHorasExtrasGravadas = importeTotalHorasExtrasGravadas + (&CalculoHorasExtrasGravadas{calculoGananciasAnterior}).getResult()
 		importeTotalHorasExtrasGravadasOtrosEmpleos = importeTotalHorasExtrasGravadasOtrosEmpleos + (&CalculoHorasExtrasGravadasOtrosEmpleos{calculoGananciasAnterior}).getResult()
 	}

@@ -1,6 +1,7 @@
 package Ganancias
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
@@ -14,6 +15,7 @@ type CalculoGanancias struct {
 	Liquidacionitem *structLiquidacion.Liquidacionitem
 	Liquidacion     *structLiquidacion.Liquidacion
 	Db              *gorm.DB
+	EjecutarCalculo bool
 }
 
 func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, formula iformula) float64 {
@@ -30,6 +32,9 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 	}
 
 	if importePuntero == nil {
+		if (cg.EjecutarCalculo == false) {
+			panic(errors.New("No se pudo obtener el valor de" + formula.getNombre() + " para la liquidacion con mes de liquidacion " + cg.Liquidacion.Fechaperiodoliquidacion.Month().String()))
+		}
 		importeTotal = formula.getResultInternal()
 		topePuntero = formula.getTope()
 		fmt.Println("Calculos Automaticos -", formula.getNombre() +":", importeTotal)

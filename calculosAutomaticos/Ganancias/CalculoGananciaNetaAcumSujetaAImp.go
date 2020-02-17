@@ -12,7 +12,9 @@ func (cg *CalculoGananciaNetaAcumSujetaAImp) getResultInternal() float64 {
 
 	for i := 0; i < len(liquidaciones); i++ {
 		itemGanancia := obtenerItemGananciaFromLiquidacion(&liquidaciones[i]);
-		importeTotal = importeTotal + (&CalculoGananciaNetaAcumSujetaAImp{CalculoGanancias{itemGanancia, &liquidaciones[i], cg.Db}}).getResult()
+		if itemGanancia != nil {
+			importeTotal = importeTotal + (&CalculoGananciaNetaAcumSujetaAImp{CalculoGanancias{itemGanancia, &liquidaciones[i], cg.Db, false}}).getResult()
+		}
 	}
 
 	return importeTotal
