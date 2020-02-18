@@ -529,6 +529,10 @@ func getfgDetalleCargoFamiliar(liquidacion *structLiquidacion.Liquidacion, colum
 			} else {
 				if mesdadobaja > mesperiodoliquidacion {
 					importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
+				} else {
+					if mesdadoalta > mesperiodoliquidacion {
+						importeTotal = 0
+					}
 				}
 			}
 		}
