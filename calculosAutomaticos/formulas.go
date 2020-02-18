@@ -53,24 +53,24 @@ func getfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias strin
 			}
 			importeTotal = importeTotal + importeConcepto
 
-			importeTotal = importeTotal + obtenerConceptosProrrateoMesesAnteriores(liquidacion, db)
 		}
 	}
 	return importeTotal
 }
 
 type importeMes struct {
-	Importe        float64
-	Mesliquidacion string
+	Importeunitario *float64
+	Mesliquidacion  string
 }
 
 func obtenerConceptosProrrateoMesesAnteriores(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	var importemes []importeMes
 	anioLiquidacion := liquidacion.Fechaperiodoliquidacion.Year()
+	mesLiquidacion := liquidacion.Fechaperiodoliquidacion.Format("01")
 	legajoID := liquidacion.Legajoid
 
-	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(liquidacion.ID) + "AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' and le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
-	db.Raw(sql).Row().Scan(&importemes)
+	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') < '" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
+	db.Raw(sql).Scan(&importemes)
 	var mes float64 = 1
 	var trece float64 = 13
 	var importeTotal float64 = 0
@@ -79,7 +79,7 @@ func obtenerConceptosProrrateoMesesAnteriores(liquidacion *structLiquidacion.Liq
 		if mesLiquidacion < mes {
 			mes = mesLiquidacion
 		}
-		importeConcepto := importemes[i].Importe / (trece - mes)
+		importeConcepto := *importemes[i].Importeunitario / (trece - mes)
 
 		importeTotal = importeTotal + importeConcepto
 	}
@@ -108,6 +108,7 @@ func getfgRemuneracionBruta(liquidacion *structLiquidacion.Liquidacion, db *gorm
 
 func getfgRemuneracionNoHabitual(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	importeTotal := getfgImporteTotalSegunTipoImpuestoGanancias("RETRIBUCIONES_NO_HABITUALES", liquidacion, db)
+	importeTotal = importeTotal + obtenerConceptosProrrateoMesesAnteriores(liquidacion, db)
 	fmt.Println("Calculos Automaticos - Remuneracion No Habitual:", importeTotal)
 	return importeTotal
 }
@@ -149,7 +150,7 @@ func getfgBaseSacOtrosEmpleos(liquidacion *structLiquidacion.Liquidacion, db *go
 	return getfgRemuneracionBrutaOtrosEmpleos(liquidacion, db) + getfgRemuneracionNoHabitualOtrosEmpleos(liquidacion, db) + getfgHorasExtrasGravadasOtrosEmpleos(liquidacion, db) + getfgMovilidadYViaticosGravadaOtrosEmpleos(liquidacion, db) + getfgMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos(liquidacion, db) - getfgAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos(liquidacion, db) - getfgAportesObraSocialOtrosEmpleos(liquidacion, db) - getfgCuotaSindicalOtrosEmpleos(liquidacion, db)
 }
 
-func GetfgSacPrimerCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
+func getfgSacPrimerCuota(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) float64 {
 	correspondePrimerSemetre := getfgMes(&liquidacion.Fechaperiodoliquidacion) <= 6
 	importeTotal := getfgSacCuotas(liquidacion, correspondePrimerSemetre, db)
 	fmt.Println("Calculos Automaticos - Sac Primer Cuota:", importeTotal)
@@ -248,7 +249,7 @@ func getfgSubtotalIngresos(liquidacion *structLiquidacion.Liquidacion, db *gorm.
 
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionBruta(liquidacion, db))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgRemuneracionNoHabitual(liquidacion, db))
-	arraySubtotalIngresos = append(arraySubtotalIngresos, GetfgSacPrimerCuota(liquidacion, db))
+	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacPrimerCuota(liquidacion, db))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgSacSegundaCuota(liquidacion, db))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgHorasExtrasGravadas(liquidacion, db))
 	arraySubtotalIngresos = append(arraySubtotalIngresos, getfgMovilidadYViaticosGravada(liquidacion, db))
@@ -468,7 +469,7 @@ func getfgCuotaMedicoAsistencial(liquidacion *structLiquidacion.Liquidacion, db 
 	}
 
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
-	fmt.Println("Calculos Automaticos - Cuota Medico Asistencial:", importeTotal)
+	//fmt.Println("Calculos Automaticos - Cuota Medico Asistencial:", importeTotal)
 	return importeTotal
 }
 
@@ -479,7 +480,7 @@ func getfgDonacionFiscosNacProvMunArt20(liquidacion *structLiquidacion.Liquidaci
 		importeTope = getfgSubtotal(liquidacion, db) * 0.05 //5% de Subtotal
 	}
 	importeTotal = getfgImporteTotalTope(importeTotal, importeTope)
-	fmt.Println("Calculos Automaticos - Donacion Fisico Nac, Prov, Munic art. 20:", importeTotal)
+	//fmt.Println("Calculos Automaticos - Donacion Fisico Nac, Prov, Munic art. 20:", importeTotal)
 	return importeTotal
 }
 
