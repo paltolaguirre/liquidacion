@@ -67,6 +67,7 @@ func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
 		for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 			liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
 			concepto := liquidacionitem.Concepto
+			var mes float64 = 1
 			if concepto.Basesac == true {
 				if concepto.Prorrateo == true {
 					mes = float64(cg.getfgMesesAProrratear(concepto))
@@ -84,9 +85,41 @@ func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
 		}
 
 		importeTotal = importeTotal + cg.getfgBaseSacOtrosEmpleos()
+
+		importeTotal = importeTotal + cg.obtenerConceptosProrrateoMesesAnteriores()
 	}
 
 	return importeTotal / 12
+}
+
+type importeMes struct {
+	Importeunitario *float64
+	Mesliquidacion  string
+}
+
+func (cg *CalculoGanancias) obtenerConceptosProrrateoMesesAnteriores() float64 {
+	var importemes []importeMes
+	anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
+	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
+	legajoID := cg.Liquidacion.Legajoid
+
+	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') < '" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
+	cg.Db.Raw(sql).Scan(&importemes)
+	var mes float64 = 1
+	var trece float64 = 13
+	var importeTotal float64 = 0
+	for i := 0; i < len(importemes); i++ {
+		mesLiquidacion, _ := strconv.ParseFloat(importemes[i].Mesliquidacion, 64)
+		if mesLiquidacion < mes {
+			mes = mesLiquidacion
+		}
+		importeConcepto := *importemes[i].Importeunitario / (trece - mes)
+
+		importeTotal = importeTotal + importeConcepto
+	}
+
+	return importeTotal
+
 }
 
 func (cg *CalculoGanancias) getfgBaseSacOtrosEmpleos() float64 {
@@ -149,6 +182,7 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
 		concepto := liquidacionitem.Concepto
 		tipoimpuesto := obtenerTipoImpuesto(concepto, cg.Db)
+		var mes float64 = 1
 
 		if tipoimpuesto == tipoImpuestoALasGanancias && concepto.Codigo != "IMPUESTO_GANANCIAS" && concepto.Codigo != "IMPUESTO_GANANCIAS_DEVOLUCION" {
 			if concepto.Prorrateo == true {
@@ -159,6 +193,8 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 				importeConcepto = *importeLiquidacionitem / mes
 			}
 			importeTotal = importeTotal + importeConcepto
+
+			importeTotal = importeTotal + cg.obtenerConceptosProrrateoMesesAnteriores()
 		}
 	}
 	return importeTotal
@@ -216,6 +252,10 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliar(columnaDetalleCargoFamilia
 			} else {
 				if mesdadobaja > mesperiodoliquidacion {
 					importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
+				} else {
+					if mesdadoalta > mesperiodoliquidacion {
+						importeTotal = 0
+					}
 				}
 			}
 		}
@@ -256,9 +296,9 @@ func (cg *CalculoGanancias) getfgImporteGananciasOtroEmpleoSiradig(columnaimport
 
 func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrillaSinMes(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
 	var importeTotal float64
-	anoliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
+	anioliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 
-	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anoliquidacion) + "' AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL AND ts.deleted_at;"
+	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anioliquidacion) + "' AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL AND ts.deleted_at IS NULL;"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
@@ -266,10 +306,10 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrillaSinMes(column
 
 func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
 	var importeTotal float64
-	mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
-	anoliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
+	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
+	anioliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 
-	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE to_number(to_char(mes, 'MM'),'99') <= " + strconv.Itoa(mesliquidacion) + " AND stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anoliquidacion) + "' AND + ts.deleted_at IS  NULL AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL;"
+	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE to_number(to_char(mes, 'MM'),'99') <= " + mesLiquidacion + " AND stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anioliquidacion) + "' AND ts.deleted_at IS  NULL AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL;"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
