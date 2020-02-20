@@ -17,5 +17,5 @@ func (cg *CalculoRemuneracionBruta) getTope() *float64 {
 }
 
 func (cg *CalculoRemuneracionBruta) getNombre() string {
-	return "Remuneracion Bruta"
+	return "Remuneración Bruta (+)"
 }

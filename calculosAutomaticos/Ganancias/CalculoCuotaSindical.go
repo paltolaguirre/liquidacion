@@ -17,5 +17,5 @@ func (cg *CalculoCuotaSindical) getTope() *float64 {
 }
 
 func (cg *CalculoCuotaSindical) getNombre() string {
-	return "Cuota Sindical"
+	return "Cuota sindical (-)"
 }

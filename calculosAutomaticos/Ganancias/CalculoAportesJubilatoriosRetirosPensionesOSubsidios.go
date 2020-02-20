@@ -18,5 +18,5 @@ func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidios) getTope() *float
 }
 
 func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidios) getNombre() string {
-	return "Aportes Jubilatorios Retiros, Pensiones o Subsidios"
+	return "Aportes jubilatorios, retiros, pensiones o subsidios (-)"
 }

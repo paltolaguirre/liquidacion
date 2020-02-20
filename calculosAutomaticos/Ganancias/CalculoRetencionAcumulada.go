@@ -32,5 +32,5 @@ func (cg *CalculoRetencionAcumulada) getTope() *float64 {
 }
 
 func (cg *CalculoRetencionAcumulada) getNombre() string {
-	return "RetencionAcumulada"
+	return "Retención acumulada"
 }

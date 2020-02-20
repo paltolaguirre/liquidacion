@@ -17,5 +17,5 @@ func (cg *CalculoRemuneracionNoHabitual) getTope() *float64 {
 }
 
 func (cg *CalculoRemuneracionNoHabitual) getNombre() string {
-	return "Remuneracion No Habitual"
+	return "Remuneración No Habitual (+)"
 }

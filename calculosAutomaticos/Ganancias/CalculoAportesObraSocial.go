@@ -17,5 +17,5 @@ func (cg *CalculoAportesObraSocial) getTope() *float64 {
 }
 
 func (cg *CalculoAportesObraSocial) getNombre() string {
-	return "Aportes Obra Social"
+	return "Aportes obra social (-)"
 }
