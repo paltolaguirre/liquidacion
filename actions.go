@@ -193,6 +193,13 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer conexionBD.CerrarDB(db)
 
+		if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
+			if existeConceptoImpuestoGanancias(&liquidacion_data) {
+				framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+				return
+			}
+		}
+
 		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
 			framework.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -244,6 +251,13 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			liquidacionid := liquidacion_data.ID
+
+			if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
+				if existeConceptoImpuestoGanancias(&liquidacion_data) {
+					framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+					return
+				}
+			}
 
 			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
 				framework.RespondError(w, http.StatusInternalServerError, err.Error())
@@ -316,6 +330,18 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+}
+
+func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion) bool {
+	var existeconceptoimpuestoganancias bool = false
+	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
+		concepto := *liquidacion.Liquidacionitems[i].Concepto
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+			existeconceptoimpuestoganancias = true
+			break
+		}
+	}
+	return existeconceptoimpuestoganancias
 }
 
 func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
