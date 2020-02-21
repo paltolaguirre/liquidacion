@@ -188,7 +188,12 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 			}
 			importeLiquidacionitem := liquidacionitem.Importeunitario
 			if importeLiquidacionitem != nil {
-				importeConcepto = *importeLiquidacionitem / mes
+				if concepto.ID == -6 {
+					importeConcepto = (*importeLiquidacionitem / float64(2)) / mes
+				} else {
+					importeConcepto = *importeLiquidacionitem / mes
+				}
+
 			}
 			importeTotal = importeTotal + importeConcepto
 
