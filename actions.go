@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
 	"io/ioutil"
@@ -202,6 +203,13 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		for _, liquidacionItem := range liquidacion_data.Liquidacionitems {
+
+			if !liquidacionItem.Concepto.Eseditable {
+				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db)
+			}
+		}
+
 		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
 			framework.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -286,6 +294,11 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
 				for _, liquidacionItem := range liquidacion_data.Liquidacionitems {
+
+					if !liquidacionItem.Concepto.Eseditable {
+						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db)
+					}
+
 					if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 						for _ , acumulador := range liquidacionItem.Acumuladores {
 							acumulador.ID = 0
@@ -355,6 +368,14 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func recalcularLiquidacionItem(liquidacionItem *structLiquidacion.Liquidacionitem, liquidacion structLiquidacion.Liquidacion, db *gorm.DB) {
+	solucionCalculo := calcularConcepto(liquidacionItem.Concepto.ID, &liquidacion, db)
+	liquidacionItem.Importeunitario = solucionCalculo.Importeunitario
+	liquidacionItem.Acumuladores = solucionCalculo.Acumuladores
+}
+
+
 
 func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 
@@ -1023,47 +1044,67 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		var liquidacionitem *structLiquidacion.Liquidacionitem
-		var concepto structConcepto.Concepto
 
-		//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
-		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 
-			if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
-				concepto = *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
-				liquidacionitem = &liquidacionCalculoAutomatico.Liquidacionitems[i]
-				break
-			}
-		}
 		defer func() {
 			if r := recover(); r != nil {
 				err := r.(error)
 				framework.RespondError(w, http.StatusBadRequest, err.Error())
 			}
 		}()
-		importeCalculado.Conceptoid = &conceptoid
-		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-			if liquidacionCalculoAutomatico.Tipo.Codigo != "PRIMER_QUINCENA" && liquidacionCalculoAutomatico.Tipo.Codigo != "VACACIONES" {
-				importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, &liquidacionCalculoAutomatico, db, true}).Calculate(), 2)
-				if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-					importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
-				}
-				importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculoImpuestoGanancias, liquidacionitem.Acumuladores}
-			} else {
-				framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-				return
-			}
-		} else {
-			if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
-				calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
-				calculoAutomatico.Hacercalculoautomatico()
-				importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
-				importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID, liquidacionitem.Acumuladores}
-			}
-		}
+
+		 importeCalculado = calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db)
 
 	}
 
 	framework.RespondJSON(w, http.StatusOK, importeCalculado)
 
+}
+
+
+func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, db *gorm.DB) StrCalculoAutomaticoConceptoId {
+
+	importeCalculado := StrCalculoAutomaticoConceptoId{}
+	//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
+	importeCalculado.Conceptoid = &conceptoid
+
+	var liquidacionitem *structLiquidacion.Liquidacionitem
+	var concepto *structConcepto.Concepto
+
+	for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+		if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
+			concepto = liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+			liquidacionitem = &liquidacionCalculoAutomatico.Liquidacionitems[i]
+			break
+		}
+	}
+
+	if concepto == nil || liquidacionitem == nil {
+		panic(errors.New("Error al obtener el concepto de la liquidacion"))
+	}
+
+	if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+		if liquidacionCalculoAutomatico.Tipo.Codigo != "PRIMER_QUINCENA" && liquidacionCalculoAutomatico.Tipo.Codigo != "VACACIONES" {
+			importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, liquidacionCalculoAutomatico, db, true}).Calculate(), 2)
+			if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+				importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
+			}
+
+			importeCalculado.Importeunitario = &importeCalculoImpuestoGanancias
+		} else {
+			panic(errors.New("La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias"))
+		}
+	} else {
+		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(concepto, liquidacionCalculoAutomatico)
+			calculoAutomatico.Hacercalculoautomatico()
+			importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+			importeCalculado.Importeunitario = &importeCalculadoConceptoID
+		}
+	}
+
+	importeCalculado.Acumuladores = liquidacionitem.Acumuladores
+
+	return importeCalculado
 }
