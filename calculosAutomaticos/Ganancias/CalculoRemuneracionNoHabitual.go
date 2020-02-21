@@ -5,7 +5,8 @@ type CalculoRemuneracionNoHabitual struct {
 }
 
 func (cg *CalculoRemuneracionNoHabitual) getResultInternal() float64 {
-	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("RETRIBUCIONES_NO_HABITUALES")
+	total := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("RETRIBUCIONES_NO_HABITUALES")
+	return total + cg.obtenerConceptosProrrateoMesesAnteriores()
 }
 
 func (cg *CalculoRemuneracionNoHabitual) getResult() float64 {

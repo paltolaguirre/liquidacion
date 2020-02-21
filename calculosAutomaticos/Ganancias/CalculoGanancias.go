@@ -60,7 +60,6 @@ func (cg *CalculoGanancias) Calculate() float64 {
 }
 
 func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
-	var mes float64 = 1
 	var importeTotal, importeConcepto float64
 
 	if correspondeSemestre {
@@ -103,7 +102,7 @@ func (cg *CalculoGanancias) obtenerConceptosProrrateoMesesAnteriores() float64 {
 	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
 	legajoID := cg.Liquidacion.Legajoid
 
-	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') < '" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
+	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(cg.Liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') < '" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
 	cg.Db.Raw(sql).Scan(&importemes)
 	var mes float64 = 1
 	var trece float64 = 13
@@ -175,7 +174,6 @@ func (cg *CalculoGanancias) obtenerRemunerativosMenosDescuentos() float64 {
 }
 
 func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string) float64 {
-	var mes float64 = 1
 	var importeTotal, importeConcepto float64
 
 	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
@@ -194,7 +192,6 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 			}
 			importeTotal = importeTotal + importeConcepto
 
-			importeTotal = importeTotal + cg.obtenerConceptosProrrateoMesesAnteriores()
 		}
 	}
 	return importeTotal
@@ -287,7 +284,7 @@ func (cg *CalculoGanancias) getfgImporteGananciasOtroEmpleoSiradig(columnaimport
 	anoLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("2006")
 	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
 	legajoid := strconv.Itoa(*cg.Liquidacion.Legajoid)
-	sql := "SELECT SUM(" + columnaimportegananciasotroempleosiradig + ") FROM importegananciasotroempleosiradig WHERE '" + anoLiquidacion + "' = extract(YEAR from mes) and '" + mesLiquidacion +"' = extract(MONTH from mes) " +
+	sql := "SELECT SUM(" + columnaimportegananciasotroempleosiradig + ") FROM importegananciasotroempleosiradig WHERE '" + anoLiquidacion + "' = extract(YEAR from mes) and '" + mesLiquidacion + "' = extract(MONTH from mes) " +
 		"and siradigid in (SELECT id from siradig where legajoid = " + legajoid + " ) AND importegananciasotroempleosiradig.deleted_at IS NULL"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
