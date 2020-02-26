@@ -92,6 +92,8 @@ github.com/xubiosueldos/autenticacion v0.0.0-20200211132537-97e9bc0005da h1:zZmd
 github.com/xubiosueldos/autenticacion v0.0.0-20200211132537-97e9bc0005da/go.mod h1:0MtcK02ddrzHi0moA5HRAJFm7GRI3ejNOsHILkd6YgM=
 github.com/xubiosueldos/autenticacion v0.0.0-20200212135435-cbc67e22a53d h1:5iRJlJ5XqqzUK1NXWHHfo7vCg+GkC6GhWVPGeo/li2M=
 github.com/xubiosueldos/autenticacion v0.0.0-20200212135435-cbc67e22a53d/go.mod h1:TODGt7YwphHOHpKvaDEMUjlNEMAGNI5SblMzeu+2rWw=
+github.com/xubiosueldos/autenticacion v0.0.0-20200226131900-6322c0cae6f1 h1:7DG3tnnmUNtmY/kbsB9zCZn0YI8SKuwcftpHKAo3rao=
+github.com/xubiosueldos/autenticacion v0.0.0-20200226131900-6322c0cae6f1/go.mod h1:zHfqo+PTvj8ir4FSBzwEuNRpFbaRtsL3JrHgUklJbD8=
 github.com/xubiosueldos/conexionBD v0.0.0-20190923132716-4e09b2219e84 h1:hh5eKKvHXvVp18cebfdyROdsbFhYxNajSDzO2MVTY0c=
 github.com/xubiosueldos/conexionBD v0.0.0-20190923132716-4e09b2219e84/go.mod h1:UU8Kkj74xg8kM7bVuVJx5ZFxPKho38yVlo78dVMFkMY=
 github.com/xubiosueldos/conexionBD v0.0.0-20191024181127-549b18628f2c h1:fXzuWQJmqlGl61JZFKCsD7W7bWisKv3tdJqfUI0fpos=
@@ -104,6 +106,8 @@ github.com/xubiosueldos/conexionBD v0.0.0-20200211132006-2dfbfea05747 h1:60iQdVZ
 github.com/xubiosueldos/conexionBD v0.0.0-20200211132006-2dfbfea05747/go.mod h1:EfsxARhkjHg9kvDCMrdvhN/0fCo+OYyFwg1LOuvYrjY=
 github.com/xubiosueldos/conexionBD v0.0.0-20200212135215-449aedd1f9e3 h1:04t8/C6IdvM43cRziYVH+UUWzWkGe7oJvIxajp4kg6M=
 github.com/xubiosueldos/conexionBD v0.0.0-20200212135215-449aedd1f9e3/go.mod h1:EfsxARhkjHg9kvDCMrdvhN/0fCo+OYyFwg1LOuvYrjY=
+github.com/xubiosueldos/conexionBD v0.0.0-20200226130551-12668a1bca50 h1:XQ08kYfG2/gn6CXubayftSs/yI72cOac8vWgzEWvAAU=
+github.com/xubiosueldos/conexionBD v0.0.0-20200226130551-12668a1bca50/go.mod h1:HMSOQVG2yGtw7o43PspUrFkitZsTDdgJU7TGjwmeO6c=
 github.com/xubiosueldos/framework v0.0.0-20190923130327-27a81bc804ce h1:5Lxe2+4CzL0HJVJKfuvxS521sLFVi5h6EYCwDoHZOCs=
 github.com/xubiosueldos/framework v0.0.0-20190923130327-27a81bc804ce/go.mod h1:Atdymo+Iri+Mn8+VPhqIyb6dW/S/q3xPgobPRPBirzs=
 github.com/xubiosueldos/framework v0.0.0-20191002111857-52b12ef56c62 h1:39700bnGzWF139TDjBPFLMICs+1Tk306RVSjp1KCkEw=
