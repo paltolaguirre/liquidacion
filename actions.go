@@ -293,10 +293,11 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				tx := db.Begin()
 
 				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
-				for _, liquidacionItem := range liquidacion_data.Liquidacionitems {
+				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
 					if !liquidacionItem.Concepto.Eseditable {
 						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db)
+						liquidacion_data.Liquidacionitems[i] = liquidacionItem
 					}
 
 					if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
@@ -1083,6 +1084,8 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 	if concepto == nil || liquidacionitem == nil {
 		panic(errors.New("Error al obtener el concepto de la liquidacion"))
 	}
+
+	liquidacionitem.Acumuladores = nil
 
 	if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 		if liquidacionCalculoAutomatico.Tipo.Codigo != "PRIMER_QUINCENA" && liquidacionCalculoAutomatico.Tipo.Codigo != "VACACIONES" {
