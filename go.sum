@@ -114,6 +114,8 @@ github.com/xubiosueldos/framework v0.0.0-20191002111857-52b12ef56c62 h1:39700bnG
 github.com/xubiosueldos/framework v0.0.0-20191002111857-52b12ef56c62/go.mod h1:YpPF+hDR5I/7906gpS7Tjz+/wJX5KJCVyUDAWXeeOds=
 github.com/xubiosueldos/framework v0.0.0-20191217163734-c7c2b5e645ef h1:dooDp5cqj4m9RM2P6bLuImAt2AK4JCgD67BPxLYS8EM=
 github.com/xubiosueldos/framework v0.0.0-20191217163734-c7c2b5e645ef/go.mod h1:YpPF+hDR5I/7906gpS7Tjz+/wJX5KJCVyUDAWXeeOds=
+github.com/xubiosueldos/framework v0.0.0-20200212144413-988f52a640e7 h1:OYQ3LDYr86ceQcn+ZMsN2Kx4PbrrosloEPWn3DKWLPE=
+github.com/xubiosueldos/framework v0.0.0-20200212144413-988f52a640e7/go.mod h1:YpPF+hDR5I/7906gpS7Tjz+/wJX5KJCVyUDAWXeeOds=
 github.com/xubiosueldos/monoliticComunication v0.0.0-20191028102914-d680e5cb199d h1:1Tn5K5pyqkcFf60SzmpnQBEsuPxELva5NqIx+zyEz4E=
 github.com/xubiosueldos/monoliticComunication v0.0.0-20191028102914-d680e5cb199d/go.mod h1:rhoyyFWO4tT6TbieNOMviu8wJH6QqH0p2hSVQWCL4/U=
 go.opencensus.io v0.20.1/go.mod h1:6WKK9ahsWS3RSO+PY9ZHZUfv2irvY6gN279GOPZjmmk=
