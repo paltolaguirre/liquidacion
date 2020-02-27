@@ -29,10 +29,11 @@ func obtenerTipoImpuesto(concepto *structConcepto.Concepto, db *gorm.DB) string 
 	var tipoimpuesto string
 	if concepto.Tipoimpuestoganancias != nil {
 		tipoimpuesto = concepto.Tipoimpuestoganancias.Codigo
-	} else {
+		return tipoimpuesto
+	}
+	if concepto.Tipoimpuestogananciasid != nil  {
 		sql := "SELECT codigo FROM tipoimpuestoganancias WHERE id = " + strconv.Itoa(*concepto.Tipoimpuestogananciasid)
 		db.Raw(sql).Row().Scan(&tipoimpuesto)
-
 	}
 
 	return tipoimpuesto
