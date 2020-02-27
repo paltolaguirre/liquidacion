@@ -52,7 +52,7 @@ func obtenerItemGananciaFromLiquidacion(liquidacion *structLiquidacion.Liquidaci
 	liquidacionItems := liquidacion.Liquidacionitems
 	for j := 0; j < len(liquidacionItems); j++ {
 		if liquidacionItems[j].Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItems[j].Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-			if (*itemGanancia.Importeunitario >= 0){
+			if (*liquidacionItems[j].Importeunitario >= 0){
 				itemGanancia = liquidacionItems[j]
 				break
 			}
