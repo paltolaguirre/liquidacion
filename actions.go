@@ -203,10 +203,14 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		for _, liquidacionItem := range liquidacion_data.Liquidacionitems {
+		for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
 			if !liquidacionItem.Concepto.Eseditable {
 				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db)
+				if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
+					framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+					return
+				}
 			}
 		}
 
@@ -299,7 +303,11 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 					if !liquidacionItem.Concepto.Eseditable {
 						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2)
-						liquidacion_data.Liquidacionitems[i] = liquidacionItem
+						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
+							tx.Rollback()
+							framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+							return
+						}
 					}
 
 					if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
