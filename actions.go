@@ -258,8 +258,10 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := conexionBD.ObtenerDB(tenant)
+		db2 := conexionBD.ObtenerDB(tenant)
 
 		defer conexionBD.CerrarDB(db)
+		defer conexionBD.CerrarDB(db2)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 			decoder := json.NewDecoder(r.Body)
@@ -296,7 +298,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
 					if !liquidacionItem.Concepto.Eseditable {
-						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db)
+						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2)
 						liquidacion_data.Liquidacionitems[i] = liquidacionItem
 					}
 
