@@ -5,7 +5,7 @@ type CalculoAlquileresInmueblesDestinadosASuCasaHabitacion struct {
 }
 
 func (cg *CalculoAlquileresInmueblesDestinadosASuCasaHabitacion) getResultInternal() float64 {
-	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrilla( "importe", "ALQUILER_INMUEBLES_DESTINADOS_A_CASA_HABITACION", "deducciondesgravacionsiradig")
+	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrilla("importe", "ALQUILER_INMUEBLES_DESTINADOS_A_CASA_HABITACION", "deducciondesgravacionsiradig")
 	importeTope := *cg.getTope()
 	return getfgImporteTotalTope(importeTotal, importeTope)
 }
@@ -21,4 +21,8 @@ func (cg *CalculoAlquileresInmueblesDestinadosASuCasaHabitacion) getTope() *floa
 
 func (cg *CalculoAlquileresInmueblesDestinadosASuCasaHabitacion) getNombre() string {
 	return "Alquileres de inmuebles destinados a su casa habitación (-)"
+}
+
+func (cg *CalculoAlquileresInmueblesDestinadosASuCasaHabitacion) getEsMostrable() bool {
+	return true
 }

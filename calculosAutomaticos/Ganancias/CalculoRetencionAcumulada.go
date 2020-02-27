@@ -34,3 +34,7 @@ func (cg *CalculoRetencionAcumulada) getTope() *float64 {
 func (cg *CalculoRetencionAcumulada) getNombre() string {
 	return "Retención acumulada"
 }
+
+func (cg *CalculoRetencionAcumulada) getEsMostrable() bool {
+	return true
+}

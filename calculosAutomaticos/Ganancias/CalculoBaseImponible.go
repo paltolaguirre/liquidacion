@@ -1,10 +1,10 @@
 package Ganancias
 
-type CalculoBaseImponible struct{
+type CalculoBaseImponible struct {
 	CalculoGanancias
 }
 
-func (cg *CalculoBaseImponible) getResultInternal() float64{
+func (cg *CalculoBaseImponible) getResultInternal() float64 {
 	var arrayBaseImponible []float64
 	var importeTotal float64
 
@@ -15,7 +15,7 @@ func (cg *CalculoBaseImponible) getResultInternal() float64{
 	return importeTotal
 }
 
-func (cg *CalculoBaseImponible) getResult() float64{
+func (cg *CalculoBaseImponible) getResult() float64 {
 	return cg.getResultOnDemandTemplate("BASE_IMPONIBLE", 47, cg)
 }
 
@@ -25,4 +25,8 @@ func (cg *CalculoBaseImponible) getTope() *float64 {
 
 func (cg *CalculoBaseImponible) getNombre() string {
 	return "Base Imponible"
+}
+
+func (cg *CalculoBaseImponible) getEsMostrable() bool {
+	return true
 }

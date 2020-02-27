@@ -20,3 +20,7 @@ func (cg *CalculoRetencionDelMes) getTope() *float64 {
 func (cg *CalculoRetencionDelMes) getNombre() string {
 	return "Retencion del mes"
 }
+
+func (cg *CalculoRetencionDelMes) getEsMostrable() bool {
+	return true
+}

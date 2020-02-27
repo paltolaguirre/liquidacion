@@ -15,10 +15,14 @@ func (cg *CalculoInteresesCreditosHipotecarios) getResult() float64 {
 }
 
 func (cg *CalculoInteresesCreditosHipotecarios) getTope() *float64 {
-	importeTope := cg.getfgValorFijoImpuestoGanancia( "topemaximodescuento", "topehipotecarios")
+	importeTope := cg.getfgValorFijoImpuestoGanancia("topemaximodescuento", "topehipotecarios")
 	return &importeTope
 }
 
 func (cg *CalculoInteresesCreditosHipotecarios) getNombre() string {
 	return "Intereses créditos hipotecarios (-)"
+}
+
+func (cg *CalculoInteresesCreditosHipotecarios) getEsMostrable() bool {
+	return true
 }

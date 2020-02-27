@@ -5,4 +5,5 @@ type iformula interface {
 	getResultInternal() float64
 	getTope() *float64
 	getNombre() string
+	getEsMostrable() bool
 }

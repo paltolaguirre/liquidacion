@@ -20,3 +20,7 @@ func (cg *CalculoPrimasDeSeguroParaCasoDeMuerte) getTope() *float64 {
 func (cg *CalculoPrimasDeSeguroParaCasoDeMuerte) getNombre() string {
 	return "Primas de seguro para el caso de muerte (-)"
 }
+
+func (cg *CalculoPrimasDeSeguroParaCasoDeMuerte) getEsMostrable() bool {
+	return true
+}

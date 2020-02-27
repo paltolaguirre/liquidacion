@@ -29,3 +29,7 @@ func (cg *CalculoImpuestoFijo) getTope() *float64 {
 func (cg *CalculoImpuestoFijo) getNombre() string {
 	return "Determinacion de impuesto fijo"
 }
+
+func (cg *CalculoImpuestoFijo) getEsMostrable() bool {
+	return true
+}

@@ -5,7 +5,7 @@ type CalculoCuotaSindicalOtrosEmpleos struct {
 }
 
 func (cg *CalculoCuotaSindicalOtrosEmpleos) getResultInternal() float64 {
-	return cg.getfgImporteGananciasOtroEmpleoSiradig( "aportesindical")
+	return cg.getfgImporteGananciasOtroEmpleoSiradig("aportesindical")
 }
 
 func (cg *CalculoCuotaSindicalOtrosEmpleos) getResult() float64 {
@@ -18,4 +18,8 @@ func (cg *CalculoCuotaSindicalOtrosEmpleos) getTope() *float64 {
 
 func (cg *CalculoCuotaSindicalOtrosEmpleos) getNombre() string {
 	return "Cuota sindical – Otros empleos (-)"
+}
+
+func (cg *CalculoCuotaSindicalOtrosEmpleos) getEsMostrable() bool {
+	return true
 }

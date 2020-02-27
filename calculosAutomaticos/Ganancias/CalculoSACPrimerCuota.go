@@ -20,3 +20,7 @@ func (cg *CalculoSACPrimerCuota) getTope() *float64 {
 func (cg *CalculoSACPrimerCuota) getNombre() string {
 	return "SAC Primer Cuota (+)"
 }
+
+func (cg *CalculoSACPrimerCuota) getEsMostrable() bool {
+	return true
+}

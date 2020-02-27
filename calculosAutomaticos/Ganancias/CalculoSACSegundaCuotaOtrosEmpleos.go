@@ -23,3 +23,7 @@ func (cg *CalculoSACSegundaCuotaOtrosEmpleos) getTope() *float64 {
 func (cg *CalculoSACSegundaCuotaOtrosEmpleos) getNombre() string {
 	return "SAC Segunda Cuota Otros Empleos (+)"
 }
+
+func (cg *CalculoSACSegundaCuotaOtrosEmpleos) getEsMostrable() bool {
+	return true
+}

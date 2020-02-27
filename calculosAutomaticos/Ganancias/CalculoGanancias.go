@@ -3,12 +3,13 @@ package Ganancias
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 	"github.com/xubiosueldos/conexionBD/Siradig/structSiradig"
-	"strconv"
-	"time"
 )
 
 type CalculoGanancias struct {
@@ -32,12 +33,12 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 	}
 
 	if importePuntero == nil {
-		if (cg.EjecutarCalculo == false) {
+		if cg.EjecutarCalculo == false {
 			panic(errors.New("No se pudo obtener el valor de" + formula.getNombre() + " para la liquidacion con mes de liquidacion " + cg.Liquidacion.Fechaperiodoliquidacion.Month().String()))
 		}
 		importeTotal = formula.getResultInternal()
 		topePuntero = formula.getTope()
-		fmt.Println("Calculos Automaticos -", formula.getNombre() +":", importeTotal)
+		fmt.Println("Calculos Automaticos -", formula.getNombre()+":", importeTotal)
 		importePuntero = &importeTotal
 		acumuladorRembruta := structLiquidacion.Acumulador{
 			Nombre:      formula.getNombre(),
@@ -46,6 +47,7 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 			Orden:       orden,
 			Importe:     importePuntero,
 			Tope:        topePuntero,
+			Esmostrable: formula.getEsMostrable(),
 		}
 		cg.Liquidacionitem.Acumuladores = append(cg.Liquidacionitem.Acumuladores, acumuladorRembruta)
 	} else {
@@ -316,4 +318,3 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeduc
 
 	return importeTotal
 }
-

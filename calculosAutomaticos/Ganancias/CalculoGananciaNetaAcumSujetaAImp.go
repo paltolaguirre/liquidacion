@@ -11,7 +11,7 @@ func (cg *CalculoGananciaNetaAcumSujetaAImp) getResultInternal() float64 {
 	importeTotal = importeTotal + (&CalculoGananciaNeta{cg.CalculoGanancias}).getResult()
 
 	for i := 0; i < len(liquidaciones); i++ {
-		itemGanancia := obtenerItemGananciaFromLiquidacion(&liquidaciones[i]);
+		itemGanancia := obtenerItemGananciaFromLiquidacion(&liquidaciones[i])
 		if itemGanancia != nil {
 			importeTotal = importeTotal + (&CalculoGananciaNetaAcumSujetaAImp{CalculoGanancias{itemGanancia, &liquidaciones[i], cg.Db, false}}).getResult()
 		}
@@ -30,4 +30,8 @@ func (cg *CalculoGananciaNetaAcumSujetaAImp) getTope() *float64 {
 
 func (cg *CalculoGananciaNetaAcumSujetaAImp) getNombre() string {
 	return "Ganancia neta acum. sujeta a Imp."
+}
+
+func (cg *CalculoGananciaNetaAcumSujetaAImp) getEsMostrable() bool {
+	return true
 }

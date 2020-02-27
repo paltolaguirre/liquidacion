@@ -19,3 +19,7 @@ func (cg *CalculoGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio) 
 func (cg *CalculoGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio) getNombre() string {
 	return "Gastos amortización e intereses rodado, corredores y viajantes de comercio (-)"
 }
+
+func (cg *CalculoGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio) getEsMostrable() bool {
+	return true
+}
