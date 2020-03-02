@@ -281,9 +281,15 @@ func (cg *CalculoGanancias) obtenerLiquidacionesIgualAnioLegajoMenorMes() *[]str
 	var liquidaciones []structLiquidacion.Liquidacion
 	anioperiodoliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 	mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
-	cg.Db.Set("gorm:auto_preload", true).Find(&liquidaciones, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", mesliquidacion, strconv.Itoa(anioperiodoliquidacion), *cg.Liquidacion.Legajoid)
+	cg.Db.Order("to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') desc").Set("gorm:auto_preload", true).Find(&liquidaciones, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", mesliquidacion, strconv.Itoa(anioperiodoliquidacion), *cg.Liquidacion.Legajoid)
 
 	return &liquidaciones
+}
+
+func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *structLiquidacion.Liquidacion {
+	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
+	liquidacionMesAnterior := liquidaciones[0]
+	return &liquidacionMesAnterior
 }
 
 func (cg *CalculoGanancias) getfgImporteGananciasOtroEmpleoSiradig(columnaimportegananciasotroempleosiradig string) float64 {
