@@ -19,3 +19,7 @@ func (cg *CalculoMovilidadYViaticosGravadaOtrosEmpleos) getTope() *float64 {
 func (cg *CalculoMovilidadYViaticosGravadaOtrosEmpleos) getNombre() string {
 	return "Movilidad y Viáticos Gravada Otros Empleos (+)"
 }
+
+func (cg *CalculoMovilidadYViaticosGravadaOtrosEmpleos) getEsMostrable() bool {
+	return true
+}

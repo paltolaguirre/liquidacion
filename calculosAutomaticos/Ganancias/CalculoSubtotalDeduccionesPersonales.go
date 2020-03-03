@@ -28,3 +28,7 @@ func (cg *CalculoSubtotalDeduccionesPersonales) getTope() *float64 {
 func (cg *CalculoSubtotalDeduccionesPersonales) getNombre() string {
 	return "Subtotal Deducciones Personales"
 }
+
+func (cg *CalculoSubtotalDeduccionesPersonales) getEsMostrable() bool {
+	return true
+}

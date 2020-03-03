@@ -4,10 +4,7 @@ import "github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 
 type CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras struct {
 	CalculoGanancias
-
 }
-
-
 
 func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getResultInternal() float64 {
 
@@ -64,4 +61,8 @@ func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getTope() *f
 
 func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getNombre() string {
 	return "Total Ganancia Neta Imponible Acumulada Sin Horas Extras"
+}
+
+func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getEsMostrable() bool {
+	return true
 }

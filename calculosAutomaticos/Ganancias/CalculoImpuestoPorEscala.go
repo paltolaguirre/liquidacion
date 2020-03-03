@@ -30,3 +30,7 @@ func (cg *CalculoImpuestoPorEscala) getTope() *float64 {
 func (cg *CalculoImpuestoPorEscala) getNombre() string {
 	return "Determinacion de Impuesto por Escala"
 }
+
+func (cg *CalculoImpuestoPorEscala) getEsMostrable() bool {
+	return true
+}

@@ -19,3 +19,7 @@ func (cg *CalculoRemuneracionNoHabitualOtrosEmpleos) getTope() *float64 {
 func (cg *CalculoRemuneracionNoHabitualOtrosEmpleos) getNombre() string {
 	return "Remuneración No Habitual Otros Empleos (+)"
 }
+
+func (cg *CalculoRemuneracionNoHabitualOtrosEmpleos) getEsMostrable() bool {
+	return true
+}

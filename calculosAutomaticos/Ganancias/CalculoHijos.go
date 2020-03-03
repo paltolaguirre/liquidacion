@@ -1,8 +1,9 @@
 package Ganancias
 
 import (
-	"github.com/xubiosueldos/conexionBD/Siradig/structSiradig"
 	"strconv"
+
+	"github.com/xubiosueldos/conexionBD/Siradig/structSiradig"
 )
 
 type CalculoHijos struct {
@@ -13,7 +14,7 @@ func (cg *CalculoHijos) getResultInternal() float64 {
 	var importeTotal float64 = 0
 	var detallescargofamiliarsiradig []structSiradig.Detallecargofamiliarsiradig
 
-	valorfijoMNI := cg.getfgValorFijoImpuestoGanancia( "deduccionespersonales", "valorfijomni")
+	valorfijoMNI := cg.getfgValorFijoImpuestoGanancia("deduccionespersonales", "valorfijomni")
 	sql := "SELECT * FROM detallecargofamiliarsiradig WHERE hijoid NOTNULL AND estaacargo = true AND montoanual < " + strconv.FormatFloat(valorfijoMNI, 'f', 5, 64) + "AND detallecargofamiliarsiradig.deleted_at IS NULL"
 	cg.Db.Raw(sql).Scan(&detallescargofamiliarsiradig)
 
@@ -34,4 +35,8 @@ func (cg *CalculoHijos) getTope() *float64 {
 
 func (cg *CalculoHijos) getNombre() string {
 	return "Hijos"
+}
+
+func (cg *CalculoHijos) getEsMostrable() bool {
+	return true
 }

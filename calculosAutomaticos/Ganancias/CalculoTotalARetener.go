@@ -26,3 +26,7 @@ func (cg *CalculoTotalARetener) getTope() *float64 {
 func (cg *CalculoTotalARetener) getNombre() string {
 	return "Total a Retener"
 }
+
+func (cg *CalculoTotalARetener) getEsMostrable() bool {
+	return true
+}

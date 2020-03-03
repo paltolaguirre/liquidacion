@@ -29,3 +29,7 @@ func (cg *CalculoGananciaNeta) getTope() *float64 {
 func (cg *CalculoGananciaNeta) getNombre() string {
 	return "Ganancia Neta"
 }
+
+func (cg *CalculoGananciaNeta) getEsMostrable() bool {
+	return true
+}

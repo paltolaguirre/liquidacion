@@ -1,12 +1,11 @@
 package Ganancias
 
-
 type CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos struct {
 	CalculoGanancias
 }
 
 func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos) getResultInternal() float64 {
-	return cg.getfgImporteGananciasOtroEmpleoSiradig( "materialdidactico")
+	return cg.getfgImporteGananciasOtroEmpleoSiradig("materialdidactico")
 }
 
 func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos) getResult() float64 {
@@ -19,4 +18,8 @@ func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos) getTo
 
 func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos) getNombre() string {
 	return "Material didáctico personal docente remuneración Otros Empleos (+)"
+}
+
+func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos) getEsMostrable() bool {
+	return true
 }

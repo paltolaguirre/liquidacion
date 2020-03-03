@@ -5,7 +5,7 @@ type CalculoHorasExtrasGravadasOtrosEmpleos struct {
 }
 
 func (cg *CalculoHorasExtrasGravadasOtrosEmpleos) getResultInternal() float64 {
-	return cg.getfgImporteGananciasOtroEmpleoSiradig( "importehorasextrasgravadas")
+	return cg.getfgImporteGananciasOtroEmpleoSiradig("importehorasextrasgravadas")
 }
 
 func (cg *CalculoHorasExtrasGravadasOtrosEmpleos) getResult() float64 {
@@ -18,4 +18,8 @@ func (cg *CalculoHorasExtrasGravadasOtrosEmpleos) getTope() *float64 {
 
 func (cg *CalculoHorasExtrasGravadasOtrosEmpleos) getNombre() string {
 	return "Horas Extras Gravadas Otros Empleos (+)"
+}
+
+func (cg *CalculoHorasExtrasGravadasOtrosEmpleos) getEsMostrable() bool {
+	return true
 }

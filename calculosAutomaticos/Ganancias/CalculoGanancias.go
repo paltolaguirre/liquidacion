@@ -3,12 +3,13 @@ package Ganancias
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 	"github.com/xubiosueldos/conexionBD/Siradig/structSiradig"
-	"strconv"
-	"time"
 )
 
 type CalculoGanancias struct {
@@ -32,12 +33,12 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 	}
 
 	if importePuntero == nil {
-		if (cg.EjecutarCalculo == false) {
+		if cg.EjecutarCalculo == false {
 			panic(errors.New("No se pudo obtener el valor de" + formula.getNombre() + " para la liquidacion con mes de liquidacion " + cg.Liquidacion.Fechaperiodoliquidacion.Month().String()))
 		}
 		importeTotal = formula.getResultInternal()
 		topePuntero = formula.getTope()
-		fmt.Println("Calculos Automaticos -", formula.getNombre() +":", importeTotal)
+		fmt.Println("Calculos Automaticos -", formula.getNombre()+":", importeTotal)
 		importePuntero = &importeTotal
 		acumuladorRembruta := structLiquidacion.Acumulador{
 			Nombre:      formula.getNombre(),
@@ -46,6 +47,7 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 			Orden:       orden,
 			Importe:     importePuntero,
 			Tope:        topePuntero,
+			Esmostrable: formula.getEsMostrable(),
 		}
 		cg.Liquidacionitem.Acumuladores = append(cg.Liquidacionitem.Acumuladores, acumuladorRembruta)
 	} else {
@@ -104,7 +106,7 @@ func (cg *CalculoGanancias) obtenerConceptosProrrateoMesesAnteriores() float64 {
 
 	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(cg.Liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') < '" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
 	cg.Db.Raw(sql).Scan(&importemes)
-	var mes float64 = 1
+	mes, _ := strconv.ParseFloat(mesLiquidacion, 64)
 	var trece float64 = 13
 	var importeTotal float64 = 0
 	for i := 0; i < len(importemes); i++ {
@@ -279,9 +281,15 @@ func (cg *CalculoGanancias) obtenerLiquidacionesIgualAnioLegajoMenorMes() *[]str
 	var liquidaciones []structLiquidacion.Liquidacion
 	anioperiodoliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 	mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
-	cg.Db.Set("gorm:auto_preload", true).Find(&liquidaciones, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", mesliquidacion, strconv.Itoa(anioperiodoliquidacion), *cg.Liquidacion.Legajoid)
+	cg.Db.Order("to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') desc").Set("gorm:auto_preload", true).Find(&liquidaciones, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", mesliquidacion, strconv.Itoa(anioperiodoliquidacion), *cg.Liquidacion.Legajoid)
 
 	return &liquidaciones
+}
+
+func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *structLiquidacion.Liquidacion {
+	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
+	liquidacionMesAnterior := liquidaciones[0]
+	return &liquidacionMesAnterior
 }
 
 func (cg *CalculoGanancias) getfgImporteGananciasOtroEmpleoSiradig(columnaimportegananciasotroempleosiradig string) float64 {
@@ -316,4 +324,3 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeduc
 
 	return importeTotal
 }
-
