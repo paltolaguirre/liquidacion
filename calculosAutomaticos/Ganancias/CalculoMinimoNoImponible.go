@@ -21,3 +21,7 @@ func (cg *CalculoMinimoNoImponible) getTope() *float64 {
 func (cg *CalculoMinimoNoImponible) getNombre() string {
 	return "Mínimo no Imponible"
 }
+
+func (cg *CalculoMinimoNoImponible) getEsMostrable() bool {
+	return true
+}

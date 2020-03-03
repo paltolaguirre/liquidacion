@@ -19,3 +19,7 @@ func (cg *CalculoAportesCapSocFondoRiesgoSociosProtectoresSGR) getTope() *float6
 func (cg *CalculoAportesCapSocFondoRiesgoSociosProtectoresSGR) getNombre() string {
 	return "Aportes cap. Soc. / Fondo de riesgo de socios protectores de SGR (-)"
 }
+
+func (cg *CalculoAportesCapSocFondoRiesgoSociosProtectoresSGR) getEsMostrable() bool {
+	return true
+}

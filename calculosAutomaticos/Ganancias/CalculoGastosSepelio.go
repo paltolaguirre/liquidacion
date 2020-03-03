@@ -22,3 +22,7 @@ func (cg *CalculoGastosSepelio) getTope() *float64 {
 func (cg *CalculoGastosSepelio) getNombre() string {
 	return "Gastos de sepelio (-)"
 }
+
+func (cg *CalculoGastosSepelio) getEsMostrable() bool {
+	return true
+}

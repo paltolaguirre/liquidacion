@@ -108,6 +108,8 @@ github.com/xubiosueldos/conexionBD v0.0.0-20200212135215-449aedd1f9e3 h1:04t8/C6
 github.com/xubiosueldos/conexionBD v0.0.0-20200212135215-449aedd1f9e3/go.mod h1:EfsxARhkjHg9kvDCMrdvhN/0fCo+OYyFwg1LOuvYrjY=
 github.com/xubiosueldos/conexionBD v0.0.0-20200226130551-12668a1bca50 h1:XQ08kYfG2/gn6CXubayftSs/yI72cOac8vWgzEWvAAU=
 github.com/xubiosueldos/conexionBD v0.0.0-20200226130551-12668a1bca50/go.mod h1:HMSOQVG2yGtw7o43PspUrFkitZsTDdgJU7TGjwmeO6c=
+github.com/xubiosueldos/conexionBD v0.0.0-20200227171013-37e96e8cd66e h1:q1IM+TDbJAxe4tJD0gx7RuSubSvY+mhYeONHSXOIAZM=
+github.com/xubiosueldos/conexionBD v0.0.0-20200227171013-37e96e8cd66e/go.mod h1:HMSOQVG2yGtw7o43PspUrFkitZsTDdgJU7TGjwmeO6c=
 github.com/xubiosueldos/framework v0.0.0-20190923130327-27a81bc804ce h1:5Lxe2+4CzL0HJVJKfuvxS521sLFVi5h6EYCwDoHZOCs=
 github.com/xubiosueldos/framework v0.0.0-20190923130327-27a81bc804ce/go.mod h1:Atdymo+Iri+Mn8+VPhqIyb6dW/S/q3xPgobPRPBirzs=
 github.com/xubiosueldos/framework v0.0.0-20191002111857-52b12ef56c62 h1:39700bnGzWF139TDjBPFLMICs+1Tk306RVSjp1KCkEw=

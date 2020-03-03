@@ -7,14 +7,12 @@ type CalculoGananciaNetaAcumSujetaAImp struct {
 func (cg *CalculoGananciaNetaAcumSujetaAImp) getResultInternal() float64 {
 	var importeTotal float64 = 0
 
-	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
+	liquidacion := *cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
 	importeTotal = importeTotal + (&CalculoGananciaNeta{cg.CalculoGanancias}).getResult()
 
-	for i := 0; i < len(liquidaciones); i++ {
-		itemGanancia := obtenerItemGananciaFromLiquidacion(&liquidaciones[i]);
-		if itemGanancia != nil {
-			importeTotal = importeTotal + (&CalculoGananciaNetaAcumSujetaAImp{CalculoGanancias{itemGanancia, &liquidaciones[i], cg.Db, false}}).getResult()
-		}
+	itemGanancia := obtenerItemGananciaFromLiquidacion(&liquidacion)
+	if itemGanancia != nil {
+		importeTotal = importeTotal + (&CalculoGananciaNetaAcumSujetaAImp{CalculoGanancias{itemGanancia, &liquidacion, cg.Db, false}}).getResult()
 	}
 
 	return importeTotal
@@ -30,4 +28,8 @@ func (cg *CalculoGananciaNetaAcumSujetaAImp) getTope() *float64 {
 
 func (cg *CalculoGananciaNetaAcumSujetaAImp) getNombre() string {
 	return "Ganancia neta acum. sujeta a Imp."
+}
+
+func (cg *CalculoGananciaNetaAcumSujetaAImp) getEsMostrable() bool {
+	return true
 }

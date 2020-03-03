@@ -1,10 +1,10 @@
 package Ganancias
 
-type CalculoSubtotal struct{
+type CalculoSubtotal struct {
 	CalculoGanancias
 }
 
-func (cg *CalculoSubtotal) getResultInternal() float64{
+func (cg *CalculoSubtotal) getResultInternal() float64 {
 	var arraySubtotal []float64
 
 	arraySubtotal = append(arraySubtotal, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidios{cg.CalculoGanancias}).getResult())
@@ -30,7 +30,7 @@ func (cg *CalculoSubtotal) getResultInternal() float64{
 	return (&CalculoSubtotalIngresos{cg.CalculoGanancias}).getResult() - Sum(arraySubtotal)
 }
 
-func (cg *CalculoSubtotal) getResult() float64{
+func (cg *CalculoSubtotal) getResult() float64 {
 	return cg.getResultOnDemandTemplate("SUBTOTAL", 35, cg)
 }
 
@@ -40,4 +40,8 @@ func (cg *CalculoSubtotal) getTope() *float64 {
 
 func (cg *CalculoSubtotal) getNombre() string {
 	return "Subtotal"
+}
+
+func (cg *CalculoSubtotal) getEsMostrable() bool {
+	return true
 }

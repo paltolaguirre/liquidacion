@@ -1,6 +1,5 @@
 package Ganancias
 
-
 type CalculoMovilidadYViaticosGravada struct {
 	CalculoGanancias
 }
@@ -19,4 +18,8 @@ func (cg *CalculoMovilidadYViaticosGravada) getTope() *float64 {
 
 func (cg *CalculoMovilidadYViaticosGravada) getNombre() string {
 	return "Movilidad y Viáticos Gravada (+)"
+}
+
+func (cg *CalculoMovilidadYViaticosGravada) getEsMostrable() bool {
+	return true
 }

@@ -19,3 +19,7 @@ func (cg *CalculoOtrasDeducciones) getTope() *float64 {
 func (cg *CalculoOtrasDeducciones) getNombre() string {
 	return "Otras Deducciones"
 }
+
+func (cg *CalculoOtrasDeducciones) getEsMostrable() bool {
+	return true
+}

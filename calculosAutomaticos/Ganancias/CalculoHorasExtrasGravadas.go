@@ -19,3 +19,7 @@ func (cg *CalculoHorasExtrasGravadas) getTope() *float64 {
 func (cg *CalculoHorasExtrasGravadas) getNombre() string {
 	return "Horas Extras Gravadas (+)"
 }
+
+func (cg *CalculoHorasExtrasGravadas) getEsMostrable() bool {
+	return true
+}

@@ -36,3 +36,7 @@ func (cg *CalculoSubtotalIngresos) getTope() *float64 {
 func (cg *CalculoSubtotalIngresos) getNombre() string {
 	return "Subtotal Ingresos"
 }
+
+func (cg *CalculoSubtotalIngresos) getEsMostrable() bool {
+	return true
+}

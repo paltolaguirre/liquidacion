@@ -22,3 +22,7 @@ func (cg *CalculoEmpleadosServicioDomestico) getTope() *float64 {
 func (cg *CalculoEmpleadosServicioDomestico) getNombre() string {
 	return "Empleados del servicio doméstico (-)"
 }
+
+func (cg *CalculoEmpleadosServicioDomestico) getEsMostrable() bool {
+	return true
+}

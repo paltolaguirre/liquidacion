@@ -19,3 +19,7 @@ func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracion) getTope() *float6
 func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracion) getNombre() string {
 	return "Material didáctico personal docente remuneración (+)"
 }
+
+func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracion) getEsMostrable() bool {
+	return true
+}

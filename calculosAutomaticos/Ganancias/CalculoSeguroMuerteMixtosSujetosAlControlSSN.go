@@ -20,3 +20,7 @@ func (cg *CalculoSeguroMuerteMixtosSujetosAlControlSSN) getTope() *float64 {
 func (cg *CalculoSeguroMuerteMixtosSujetosAlControlSSN) getNombre() string {
 	return "Seguro muerte/mixtos sujetos al control de la SSN (-)"
 }
+
+func (cg *CalculoSeguroMuerteMixtosSujetosAlControlSSN) getEsMostrable() bool {
+	return true
+}

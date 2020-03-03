@@ -27,3 +27,7 @@ func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getTope() *float
 func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getNombre() string {
 	return "Gastos Movilidad Viaticos Abonados por el Empleador (-)"
 }
+
+func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getEsMostrable() bool {
+	return true
+}

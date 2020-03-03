@@ -1,14 +1,14 @@
 package Ganancias
 
-type CalculoAportesObraSocialOtrosEmpleos struct{
+type CalculoAportesObraSocialOtrosEmpleos struct {
 	CalculoGanancias
 }
 
-func (cg *CalculoAportesObraSocialOtrosEmpleos) getResultInternal() float64{
-	return cg.getfgImporteGananciasOtroEmpleoSiradig( "aporteobrasocial")
+func (cg *CalculoAportesObraSocialOtrosEmpleos) getResultInternal() float64 {
+	return cg.getfgImporteGananciasOtroEmpleoSiradig("aporteobrasocial")
 }
 
-func (cg *CalculoAportesObraSocialOtrosEmpleos) getResult() float64{
+func (cg *CalculoAportesObraSocialOtrosEmpleos) getResult() float64 {
 	return cg.getResultOnDemandTemplate("APORTES_OBRA_SOCIAL_OTROS_EMPLEOS", 22, cg)
 }
 
@@ -18,4 +18,8 @@ func (cg *CalculoAportesObraSocialOtrosEmpleos) getTope() *float64 {
 
 func (cg *CalculoAportesObraSocialOtrosEmpleos) getNombre() string {
 	return "Aportes obra social – Otros empleos (-)"
+}
+
+func (cg *CalculoAportesObraSocialOtrosEmpleos) getEsMostrable() bool {
+	return true
 }

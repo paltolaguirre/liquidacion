@@ -7,7 +7,7 @@ type CalculoSACPrimerCuotaOtrosEmpleos struct {
 func (cg *CalculoSACPrimerCuotaOtrosEmpleos) getResultInternal() float64 {
 	var importeTotal float64 = 0
 	if getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion) <= 6 {
-		importeTotal = cg.getfgImporteGananciasOtroEmpleoSiradig( "sac")
+		importeTotal = cg.getfgImporteGananciasOtroEmpleoSiradig("sac")
 	}
 	return importeTotal
 }
@@ -22,4 +22,8 @@ func (cg *CalculoSACPrimerCuotaOtrosEmpleos) getTope() *float64 {
 
 func (cg *CalculoSACPrimerCuotaOtrosEmpleos) getNombre() string {
 	return "SAC Primer Cuota Otros Empleos (+)"
+}
+
+func (cg *CalculoSACPrimerCuotaOtrosEmpleos) getEsMostrable() bool {
+	return true
 }
