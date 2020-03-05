@@ -387,14 +387,6 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func recalcularLiquidacionItem(liquidacionItem *structLiquidacion.Liquidacionitem, liquidacion structLiquidacion.Liquidacion, db *gorm.DB) {
-	solucionCalculo := calcularConcepto(liquidacionItem.Concepto.ID, &liquidacion, db)
-	liquidacionItem.Importeunitario = solucionCalculo.Importeunitario
-	liquidacionItem.Acumuladores = solucionCalculo.Acumuladores
-}
-
-
-
 func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
@@ -1000,21 +992,13 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 			if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt == nil {
 				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+
 				if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-					if liquidacionCalculoAutomatico.Tipo.Codigo != "PRIMER_QUINCENA" && liquidacionCalculoAutomatico.Tipo.Codigo != "VACACIONES" {
-						liquidacionCalculoAutomatico.Liquidacionitems[i].Acumuladores = nil
-						importeCalculoImpuestoGanancias := (&Ganancias.CalculoGanancias{&liquidacionCalculoAutomatico.Liquidacionitems[i], &liquidacionCalculoAutomatico, db, true}).Calculate()
-						if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-							importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
-						}
-						if liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario == nil {
-							liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = new(float64)
-						}
-						*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(importeCalculoImpuestoGanancias, 2)
-					} else {
-						framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-						return
+					importeCalculoImpuestoGanancias := calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db)
+					if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+						importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
 					}
+					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(importeCalculoImpuestoGanancias, 2)
 
 				} else {
 					if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
@@ -1071,7 +1055,7 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 			}
 		}()
 
-		importeCalculado = calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db)
+		 importeCalculado = calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db)
 
 	}
 
@@ -1096,17 +1080,10 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 			liquidacionitem = &liquidacionCalculoAutomatico.Liquidacionitems[i]
 			break
 		}
-	}
 
-	if concepto == nil || liquidacionitem == nil {
-		panic(errors.New("Error al obtener el concepto de la liquidacion"))
-	}
-
-	liquidacionitem.Acumuladores = nil
-
-	if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-		if liquidacionCalculoAutomatico.Tipo.Codigo != "PRIMER_QUINCENA" && liquidacionCalculoAutomatico.Tipo.Codigo != "VACACIONES" {
-			importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, liquidacionCalculoAutomatico, db, true}).Calculate(), 2)
+		importeCalculado.Conceptoid = &conceptoid
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+			importeCalculoImpuestoGanancias := roundTo(calculosAutomaticos.GetfgRetencionMes(&liquidacionCalculoAutomatico, db), 2)
 			if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 				importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
 			}
