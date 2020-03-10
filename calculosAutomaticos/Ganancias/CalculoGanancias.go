@@ -287,8 +287,11 @@ func (cg *CalculoGanancias) obtenerLiquidacionesIgualAnioLegajoMenorMes() *[]str
 }
 
 func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *structLiquidacion.Liquidacion {
+	var liquidacionMesAnterior structLiquidacion.Liquidacion
 	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
-	liquidacionMesAnterior := liquidaciones[0]
+	if len(liquidaciones) > 0 {
+		liquidacionMesAnterior = liquidaciones[0]
+	}
 	return &liquidacionMesAnterior
 }
 
