@@ -57,8 +57,42 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 }
 
 func (cg *CalculoGanancias) Calculate() float64 {
-
+	cg.invocarCalculosLiquidacionAnual()
 	return (&CalculoRetencionDelMes{*cg}).getResult()
+}
+
+func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
+	(&CalculoRemuneracionNoAlcanzadaExentaSinHorasExtras{*cg}).getResult()
+	(&CalculoHorasExtrasRemuneracionExenta{*cg}).getResult()
+	(&CalculoMovilidadYViaticosRemuneracionExenta{*cg}).getResult()
+	(&CalculoMaterialDidacticoPersonalDocenteRemuneracionExenta{*cg}).getResult()
+	(&CalculoRemuneracionNoAlcanzadaExentaSinHorasExtrasOtrosEmpleos{*cg}).getResult()
+	(&CalculoHorasExtrasRemuneracionExentaOtrosEmpleos{*cg}).getResult()
+	(&CalculoMovilidadYViaticosRemuneracionExentaOtrosEmpleos{*cg}).getResult()
+	(&CalculoMaterialDidacticoPersonalDocenteRemuneracionExentaOtrosEmpleos{*cg}).getResult()
+	(&CalculoSubtotalRemuneracionGravada{*cg}).getResult()
+	(&CalculoSubtotalRemuneracionNoGravadaNoAlcanzadaExenta{*cg}).getResult()
+	(&CalculoTotalRemuneraciones{*cg}).getResult()
+	(&CalculoPrimasDeSeguroParaElCasoDeMuerteAnual{*cg}).getResult()
+	(&CalculoSeguroMuerteMixtosSujetosAlControlSSNAnual{*cg}).getResult()
+	(&CalculoSegurosRetirosPrivadosSujetosAlControlSSNAnual{*cg}).getResult()
+	(&CalculoAdquisicionDeCuotapartesDeFCIConFinesDeRetiro{*cg}).getResult()
+	(&CalculoHonorariosServAsistenciaSanitariaMedicaYParamedica{*cg}).getResult()
+	(&CalculoAportesCajasComplementariasFondosCompensadoresDePrevSimilares{*cg}).getResult()
+	(&CalculoSubtotalDeduccionesGenerales{*cg}).getResult()
+	(&CalculoSubtotalAnual{*cg}).getResult()
+	(&CalculoGananciaNetaAnual{*cg}).getResult()
+	(&CalculoConyugeAnual{*cg}).getResult()
+	(&CalculoHijosAnual{*cg}).getResult()
+	(&CalculoSubtotalCargasFamilia{*cg}).getResult()
+	(&CalculoSubtotalDeduccionesPersonalesAnual{*cg}).getResult()
+	(&CalculoRemuneracionSujetaAImpuesto{*cg}).getResult()
+	(&CalculoRemuneracionSujetaAImpuestoSinIncluirHorasExtras{*cg}).getResult()
+	(&CalculoAlicuotaArt90LeyGanancias{*cg}).getResult()
+	(&CalculoAlicuotaAplicableSinIncluirHorasExtras{*cg}).getResult()
+	(&CalculoImpuestoDeterminado{*cg}).getResult()
+	(&CalculoPagosACuenta{*cg}).getResult()
+	(&CalculoSaldoAPagar{*cg}).getResult()
 }
 
 func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
