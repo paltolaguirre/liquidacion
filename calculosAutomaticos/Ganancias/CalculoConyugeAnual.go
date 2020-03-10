@@ -5,8 +5,8 @@ type CalculoConyugeAnual struct {
 }
 
 func (cg *CalculoConyugeAnual) getResultInternal() float64 {
-	/*No usa el mismo calculo, hay que recalcular*/
-	return cg.getfgDetalleCargoFamiliar("conyugeid", "valorfijoconyuge", 100)
+	valorfijoMNI := cg.getfgValorFijoImpuestoGanancia("deduccionespersonales", "valorfijomni")
+	return cg.getfgDetalleCargoFamiliarAnual("conyugeid", "valorfijoconyuge", 100, valorfijoMNI)
 }
 
 func (cg *CalculoConyugeAnual) getResult() float64 {
