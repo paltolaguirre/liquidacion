@@ -7,7 +7,7 @@ type CalculoGananciaNetaAcumSujetaAImp struct {
 func (cg *CalculoGananciaNetaAcumSujetaAImp) getResultInternal() float64 {
 	var importeTotal float64 = 0
 
-	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
+	liquidacion := *cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
 	importeTotal = importeTotal + (&CalculoGananciaNeta{cg.CalculoGanancias}).getResult()
 
 	itemGanancia := obtenerItemGananciaFromLiquidacion(&liquidacion)
