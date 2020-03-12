@@ -9,7 +9,7 @@ func (cg *CalculoSubtotalAnual) getResultInternal() float64 {
 }
 
 func (cg *CalculoSubtotalAnual) getResult() float64 {
-	return cg.getResultOnDemandTemplate("SUBTOTAL_ANUAL", 35, cg)
+	return cg.getResultOnDemandTemplate("SUBTOTAL_ANUAL", 0, cg)
 }
 
 func (cg *CalculoSubtotalAnual) getTope() *float64 {
