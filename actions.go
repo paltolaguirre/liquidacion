@@ -1088,6 +1088,7 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 
 	var liquidacionitem *structLiquidacion.Liquidacionitem
 	var concepto *structConcepto.Concepto
+	var Tipocalculoautomatico structConcepto.Tipocalculoautomatico
 
 	for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 
@@ -1102,20 +1103,30 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 		panic(errors.New("Error al obtener el concepto de la liquidacion"))
 	}
 
-	liquidacionitem.Acumuladores = nil
+	if concepto.Tipocalculoautomaticoid != nil && concepto.Tipocalculoautomatico == nil {
+		ID := *concepto.Tipocalculoautomaticoid
+		db.Set("gorm:auto_preload", true).First(&Tipocalculoautomatico, ID)
+		concepto.Tipocalculoautomatico = &Tipocalculoautomatico
+	}
 
-	if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-		if liquidacionCalculoAutomatico.Tipo.Codigo != "PRIMER_QUINCENA" && liquidacionCalculoAutomatico.Tipo.Codigo != "VACACIONES" {
-			importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, liquidacionCalculoAutomatico, db, true}).Calculate(), 2)
-			if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-				importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
-			}
+	if concepto.Tipocalculoautomatico == nil {
+		concepto.Tipocalculoautomatico = &structConcepto.Tipocalculoautomatico{}
+		concepto.Tipocalculoautomatico.Codigo = "NO_APLICA";
+	}
 
-			importeCalculado.Importeunitario = &importeCalculoImpuestoGanancias
-		} else {
-			panic(errors.New("La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias"))
+	if concepto.Tipocalculoautomatico.Codigo == "FORMULA" {
+
+		if *concepto.Formulanombre == "ImpuestoALasGanancias" {
+			importeCalculado = ImpuestoALasGanancias(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
 		}
-	} else {
+
+		if *concepto.Formulanombre == "ImpuestoALasGananciasDevolucion" {
+			importeCalculado = ImpuestoALasGananciasDevolucion(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
+		}
+
+		//CODIGO PARA EJECUTAR LAS FORMULAS AMIGO
+
+	} else if concepto.Tipocalculoautomatico.Codigo == "PORCENTAJE" {
 		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
 			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(concepto, liquidacionCalculoAutomatico)
 			calculoAutomatico.Hacercalculoautomatico()
@@ -1124,7 +1135,35 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 		}
 	}
 
-	importeCalculado.Acumuladores = liquidacionitem.Acumuladores
+	return importeCalculado
+}
 
+func ImpuestoALasGanancias(concepto structConcepto.Concepto, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, liquidacionitem *structLiquidacion.Liquidacionitem, db *gorm.DB) StrCalculoAutomaticoConceptoId {
+	importeCalculado := StrCalculoAutomaticoConceptoId{}
+
+	liquidacionitem.Acumuladores = nil
+
+	if liquidacionCalculoAutomatico.Tipo.Codigo != "PRIMER_QUINCENA" && liquidacionCalculoAutomatico.Tipo.Codigo != "VACACIONES" {
+		importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, liquidacionCalculoAutomatico, db, true}).Calculate(), 2)
+		if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+			importeCalculoImpuestoGanancias = importeCalculoImpuestoGanancias * -1
+		}
+
+		importeCalculado.Importeunitario = &importeCalculoImpuestoGanancias
+	} else {
+		panic(errors.New("La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias"))
+	}
+
+	importeCalculado.Acumuladores = liquidacionitem.Acumuladores
+	importeCalculado.Conceptoid = &concepto.ID
+
+	return importeCalculado
+}
+
+
+func ImpuestoALasGananciasDevolucion(concepto structConcepto.Concepto, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, liquidacionitem *structLiquidacion.Liquidacionitem, db *gorm.DB) StrCalculoAutomaticoConceptoId {
+	importeCalculado := ImpuestoALasGanancias(concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
+	importeFinal := (*importeCalculado.Importeunitario) * -1
+	importeCalculado.Importeunitario = &importeFinal
 	return importeCalculado
 }
