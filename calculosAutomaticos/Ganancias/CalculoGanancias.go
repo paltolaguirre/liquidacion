@@ -57,8 +57,42 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 }
 
 func (cg *CalculoGanancias) Calculate() float64 {
-
+	cg.invocarCalculosLiquidacionAnual()
 	return (&CalculoRetencionDelMes{*cg}).getResult()
+}
+
+func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
+	(&CalculoRemuneracionNoAlcanzadaExentaSinHorasExtras{*cg}).getResult()
+	(&CalculoHorasExtrasRemuneracionExenta{*cg}).getResult()
+	(&CalculoMovilidadYViaticosRemuneracionExenta{*cg}).getResult()
+	(&CalculoMaterialDidacticoPersonalDocenteRemuneracionExenta{*cg}).getResult()
+	(&CalculoRemuneracionNoAlcanzadaExentaSinHorasExtrasOtrosEmpleos{*cg}).getResult()
+	(&CalculoHorasExtrasRemuneracionExentaOtrosEmpleos{*cg}).getResult()
+	(&CalculoMovilidadYViaticosRemuneracionExentaOtrosEmpleos{*cg}).getResult()
+	(&CalculoMaterialDidacticoPersonalDocenteRemuneracionExentaOtrosEmpleos{*cg}).getResult()
+	(&CalculoSubtotalRemuneracionGravada{*cg}).getResult()
+	(&CalculoSubtotalRemuneracionNoGravadaNoAlcanzadaExenta{*cg}).getResult()
+	(&CalculoTotalRemuneraciones{*cg}).getResult()
+	(&CalculoPrimasDeSeguroParaElCasoDeMuerteAnual{*cg}).getResult()
+	(&CalculoSeguroMuerteMixtosSujetosAlControlSSNAnual{*cg}).getResult()
+	(&CalculoSegurosRetirosPrivadosSujetosAlControlSSNAnual{*cg}).getResult()
+	(&CalculoAdquisicionDeCuotapartesDeFCIConFinesDeRetiro{*cg}).getResult()
+	(&CalculoHonorariosServAsistenciaSanitariaMedicaYParamedica{*cg}).getResult()
+	(&CalculoAportesCajasComplementariasFondosCompensadoresDePrevSimilares{*cg}).getResult()
+	(&CalculoSubtotalDeduccionesGenerales{*cg}).getResult()
+	(&CalculoSubtotalAnual{*cg}).getResult()
+	(&CalculoGananciaNetaAnual{*cg}).getResult()
+	(&CalculoConyugeAnual{*cg}).getResult()
+	(&CalculoHijosAnual{*cg}).getResult()
+	(&CalculoSubtotalCargasFamilia{*cg}).getResult()
+	(&CalculoSubtotalDeduccionesPersonalesAnual{*cg}).getResult()
+	(&CalculoRemuneracionSujetaAImpuesto{*cg}).getResult()
+	(&CalculoRemuneracionSujetaAImpuestoSinIncluirHorasExtras{*cg}).getResult()
+	(&CalculoAlicuotaArt90LeyGanancias{*cg}).getResult()
+	(&CalculoAlicuotaAplicableSinIncluirHorasExtras{*cg}).getResult()
+	(&CalculoImpuestoDeterminado{*cg}).getResult()
+	(&CalculoPagosACuenta{*cg}).getResult()
+	(&CalculoSaldoAPagar{*cg}).getResult()
 }
 
 func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
@@ -260,6 +294,43 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliar(columnaDetalleCargoFamilia
 					if mesdadoalta > mesperiodoliquidacion {
 						importeTotal = 0
 					}
+				}
+			}
+		}
+	}
+
+	return importeTotal
+}
+
+func (cg *CalculoGanancias) getfgDetalleCargoFamiliarAnual(columnaDetalleCargoFamiliar string, valorfijocolumna string, porcentaje float64, valorfijoMNI float64) float64 {
+	var importeTotal float64
+	var tienevalorbeneficio bool
+	anioperiodoliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
+	mesperiodoliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
+
+	var detallecargofamiliar structSiradig.Detallecargofamiliarsiradig
+	sql := "SELECT dcfs.* FROM siradig s INNER JOIN detallecargofamiliarsiradig dcfs ON s.id = dcfs.siradigid where to_char(periodosiradig, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND dcfs." + columnaDetalleCargoFamiliar + " NOTNULL AND s.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND s.deleted_at IS NULL AND dcfs.deleted_at IS NULL"
+	cg.Db.Raw(sql).Scan(&detallecargofamiliar)
+	sql = "SELECT valor FROM siradig s INNER JOIN beneficiosiradig bs ON s.id = bs.siradigid WHERE to_number(to_char(bs.mesdesde, 'MM'),'99') <= " + strconv.Itoa(mesperiodoliquidacion) + " AND to_number(to_char(bs.meshasta, 'MM'), '99') > " + strconv.Itoa(mesperiodoliquidacion) + " AND bs.siradigtipogrillaid = -24 AND to_char(s.periodosiradig, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND s.deleted_at IS NULL AND bs.deleted_at IS NULL"
+	cg.Db.Raw(sql).Row().Scan(&tienevalorbeneficio)
+
+	if detallecargofamiliar.ID != 0 {
+
+		if *detallecargofamiliar.Montoanual < valorfijoMNI {
+
+			mesdadobaja := getfgMes(detallecargofamiliar.Meshasta)
+			mesdadoalta := getfgMes(detallecargofamiliar.Mesdesde)
+			valorfijo := cg.getfgValorFijoImpuestoGanancia("deduccionespersonales", valorfijocolumna)
+
+			if tienevalorbeneficio == true {
+				valorfijo = valorfijo * 1.22
+			}
+
+			if mesdadobaja == 0 {
+				importeTotal = (valorfijo / 12) * -float64(12-mesdadoalta) * (porcentaje / 100)
+			} else {
+				if mesdadobaja <= 12 {
+					importeTotal = (valorfijo / 12) * float64(mesdadobaja-mesdadoalta) * (porcentaje / 100)
 				}
 			}
 		}

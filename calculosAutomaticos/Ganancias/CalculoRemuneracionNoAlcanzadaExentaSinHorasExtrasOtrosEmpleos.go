@@ -9,7 +9,7 @@ func (cg *CalculoRemuneracionNoAlcanzadaExentaSinHorasExtrasOtrosEmpleos) getRes
 }
 
 func (cg *CalculoRemuneracionNoAlcanzadaExentaSinHorasExtrasOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("REMUNERACION_NO_ALCANZADA_O_EXENTA", 0, cg)
+	return cg.getResultOnDemandTemplate("REMUNERACION_NO_ALCANZADA_O_EXENTA_OTROS_EMPLEOS", 0, cg)
 }
 
 func (cg *CalculoRemuneracionNoAlcanzadaExentaSinHorasExtrasOtrosEmpleos) getTope() *float64 {

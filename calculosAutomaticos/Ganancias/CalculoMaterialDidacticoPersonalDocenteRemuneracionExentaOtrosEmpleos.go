@@ -9,7 +9,7 @@ func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionExentaOtrosEmpleos)
 }
 
 func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionExentaOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("MATERIAL_DIDACTICO_PERSONAL_DOCENTE_REMUNERACION_EXENTA", 0, cg)
+	return cg.getResultOnDemandTemplate("MATERIAL_DIDACTICO_PERSONAL_DOCENTE_REMUNERACION_EXENTA_OTROS_EMPLEOS", 0, cg)
 }
 
 func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionExentaOtrosEmpleos) getTope() *float64 {
