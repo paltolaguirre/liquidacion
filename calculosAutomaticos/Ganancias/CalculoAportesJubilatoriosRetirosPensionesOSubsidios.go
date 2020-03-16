@@ -5,7 +5,7 @@ type CalculoAportesJubilatoriosRetirosPensionesOSubsidios struct {
 }
 
 func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidios) getResultInternal() float64 {
-	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS", false)
+	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS")
 }
 
 func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidios) getResult() float64 {

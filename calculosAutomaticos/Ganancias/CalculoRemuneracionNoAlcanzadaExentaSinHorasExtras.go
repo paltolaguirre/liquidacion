@@ -5,7 +5,7 @@ type CalculoRemuneracionNoAlcanzadaExentaSinHorasExtras struct {
 }
 
 func (cg *CalculoRemuneracionNoAlcanzadaExentaSinHorasExtras) getResultInternal() float64 {
-	total := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_NO_ALCANZADA_O_EXENTA", false)
+	total := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_NO_ALCANZADA_O_EXENTA")
 	return total + cg.obtenerConceptosProrrateoMesesAnteriores()
 }
 
