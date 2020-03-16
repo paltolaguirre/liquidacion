@@ -171,13 +171,13 @@ func (cg *CalculoGanancias) obtenerRemunerativosMenosDescuentos() float64 {
 	return totalRemunerativos - totalDescuentos
 }
 
-func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string) float64 {
+func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string, agregarLiquidacionesItemsMismoMes bool) float64 {
 	var importeTotal, importeConcepto float64
 	var liquidacionPrimerQuincena structLiquidacion.Liquidacion
 
-	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" {
+	if (cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || cg.Liquidacion.Tipo.Codigo == "VACACIONES") && agregarLiquidacionesItemsMismoMes {
 		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
-		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND tipoid = ? ", mesliquidacion, -2)
+		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ?", mesliquidacion)
 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
 

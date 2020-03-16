@@ -5,7 +5,7 @@ type CalculoDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal struct {
 }
 
 func (cg *CalculoDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal) getResultInternal() float64 {
-	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("DESCUENTOS_OBLIGATORIOS_POR_LEY_NACIONAL_PROVINCIAL_MUNICIPAL")
+	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("DESCUENTOS_OBLIGATORIOS_POR_LEY_NACIONAL_PROVINCIAL_MUNICIPAL", false)
 }
 
 func (cg *CalculoDescuentosObligatoriosPorLeyNacionalProvincialOMunicipal) getResult() float64 {

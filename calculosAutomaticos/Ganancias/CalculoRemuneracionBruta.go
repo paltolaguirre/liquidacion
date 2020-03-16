@@ -5,7 +5,7 @@ type CalculoRemuneracionBruta struct {
 }
 
 func (cg *CalculoRemuneracionBruta) getResultInternal() float64 {
-	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA")
+	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("REMUNERACION_BRUTA", false)
 }
 
 func (cg *CalculoRemuneracionBruta) getResult() float64 {
