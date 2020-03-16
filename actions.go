@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/apiClientFormula"
 	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
 	"io/ioutil"
 	"math"
@@ -178,6 +179,8 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+
+	autenticacion := r.Header.Get("Authorization")
 	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
@@ -206,7 +209,7 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 		for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
 			if !liquidacionItem.Concepto.Eseditable {
-				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db)
+				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
 				if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
 					framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
 					return
@@ -248,6 +251,7 @@ func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion)
 func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	autenticacion := r.Header.Get("Authorization")
 	if tokenValido {
 
 		params := mux.Vars(r)
@@ -309,7 +313,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
 					if !liquidacionItem.Concepto.Eseditable {
-						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2)
+						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
 						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
 							tx.Rollback()
 							framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
@@ -387,8 +391,8 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func recalcularLiquidacionItem(liquidacionItem *structLiquidacion.Liquidacionitem, liquidacion structLiquidacion.Liquidacion, db *gorm.DB) {
-	solucionCalculo := calcularConcepto(liquidacionItem.Concepto.ID, &liquidacion, db)
+func recalcularLiquidacionItem(liquidacionItem *structLiquidacion.Liquidacionitem, liquidacion structLiquidacion.Liquidacion, db *gorm.DB, autenticacion string) {
+	solucionCalculo := calcularConcepto(liquidacionItem.Concepto.ID, &liquidacion, db, autenticacion)
 	liquidacionItem.Importeunitario = solucionCalculo.Importeunitario
 	liquidacionItem.Acumuladores = solucionCalculo.Acumuladores
 }
@@ -974,6 +978,7 @@ func roundTo(num float64, precision int) float64 {
 func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	autenticacion := r.Header.Get("Authorization")
 	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
@@ -1002,7 +1007,7 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
 
 				liquidacionCalculoAutomaticoCopia := liquidacionCalculoAutomatico
-				resultado := calcularConcepto(concepto.ID, &liquidacionCalculoAutomaticoCopia, db)
+				resultado := calcularConcepto(concepto.ID, &liquidacionCalculoAutomaticoCopia, db, autenticacion)
 
 				liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = resultado.Importeunitario
 				liquidacionCalculoAutomatico.Liquidacionitems[i].Acumuladores = resultado.Acumuladores
@@ -1020,6 +1025,8 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
 	var importeCalculado StrCalculoAutomaticoConceptoId
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+
+	autenticacion := r.Header.Get("Authorization")
 	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
@@ -1054,7 +1061,7 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 			}
 		}()
 
-		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db)
+		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db, autenticacion)
 
 		if calculo == nil {
 			
@@ -1069,7 +1076,7 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 }
 
 
-func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, db *gorm.DB) *StrCalculoAutomaticoConceptoId {
+func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, db *gorm.DB, autenticacion string ) *StrCalculoAutomaticoConceptoId {
 
 	importeCalculado := StrCalculoAutomaticoConceptoId{}
 	//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
@@ -1118,6 +1125,13 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 		}
 
 		//CODIGO PARA EJECUTAR LAS FORMULAS AMIGO
+		resultadoFormula, err := apiClientFormula.ExecuteFormulaLiquidacion(autenticacion, liquidacionCalculoAutomatico, *concepto.Formulanombre)
+
+		if err != nil {
+			panic(err)
+		}
+
+		importeCalculado.Importeunitario = &resultadoFormula
 
 	} else if concepto.Tipocalculoautomatico.Codigo == "PORCENTAJE" {
 		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
