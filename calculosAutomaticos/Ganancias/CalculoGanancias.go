@@ -57,8 +57,27 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 }
 
 func (cg *CalculoGanancias) Calculate() float64 {
+	cg.obtenerLiquidacionesItemsPrimerQuincenaVacaciones()
 	cg.invocarCalculosLiquidacionAnual()
 	return (&CalculoRetencionDelMes{*cg}).getResult()
+}
+
+func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() {
+	var liquidacionPrimerQuincena structLiquidacion.Liquidacion
+
+	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || cg.Liquidacion.Tipo.Codigo == "VACACIONES" {
+		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
+		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ?", mesliquidacion)
+
+		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
+
+			liquidacionItem := liquidacionPrimerQuincena.Liquidacionitems[i]
+			cg.Liquidacion.Liquidacionitems = append(cg.Liquidacion.Liquidacionitems, liquidacionItem)
+
+		}
+
+	}
+
 }
 
 func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
@@ -205,22 +224,8 @@ func (cg *CalculoGanancias) obtenerRemunerativosMenosDescuentos() float64 {
 	return totalRemunerativos - totalDescuentos
 }
 
-func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string, agregarLiquidacionesItemsMismoMes bool) float64 {
+func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string) float64 {
 	var importeTotal, importeConcepto float64
-	var liquidacionPrimerQuincena structLiquidacion.Liquidacion
-
-	if (cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || cg.Liquidacion.Tipo.Codigo == "VACACIONES") && agregarLiquidacionesItemsMismoMes {
-		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
-		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ?", mesliquidacion)
-
-		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
-
-			liquidacionItem := liquidacionPrimerQuincena.Liquidacionitems[i]
-			cg.Liquidacion.Liquidacionitems = append(cg.Liquidacion.Liquidacionitems, liquidacionItem)
-
-		}
-
-	}
 
 	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
