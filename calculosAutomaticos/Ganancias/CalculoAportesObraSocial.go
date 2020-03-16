@@ -5,7 +5,7 @@ type CalculoAportesObraSocial struct {
 }
 
 func (cg *CalculoAportesObraSocial) getResultInternal() float64 {
-	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("APORTES_OBRA_SOCIAL")
+	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("APORTES_OBRA_SOCIAL", false)
 }
 
 func (cg *CalculoAportesObraSocial) getResult() float64 {

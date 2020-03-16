@@ -5,7 +5,7 @@ type CalculoHorasExtrasGravadas struct {
 }
 
 func (cg *CalculoHorasExtrasGravadas) getResultInternal() float64 {
-	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("HORAS_EXTRAS_REMUNERACION_GRAVADA")
+	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("HORAS_EXTRAS_REMUNERACION_GRAVADA", false)
 }
 
 func (cg *CalculoHorasExtrasGravadas) getResult() float64 {
