@@ -5,7 +5,7 @@ type CalculoHorasExtrasRemuneracionExenta struct {
 }
 
 func (cg *CalculoHorasExtrasRemuneracionExenta) getResultInternal() float64 {
-	total := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("HORAS_EXTRAS_REMUNERACION_EXENTA", false)
+	total := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("HORAS_EXTRAS_REMUNERACION_EXENTA")
 	return total + cg.obtenerConceptosProrrateoMesesAnteriores()
 }
 

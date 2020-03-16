@@ -5,7 +5,7 @@ type CalculoMovilidadYViaticosRemuneracionExenta struct {
 }
 
 func (cg *CalculoMovilidadYViaticosRemuneracionExenta) getResultInternal() float64 {
-	total := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("MOVILIDAD_Y_VIATICOS_REMUNERACION_EXENTA", false)
+	total := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("MOVILIDAD_Y_VIATICOS_REMUNERACION_EXENTA")
 	return total + cg.obtenerConceptosProrrateoMesesAnteriores()
 }
 
