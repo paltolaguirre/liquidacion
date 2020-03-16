@@ -9,7 +9,7 @@ func (cg *CalculoMovilidadYViaticosRemuneracionExentaOtrosEmpleos) getResultInte
 }
 
 func (cg *CalculoMovilidadYViaticosRemuneracionExentaOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("MOVILIDAD_Y_VIATICOS_REMUNERACION_EXENTA", 0, cg)
+	return cg.getResultOnDemandTemplate("MOVILIDAD_Y_VIATICOS_REMUNERACION_EXENTA_OTROS_EMPLEOS", 0, cg)
 }
 
 func (cg *CalculoMovilidadYViaticosRemuneracionExentaOtrosEmpleos) getTope() *float64 {
