@@ -138,7 +138,7 @@ func (cg *CalculoGanancias) obtenerConceptosProrrateoMesesAnteriores() float64 {
 	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
 	legajoID := cg.Liquidacion.Legajoid
 
-	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(cg.Liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') < '" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
+	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(cg.Liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') < ='" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
 	cg.Db.Raw(sql).Scan(&importemes)
 	var trece float64 = 13
 	var importeTotal float64 = 0
@@ -207,6 +207,20 @@ func (cg *CalculoGanancias) obtenerRemunerativosMenosDescuentos() float64 {
 
 func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpuestoALasGanancias string) float64 {
 	var importeTotal, importeConcepto float64
+	var liquidacionPrimerQuincena structLiquidacion.Liquidacion
+
+	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" {
+		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
+		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND tipoid = ? ", mesliquidacion, -2)
+
+		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
+
+			liquidacionItem := liquidacionPrimerQuincena.Liquidacionitems[i]
+			cg.Liquidacion.Liquidacionitems = append(cg.Liquidacion.Liquidacionitems, liquidacionItem)
+
+		}
+
+	}
 
 	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
