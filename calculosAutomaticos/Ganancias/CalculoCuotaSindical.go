@@ -5,7 +5,7 @@ type CalculoCuotaSindical struct {
 }
 
 func (cg *CalculoCuotaSindical) getResultInternal() float64 {
-	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("CUOTA_SINDICAL")
+	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("CUOTA_SINDICAL", true)
 }
 
 func (cg *CalculoCuotaSindical) getResult() float64 {
