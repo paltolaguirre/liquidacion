@@ -15,7 +15,7 @@ import (
 func ExecuteFormulaLiquidacion(authorization string, liquidacion *structLiquidacion.Liquidacion, formulaName string) (float64, error) {
 
 	config := configuracion.GetInstance()
-	url := configuracion.GetUrlMicroservicio(config.Puertomicroservicioformula) + "api/formula/execute"
+	url := configuracion.GetUrlMicroservicio(config.Puertomicroservicioformula) + "formula/execute"
 
 	executeBody := FormulaExecute{
 		Context: Context{Currentliquidacion: *liquidacion},
@@ -59,9 +59,13 @@ func ExecuteFormulaLiquidacion(authorization string, liquidacion *structLiquidac
 		return 0, errors.New("No se pudo resolver la formula")
 	}
 
-	var value structFunction.Value
+	value := &structFunction.Value{}
 
-	json.Unmarshal([]byte(string(body)), value)
+	err = json.Unmarshal([]byte(string(body)), value)
+
+	if err != nil {
+		return 0, err
+	}
 
 	return value.Valuenumber, nil
 
