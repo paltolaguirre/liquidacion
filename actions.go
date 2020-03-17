@@ -312,7 +312,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
 				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
-					if !liquidacionItem.Concepto.Eseditable {
+					if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
 						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
 						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
 							tx.Rollback()
@@ -1086,6 +1086,8 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 	var concepto *structConcepto.Concepto
 	var Tipocalculoautomatico structConcepto.Tipocalculoautomatico
 
+	limpiarDeletedAts(liquidacionCalculoAutomatico)
+
 	for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 
 		if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
@@ -1140,6 +1142,19 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 	}
 
 	return &importeCalculado
+}
+
+func limpiarDeletedAts(liquidacionCalculoAutomatico *structLiquidacion.Liquidacion) {
+
+	for i:=0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+		if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt != nil {
+			siguiente := i + 1
+			test := append(liquidacionCalculoAutomatico.Liquidacionitems[:i], liquidacionCalculoAutomatico.Liquidacionitems[siguiente:]...)
+			liquidacionCalculoAutomatico.Liquidacionitems = test
+			i--
+		}
+
+	}
 }
 
 func ImpuestoALasGanancias(concepto structConcepto.Concepto, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, liquidacionitem *structLiquidacion.Liquidacionitem, db *gorm.DB) StrCalculoAutomaticoConceptoId {
