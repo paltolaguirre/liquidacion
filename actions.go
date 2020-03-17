@@ -1009,8 +1009,10 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 				liquidacionCalculoAutomaticoCopia := liquidacionCalculoAutomatico
 				resultado := calcularConcepto(concepto.ID, &liquidacionCalculoAutomaticoCopia, db, autenticacion)
 
-				liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = resultado.Importeunitario
-				liquidacionCalculoAutomatico.Liquidacionitems[i].Acumuladores = resultado.Acumuladores
+				if resultado != nil {
+					liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = resultado.Importeunitario
+					liquidacionCalculoAutomatico.Liquidacionitems[i].Acumuladores = resultado.Acumuladores
+				}
 
 			}
 		}
@@ -1062,10 +1064,6 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 		}()
 
 		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db, autenticacion)
-
-		if calculo == nil {
-			
-		}
 
 		importeCalculado = *calculo
 
