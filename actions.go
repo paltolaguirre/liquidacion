@@ -1116,20 +1116,17 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 
 		if *concepto.Formulanombre == "ImpuestoALasGanancias" {
 			importeCalculado = ImpuestoALasGanancias(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
-		}
-
-		if *concepto.Formulanombre == "ImpuestoALasGananciasDevolucion" {
+		} else 	if *concepto.Formulanombre == "ImpuestoALasGananciasDevolucion" {
 			importeCalculado = ImpuestoALasGananciasDevolucion(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
+		} else {
+			//CODIGO PARA EJECUTAR LAS FORMULAS
+			resultadoFormula, err := apiClientFormula.ExecuteFormulaLiquidacion(autenticacion, liquidacionCalculoAutomatico, *concepto.Formulanombre)
+			if err != nil {
+				panic(err)
+			}
+
+			importeCalculado.Importeunitario = &resultadoFormula
 		}
-
-		//CODIGO PARA EJECUTAR LAS FORMULAS AMIGO
-		resultadoFormula, err := apiClientFormula.ExecuteFormulaLiquidacion(autenticacion, liquidacionCalculoAutomatico, *concepto.Formulanombre)
-
-		if err != nil {
-			panic(err)
-		}
-
-		importeCalculado.Importeunitario = &resultadoFormula
 
 	} else if concepto.Tipocalculoautomatico.Codigo == "PORCENTAJE" {
 		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
