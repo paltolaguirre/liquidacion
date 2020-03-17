@@ -1065,7 +1065,9 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 
 		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db, autenticacion)
 
-		importeCalculado = *calculo
+		if calculo != nil {
+			importeCalculado = *calculo
+		}
 
 	}
 
