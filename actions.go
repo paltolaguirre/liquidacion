@@ -1086,8 +1086,6 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 	var concepto *structConcepto.Concepto
 	var Tipocalculoautomatico structConcepto.Tipocalculoautomatico
 
-	limpiarDeletedAts(liquidacionCalculoAutomatico)
-
 	for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 
 		if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
@@ -1142,19 +1140,6 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 	}
 
 	return &importeCalculado
-}
-
-func limpiarDeletedAts(liquidacionCalculoAutomatico *structLiquidacion.Liquidacion) {
-
-	for i:=0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
-		if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt != nil {
-			siguiente := i + 1
-			test := append(liquidacionCalculoAutomatico.Liquidacionitems[:i], liquidacionCalculoAutomatico.Liquidacionitems[siguiente:]...)
-			liquidacionCalculoAutomatico.Liquidacionitems = test
-			i--
-		}
-
-	}
 }
 
 func ImpuestoALasGanancias(concepto structConcepto.Concepto, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, liquidacionitem *structLiquidacion.Liquidacionitem, db *gorm.DB) StrCalculoAutomaticoConceptoId {

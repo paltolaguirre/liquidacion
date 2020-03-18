@@ -73,8 +73,9 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
 
 			liquidacionItem := liquidacionPrimerQuincena.Liquidacionitems[i]
-			cg.Liquidacion.Liquidacionitems = append(cg.Liquidacion.Liquidacionitems, liquidacionItem)
-
+			if liquidacionItem.DeletedAt == nil {
+				cg.Liquidacion.Liquidacionitems = append(cg.Liquidacion.Liquidacionitems, liquidacionItem)
+			}
 		}
 
 	}
@@ -121,21 +122,24 @@ func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
 	if correspondeSemestre {
 		for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 			liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
-			concepto := liquidacionitem.Concepto
-			var mes float64 = 1
-			if concepto.Basesac == true {
-				if concepto.Prorrateo == true {
-					mes = float64(cg.getfgMesesAProrratear(concepto))
-				}
-				importeLiquidacionitem := liquidacionitem.Importeunitario
-				if importeLiquidacionitem != nil {
-					importeConcepto = *importeLiquidacionitem / mes
-				}
 
-				if *concepto.Tipoconceptoid == -4 {
-					importeConcepto = importeConcepto * -1
+			if liquidacionitem.DeletedAt == nil {
+				concepto := liquidacionitem.Concepto
+				var mes float64 = 1
+				if concepto.Basesac == true {
+					if concepto.Prorrateo == true {
+						mes = float64(cg.getfgMesesAProrratear(concepto))
+					}
+					importeLiquidacionitem := liquidacionitem.Importeunitario
+					if importeLiquidacionitem != nil {
+						importeConcepto = *importeLiquidacionitem / mes
+					}
+
+					if *concepto.Tipoconceptoid == -4 {
+						importeConcepto = importeConcepto * -1
+					}
+					importeTotal = importeTotal + importeConcepto
 				}
-				importeTotal = importeTotal + importeConcepto
 			}
 		}
 
@@ -209,15 +213,18 @@ func (cg *CalculoGanancias) obtenerRemunerativosMenosDescuentos() float64 {
 	var totalRemunerativos, totalDescuentos float64
 	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
-		tipoconcepto := *liquidacionitem.Concepto.Tipoconceptoid
-		importeconcepto := liquidacionitem.Importeunitario
-		if importeconcepto != nil {
 
-			if tipoconcepto == -1 {
-				totalRemunerativos = totalRemunerativos + *importeconcepto
-			}
-			if tipoconcepto == -3 {
-				totalDescuentos = totalDescuentos + *importeconcepto
+		if liquidacionitem.DeletedAt == nil {
+			tipoconcepto := *liquidacionitem.Concepto.Tipoconceptoid
+			importeconcepto := liquidacionitem.Importeunitario
+			if importeconcepto != nil {
+
+				if tipoconcepto == -1 {
+					totalRemunerativos = totalRemunerativos + *importeconcepto
+				}
+				if tipoconcepto == -3 {
+					totalDescuentos = totalDescuentos + *importeconcepto
+				}
 			}
 		}
 	}
@@ -230,26 +237,30 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 
 	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
-		concepto := liquidacionitem.Concepto
-		tipoimpuesto := obtenerTipoImpuesto(concepto, cg.Db)
-		var mes float64 = 1
 
-		if tipoimpuesto == tipoImpuestoALasGanancias && concepto.Codigo != "IMPUESTO_GANANCIAS" && concepto.Codigo != "IMPUESTO_GANANCIAS_DEVOLUCION" {
-			if concepto.Prorrateo == true {
-				mes = float64(cg.getfgMesesAProrratear(concepto))
-			}
-			importeLiquidacionitem := liquidacionitem.Importeunitario
-			if importeLiquidacionitem != nil {
-				if concepto.ID == -6 {
-					importeConcepto = (*importeLiquidacionitem / float64(2)) / mes
-				} else {
-					importeConcepto = *importeLiquidacionitem / mes
+		if liquidacionitem.DeletedAt == nil {
+			concepto := liquidacionitem.Concepto
+			tipoimpuesto := obtenerTipoImpuesto(concepto, cg.Db)
+			var mes float64 = 1
+
+			if tipoimpuesto == tipoImpuestoALasGanancias && concepto.Codigo != "IMPUESTO_GANANCIAS" && concepto.Codigo != "IMPUESTO_GANANCIAS_DEVOLUCION" {
+				if concepto.Prorrateo == true {
+					mes = float64(cg.getfgMesesAProrratear(concepto))
 				}
+				importeLiquidacionitem := liquidacionitem.Importeunitario
+				if importeLiquidacionitem != nil {
+					if concepto.ID == -6 {
+						importeConcepto = (*importeLiquidacionitem / float64(2)) / mes
+					} else {
+						importeConcepto = *importeLiquidacionitem / mes
+					}
+
+				}
+				importeTotal = importeTotal + importeConcepto
 
 			}
-			importeTotal = importeTotal + importeConcepto
-
 		}
+
 	}
 	return importeTotal
 }
