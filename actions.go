@@ -208,7 +208,7 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
-			if !liquidacionItem.Concepto.Eseditable {
+			if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil{
 				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
 				if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
 					framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
