@@ -62,7 +62,7 @@ func (cg *CalculoGanancias) Calculate() float64 {
 	calculo := (&CalculoRetencionDelMes{*cg}).getResult()
 	cg.retirarItemsPrimerQuincenaVacaciones(cantidadItems)
 	return calculo
-	
+
 }
 
 func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() int {
@@ -70,7 +70,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 
 	items := len(cg.Liquidacion.Liquidacionitems)
 
-	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || cg.Liquidacion.Tipo.Codigo == "MENSUAL"{
+	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || cg.Liquidacion.Tipo.Codigo == "MENSUAL" {
 		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 		anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 
@@ -320,7 +320,7 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliar(columnaDetalleCargoFamilia
 			importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
 		} else {
 			if mesdadobaja <= mesperiodoliquidacion {
-				importeTotal = (valorfijo / 12) * float64(mesdadobaja-mesdadoalta) * (porcentaje / 100)
+				importeTotal = (valorfijo / 12) * float64(mesdadobaja-(mesdadoalta-1)) * (porcentaje / 100)
 			} else {
 				if mesdadobaja > mesperiodoliquidacion {
 					importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
@@ -361,10 +361,10 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliarAnual(columnaDetalleCargoFa
 			}
 
 			if mesdadobaja == 0 {
-				importeTotal = (valorfijo / 12) * -float64(12-mesdadoalta) * (porcentaje / 100)
+				importeTotal = (valorfijo / 12) * -float64(12-(mesdadoalta-1)) * (porcentaje / 100)
 			} else {
 				if mesdadobaja <= 12 {
-					importeTotal = (valorfijo / 12) * float64(mesdadobaja-mesdadoalta) * (porcentaje / 100)
+					importeTotal = (valorfijo / 12) * float64(mesdadobaja-(mesdadoalta-1)) * (porcentaje / 100)
 				}
 			}
 		}
