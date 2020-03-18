@@ -312,7 +312,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
 				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
-					if !liquidacionItem.Concepto.Eseditable {
+					if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
 						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
 						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
 							tx.Rollback()
