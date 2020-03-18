@@ -57,18 +57,24 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 }
 
 func (cg *CalculoGanancias) Calculate() float64 {
-	cg.obtenerLiquidacionesItemsPrimerQuincenaVacaciones()
+	cantidadItems := cg.obtenerLiquidacionesItemsPrimerQuincenaVacaciones()
 	cg.invocarCalculosLiquidacionAnual()
-	return (&CalculoRetencionDelMes{*cg}).getResult()
+	calculo := (&CalculoRetencionDelMes{*cg}).getResult()
+	cg.retirarItemsPrimerQuincenaVacaciones(cantidadItems)
+	return calculo
+	
 }
 
-func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() {
+func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() int {
 	var liquidacionPrimerQuincena structLiquidacion.Liquidacion
 
-	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" {
+	items := len(cg.Liquidacion.Liquidacionitems)
+
+	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || cg.Liquidacion.Tipo.Codigo == "MENSUAL"{
 		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 		anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
-		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ?", mesliquidacion, anioLiquidacion)
+
+		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ?", mesliquidacion, anioLiquidacion, cg.Liquidacion.ID)
 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
 
@@ -80,6 +86,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 
 	}
 
+	return items
 }
 
 func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
@@ -424,4 +431,8 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeduc
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
+}
+
+func (cg *CalculoGanancias) retirarItemsPrimerQuincenaVacaciones(items int) {
+	cg.Liquidacion.Liquidacionitems = cg.Liquidacion.Liquidacionitems[:items]
 }
