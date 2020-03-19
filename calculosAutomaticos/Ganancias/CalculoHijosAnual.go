@@ -6,11 +6,11 @@ import (
 	"github.com/xubiosueldos/conexionBD/Siradig/structSiradig"
 )
 
-type CalculoHijos struct {
+type CalculoHijosAnual struct {
 	CalculoGanancias
 }
 
-func (cg *CalculoHijos) getResultInternal() float64 {
+func (cg *CalculoHijosAnual) getResultInternal() float64 {
 	var importeTotal float64 = 0
 	var detallescargofamiliarsiradig []structSiradig.Detallecargofamiliarsiradig
 	var porcentaje float64 = 0
@@ -19,27 +19,26 @@ func (cg *CalculoHijos) getResultInternal() float64 {
 	cg.Db.Raw(sql).Scan(&detallescargofamiliarsiradig)
 
 	for i := 0; i < len(detallescargofamiliarsiradig); i++ {
-
 		if detallescargofamiliarsiradig[i].Porcentaje != nil {
 			porcentaje = *detallescargofamiliarsiradig[i].Porcentaje
 		}
-		importeTotal = importeTotal + cg.getfgDetalleCargoFamiliar("hijoid", "valorfijohijo", porcentaje)
+		importeTotal = importeTotal + cg.getfgDetalleCargoFamiliarAnual("hijoid", "valorfijohijo", porcentaje, valorfijoMNI)
 	}
 	return importeTotal
 }
 
-func (cg *CalculoHijos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("HIJOS", 40, cg)
+func (cg *CalculoHijosAnual) getResult() float64 {
+	return cg.getResultOnDemandTemplate("HIJOS_ANUAL", 0, cg)
 }
 
-func (cg *CalculoHijos) getTope() *float64 {
+func (cg *CalculoHijosAnual) getTope() *float64 {
 	return nil
 }
 
-func (cg *CalculoHijos) getNombre() string {
-	return "Hijos"
+func (cg *CalculoHijosAnual) getNombre() string {
+	return "Hijos Anual"
 }
 
-func (cg *CalculoHijos) getEsMostrable() bool {
-	return true
+func (cg *CalculoHijosAnual) getEsMostrable() bool {
+	return false
 }
