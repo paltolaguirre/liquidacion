@@ -1111,9 +1111,9 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 
 	if concepto.Tipocalculoautomatico.Codigo == "FORMULA" {
 
-		if *concepto.Formulanombre == "ImpuestoALasGanancias" {
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" {
 			importeCalculado = ImpuestoALasGanancias(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
-		} else 	if *concepto.Formulanombre == "ImpuestoALasGananciasDevolucion" {
+		} else 	if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 			importeCalculado = ImpuestoALasGananciasDevolucion(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
 		} else {
 			//CODIGO PARA EJECUTAR LAS FORMULAS
