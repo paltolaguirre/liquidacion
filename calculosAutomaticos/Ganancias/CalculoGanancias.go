@@ -74,7 +74,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 		anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 
-		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ?", mesliquidacion, anioLiquidacion, cg.Liquidacion.ID)
+		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ?", mesliquidacion, anioLiquidacion, strconv.Itoa(cg.Liquidacion.ID))
 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
 
