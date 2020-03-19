@@ -5,8 +5,7 @@ type CalculoMaterialDidacticoPersonalDocenteRemuneracionExenta struct {
 }
 
 func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionExenta) getResultInternal() float64 {
-	total := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("MATERIAL_DIDACTICO_PERSONAL_DOCENTE_REMUNERACION_EXENTA")
-	return total + cg.obtenerConceptosProrrateoMesesAnteriores()
+	return cg.GetfgImporteTotalSegunTipoImpuestoGanancias("MATERIAL_DIDACTICO_PERSONAL_DOCENTE_REMUNERACION_EXENTA")
 }
 
 func (cg *CalculoMaterialDidacticoPersonalDocenteRemuneracionExenta) getResult() float64 {
