@@ -13,14 +13,17 @@ type CalculoHijos struct {
 func (cg *CalculoHijos) getResultInternal() float64 {
 	var importeTotal float64 = 0
 	var detallescargofamiliarsiradig []structSiradig.Detallecargofamiliarsiradig
-
+	var porcentaje float64 = 0
 	valorfijoMNI := cg.getfgValorFijoImpuestoGanancia("deduccionespersonales", "valorfijomni")
 	sql := "SELECT * FROM detallecargofamiliarsiradig WHERE hijoid NOTNULL AND estaacargo = true AND montoanual < " + strconv.FormatFloat(valorfijoMNI, 'f', 5, 64) + "AND detallecargofamiliarsiradig.deleted_at IS NULL"
 	cg.Db.Raw(sql).Scan(&detallescargofamiliarsiradig)
 
 	for i := 0; i < len(detallescargofamiliarsiradig); i++ {
-		porcentaje := detallescargofamiliarsiradig[i].Porcentaje
-		importeTotal = importeTotal + cg.getfgDetalleCargoFamiliar("hijoid", "valorfijohijo", *porcentaje)
+
+		if detallescargofamiliarsiradig[i].Porcentaje != nil {
+			porcentaje = *detallescargofamiliarsiradig[i].Porcentaje
+		}
+		importeTotal = importeTotal + cg.getfgDetalleCargoFamiliar("hijoid", "valorfijohijo", porcentaje)
 	}
 	return importeTotal
 }
