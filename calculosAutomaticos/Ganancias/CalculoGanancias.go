@@ -395,7 +395,12 @@ func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *stru
 	var liquidacionMesAnterior structLiquidacion.Liquidacion
 	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
 	if len(liquidaciones) > 0 {
-		liquidacionMesAnterior = liquidaciones[0]
+		for _, liquidacion := range liquidaciones {
+			if liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" {
+				liquidacionMesAnterior = liquidacion
+				break;
+			}
+		}
 	}
 	return &liquidacionMesAnterior
 }
