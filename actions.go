@@ -201,7 +201,7 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
 			if existeConceptoImpuestoGanancias(&liquidacion_data) {
-				framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
 				return
 			}
 		}
@@ -287,7 +287,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
 				if existeConceptoImpuestoGanancias(&liquidacion_data) {
-					framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+					framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
 					return
 				}
 			}
@@ -1118,9 +1118,9 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 
 	if concepto.Tipocalculoautomatico.Codigo == "FORMULA" {
 
-		if *concepto.Formulanombre == "ImpuestoALasGanancias" {
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" {
 			importeCalculado = ImpuestoALasGanancias(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
-		} else 	if *concepto.Formulanombre == "ImpuestoALasGananciasDevolucion" {
+		} else 	if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 			importeCalculado = ImpuestoALasGananciasDevolucion(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
 		} else {
 			//CODIGO PARA EJECUTAR LAS FORMULAS
