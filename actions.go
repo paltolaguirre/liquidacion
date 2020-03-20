@@ -201,7 +201,7 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
 			if existeConceptoImpuestoGanancias(&liquidacion_data) {
-				framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
 				return
 			}
 		}
@@ -284,6 +284,13 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			liquidacionid := liquidacion_data.ID
+
+			if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
+				if existeConceptoImpuestoGanancias(&liquidacion_data) {
+					framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+					return
+				}
+			}
 
 			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
 				framework.RespondError(w, http.StatusInternalServerError, err.Error())
