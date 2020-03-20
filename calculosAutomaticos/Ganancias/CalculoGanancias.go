@@ -316,17 +316,17 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliar(columnaDetalleCargoFamilia
 			valorfijo = valorfijo * 1.22
 		}
 
-		if mesdadobaja == 0 {
-			importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
+		if mesdadoalta > mesperiodoliquidacion {
+			importeTotal = 0
 		} else {
-			if mesdadobaja <= mesperiodoliquidacion {
-				importeTotal = (valorfijo / 12) * float64(mesdadobaja-(mesdadoalta-1)) * (porcentaje / 100)
+			if mesdadobaja == 0 {
+				importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
 			} else {
-				if mesdadobaja > mesperiodoliquidacion {
-					importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
+				if mesdadobaja <= mesperiodoliquidacion {
+					importeTotal = (valorfijo / 12) * float64(mesdadobaja-(mesdadoalta-1)) * (porcentaje / 100)
 				} else {
-					if mesdadoalta > mesperiodoliquidacion {
-						importeTotal = 0
+					if mesdadobaja > mesperiodoliquidacion {
+						importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
 					}
 				}
 			}
