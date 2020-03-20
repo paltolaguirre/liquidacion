@@ -201,7 +201,7 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
 			if existeConceptoImpuestoGanancias(&liquidacion_data) {
-				framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
 				return
 			}
 		}
@@ -211,7 +211,8 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 			if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil{
 				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
 				if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
-					framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+					//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+					framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
 					return
 				}
 			}
@@ -286,7 +287,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
 				if existeConceptoImpuestoGanancias(&liquidacion_data) {
-					framework.RespondError(w, http.StatusInternalServerError, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+					framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
 					return
 				}
 			}
@@ -316,7 +317,8 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
 						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
 							tx.Rollback()
-							framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+							//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+							framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
 							return
 						}
 					}
@@ -1116,9 +1118,9 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 
 	if concepto.Tipocalculoautomatico.Codigo == "FORMULA" {
 
-		if *concepto.Formulanombre == "ImpuestoALasGanancias" {
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" {
 			importeCalculado = ImpuestoALasGanancias(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
-		} else 	if *concepto.Formulanombre == "ImpuestoALasGananciasDevolucion" {
+		} else 	if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
 			importeCalculado = ImpuestoALasGananciasDevolucion(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
 		} else {
 			//CODIGO PARA EJECUTAR LAS FORMULAS
