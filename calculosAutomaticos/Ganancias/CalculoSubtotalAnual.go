@@ -5,7 +5,12 @@ type CalculoSubtotalAnual struct {
 }
 
 func (cg *CalculoSubtotalAnual) getResultInternal() float64 {
-	return (&CalculoSubtotalRemuneracionGravada{cg.CalculoGanancias}).getResult() - (&CalculoSubtotalDeduccionesGenerales{cg.CalculoGanancias}).getResult()
+	var importeTotal float64
+
+	importeSubtotalAnual := (&CalculoSubtotalRemuneracionGravada{cg.CalculoGanancias}).getResult() - (&CalculoSubtotalDeduccionesGenerales{cg.CalculoGanancias}).getResult()
+	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("SUBTOTAL_ANUAL")
+	importeTotal = importeSubtotalAnual + importeAcumuladorMesAnterior
+	return importeTotal
 }
 
 func (cg *CalculoSubtotalAnual) getResult() float64 {

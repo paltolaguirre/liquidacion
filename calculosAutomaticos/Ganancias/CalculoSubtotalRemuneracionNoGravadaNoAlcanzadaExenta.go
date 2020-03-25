@@ -6,6 +6,7 @@ type CalculoSubtotalRemuneracionNoGravadaNoAlcanzadaExenta struct {
 
 func (cg *CalculoSubtotalRemuneracionNoGravadaNoAlcanzadaExenta) getResultInternal() float64 {
 	var arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta []float64
+	var importeTotal float64
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoRemuneracionNoAlcanzadaExentaSinHorasExtras{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoHorasExtrasRemuneracionExenta{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoMovilidadYViaticosRemuneracionExenta{cg.CalculoGanancias}).getResult())
@@ -15,7 +16,9 @@ func (cg *CalculoSubtotalRemuneracionNoGravadaNoAlcanzadaExenta) getResultIntern
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoMovilidadYViaticosRemuneracionExentaOtrosEmpleos{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoMaterialDidacticoPersonalDocenteRemuneracionExentaOtrosEmpleos{cg.CalculoGanancias}).getResult())
 
-	return Sum(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta)
+	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("SUBTOTAL_REMUNERACION_NO_GRAVADA_NO_ALCANZADA_EXENTA")
+	importeTotal = Sum(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta) + importeAcumuladorMesAnterior
+	return importeTotal
 }
 
 func (cg *CalculoSubtotalRemuneracionNoGravadaNoAlcanzadaExenta) getResult() float64 {

@@ -6,13 +6,14 @@ type CalculoTotalRemuneraciones struct {
 
 func (cg *CalculoTotalRemuneraciones) getResultInternal() float64 {
 	var arrayTotalRemuneraciones []float64
-	var totalRemuneraciones float64
+	var importeTotal float64
 
 	arrayTotalRemuneraciones = append(arrayTotalRemuneraciones, (&CalculoSubtotalRemuneracionGravada{cg.CalculoGanancias}).getResult())
 	arrayTotalRemuneraciones = append(arrayTotalRemuneraciones, (&CalculoSubtotalRemuneracionNoGravadaNoAlcanzadaExenta{cg.CalculoGanancias}).getResult())
 
-	totalRemuneraciones = Sum(arrayTotalRemuneraciones)
-	return totalRemuneraciones
+	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("TOTAL_REMUNERACIONES")
+	importeTotal = Sum(arrayTotalRemuneraciones) + importeAcumuladorMesAnterior
+	return importeTotal
 }
 
 func (cg *CalculoTotalRemuneraciones) getResult() float64 {
