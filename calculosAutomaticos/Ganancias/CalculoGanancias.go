@@ -3,6 +3,7 @@ package Ganancias
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 
@@ -119,6 +120,7 @@ func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
 	(&CalculoAlicuotaArt90LeyGanancias{*cg}).getResult()
 	(&CalculoAlicuotaAplicableSinIncluirHorasExtras{*cg}).getResult()
 	(&CalculoImpuestoDeterminado{*cg}).getResult()
+	(&CalculoImpuestoRetenido{*cg}).getResult()
 	(&CalculoPagosACuenta{*cg}).getResult()
 	(&CalculoSaldoAPagar{*cg}).getResult()
 }
@@ -463,4 +465,13 @@ func (cg *CalculoGanancias) obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodi
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
+}
+
+func round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
+}
+
+func (cg *CalculoGanancias) roundTo(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
 }
