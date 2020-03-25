@@ -12,7 +12,7 @@ func (cg *CalculoAlicuotaAplicableSinIncluirHorasExtras) getResultInternal() flo
 	for i := 0; i < len(strescalaimpuestoaplicable); i++ {
 		escalaimpuestoaplicable := strescalaimpuestoaplicable[i]
 		if importeRemuneracionSujetaImpuestoSinIncluirHorasExtras > escalaimpuestoaplicable.Limiteinferior && importeRemuneracionSujetaImpuestoSinIncluirHorasExtras <= escalaimpuestoaplicable.Limitesuperior {
-			importeTotal = escalaimpuestoaplicable.Valorfijo
+			importeTotal = escalaimpuestoaplicable.Valorvariable * 100
 		}
 	}
 	return importeTotal
