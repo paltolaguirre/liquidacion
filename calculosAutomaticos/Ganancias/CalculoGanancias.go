@@ -74,7 +74,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 		anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 
-		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ?", mesliquidacion, anioLiquidacion, cg.Liquidacion.ID)
+		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ? AND legajoid = ?", mesliquidacion, anioLiquidacion, strconv.Itoa(cg.Liquidacion.ID), cg.Liquidacion.Legajoid)
 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
 
@@ -169,7 +169,7 @@ func (cg *CalculoGanancias) obtenerConceptosProrrateoMesesAnteriores() float64 {
 	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
 	legajoID := cg.Liquidacion.Legajoid
 
-	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(cg.Liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') <= '" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
+	sql := "SELECT li.importeunitario, to_char(l.fechaperiodoliquidacion, 'MM') AS mesliquidacion FROM liquidacion l INNER JOIN liquidacionitem li on l.id = li.liquidacionid INNER JOIN legajo le on le.id = l.legajoid INNER JOIN concepto c on c.id = li.conceptoid WHERE li.ID != " + strconv.Itoa(cg.Liquidacion.ID) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') < '" + mesLiquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " and c.prorrateo = true ORDER BY to_char(l.fechaperiodoliquidacion, 'MM') ASC"
 	cg.Db.Raw(sql).Scan(&importemes)
 	var trece float64 = 13
 	var importeTotal float64 = 0
@@ -316,17 +316,17 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliar(columnaDetalleCargoFamilia
 			valorfijo = valorfijo * 1.22
 		}
 
-		if mesdadobaja == 0 {
-			importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
+		if mesdadoalta > mesperiodoliquidacion {
+			importeTotal = 0
 		} else {
-			if mesdadobaja <= mesperiodoliquidacion {
-				importeTotal = (valorfijo / 12) * float64(mesdadobaja-(mesdadoalta-1)) * (porcentaje / 100)
+			if mesdadobaja == 0 {
+				importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
 			} else {
-				if mesdadobaja > mesperiodoliquidacion {
-					importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
+				if mesdadobaja <= mesperiodoliquidacion {
+					importeTotal = (valorfijo / 12) * float64(mesdadobaja-(mesdadoalta-1)) * (porcentaje / 100)
 				} else {
-					if mesdadoalta > mesperiodoliquidacion {
-						importeTotal = 0
+					if mesdadobaja > mesperiodoliquidacion {
+						importeTotal = (valorfijo / 12) * float64(mesperiodoliquidacion-(mesdadoalta-1)) * (porcentaje / 100)
 					}
 				}
 			}
@@ -395,7 +395,12 @@ func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *stru
 	var liquidacionMesAnterior structLiquidacion.Liquidacion
 	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
 	if len(liquidaciones) > 0 {
-		liquidacionMesAnterior = liquidaciones[0]
+		for _, liquidacion := range liquidaciones {
+			if liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" {
+				liquidacionMesAnterior = liquidacion
+				break;
+			}
+		}
 	}
 	return &liquidacionMesAnterior
 }
