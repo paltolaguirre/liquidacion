@@ -5,7 +5,7 @@ type CalculoAlquileresInmueblesDestinadosASuCasaHabitacion struct {
 }
 
 func (cg *CalculoAlquileresInmueblesDestinadosASuCasaHabitacion) getResultInternal() float64 {
-	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrilla("importe", "ALQUILER_INMUEBLES_DESTINADOS_A_CASA_HABITACION", "deducciondesgravacionsiradig")
+	importeTotal := cg.getfgImporteMensualSiradigSegunTipoGrilla("importe", "ALQUILER_INMUEBLES_DESTINADOS_A_CASA_HABITACION", "deducciondesgravacionsiradig")
 	importeTope := *cg.getTope()
 	return getfgImporteTotalTope(importeTotal, importeTope)
 }
