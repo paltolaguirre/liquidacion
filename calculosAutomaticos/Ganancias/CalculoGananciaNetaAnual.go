@@ -6,11 +6,8 @@ type CalculoGananciaNetaAnual struct {
 
 func (cg *CalculoGananciaNetaAnual) getResultInternal() float64 {
 	var gananciaNetaAnual float64
-	var importeTotal float64
 	gananciaNetaAnual = (&CalculoSubtotalAnual{cg.CalculoGanancias}).getResult() - (&CalculoCuotaMedicoAsistencial{cg.CalculoGanancias}).getResult() - (&CalculoDonacionFisicosNacProvMunArt20{cg.CalculoGanancias}).getResult()
-	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("GANANCIA_NETA_ANUAL")
-	importeTotal = gananciaNetaAnual + importeAcumuladorMesAnterior
-	return importeTotal
+	return gananciaNetaAnual
 
 }
 
