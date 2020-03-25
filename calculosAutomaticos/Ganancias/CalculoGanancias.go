@@ -398,7 +398,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *stru
 		for _, liquidacion := range liquidaciones {
 			if liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" {
 				liquidacionMesAnterior = liquidacion
-				break;
+				break
 			}
 		}
 	}
@@ -440,4 +440,17 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeduc
 
 func (cg *CalculoGanancias) retirarItemsPrimerQuincenaVacaciones(items int) {
 	cg.Liquidacion.Liquidacionitems = cg.Liquidacion.Liquidacionitems[:items]
+}
+
+func (cg *CalculoGanancias) obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo(codigo string) float64 {
+	var importeTotal float64
+
+	anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
+	mesLiquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion) - 1
+
+	sql := "select importe from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesLiquidacion) + " order by fechaperiodoliquidacion))"
+	fmt.Println(sql)
+	cg.Db.Raw(sql).Row().Scan(&importeTotal)
+
+	return importeTotal
 }

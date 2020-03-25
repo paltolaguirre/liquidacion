@@ -6,6 +6,7 @@ type CalculoSubtotalDeduccionesGenerales struct {
 
 func (cg *CalculoSubtotalDeduccionesGenerales) getResultInternal() float64 {
 	var arraySubtotalDeduccionesGenerales []float64
+	var importeTotal float64
 
 	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidios{cg.CalculoGanancias}).getResult())
 	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos{cg.CalculoGanancias}).getResult())
@@ -30,7 +31,9 @@ func (cg *CalculoSubtotalDeduccionesGenerales) getResultInternal() float64 {
 	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoIndumentariaEquipamientoCaracterObligatorio{cg.CalculoGanancias}).getResult())
 	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoOtrasDeducciones{cg.CalculoGanancias}).getResult())
 
-	return Sum(arraySubtotalDeduccionesGenerales)
+	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("SUBTOTAL_DEDUCCIONES_GENERALES")
+	importeTotal = Sum(arraySubtotalDeduccionesGenerales) + importeAcumuladorMesAnterior
+	return importeTotal
 }
 
 func (cg *CalculoSubtotalDeduccionesGenerales) getResult() float64 {

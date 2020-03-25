@@ -6,7 +6,7 @@ type CalculoSubtotalRemuneracionGravada struct {
 
 func (cg *CalculoSubtotalRemuneracionGravada) getResultInternal() float64 {
 	var arraySubtotalRemuneracionGravada []float64
-
+	var importeTotal float64
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoRemuneracionBruta{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoRemuneracionNoHabitual{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoSACPrimerCuota{cg.CalculoGanancias}).getResult())
@@ -22,7 +22,10 @@ func (cg *CalculoSubtotalRemuneracionGravada) getResultInternal() float64 {
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoMovilidadYViaticosGravadaOtrosEmpleos{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos{cg.CalculoGanancias}).getResult())
 
-	return Sum(arraySubtotalRemuneracionGravada)
+	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("SUBTOTAL_REMUNERACION_GRAVADA")
+	importeTotal = Sum(arraySubtotalRemuneracionGravada) + importeAcumuladorMesAnterior
+
+	return importeTotal
 }
 
 func (cg *CalculoSubtotalRemuneracionGravada) getResult() float64 {
