@@ -5,7 +5,7 @@ type CalculoCuotaMedicoAsistencial struct {
 }
 
 func (cg *CalculoCuotaMedicoAsistencial) getResultInternal() float64 {
-	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrillaSinMes("importe", "CUOTA_MEDICA_ASISTENCIAL", "deducciondesgravacionsiradig")
+	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrillaMesDesdeHasta("importe", "CUOTA_MEDICA_ASISTENCIAL", "deducciondesgravacionsiradig")
 	var importeTope float64
 	if importeTotal != 0 {
 		importeTope = *cg.getTope()
