@@ -440,17 +440,6 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeduc
 	return importeTotal
 }
 
-func (cg *CalculoGanancias) getfgImporteMensualSiradigSegunTipoGrilla(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
-	var importeTotal float64
-	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
-	anioliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
-
-	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE to_number(to_char(mes, 'MM'),'99') = " + mesLiquidacion + " AND stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anioliquidacion) + "' AND ts.deleted_at IS  NULL AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL;"
-	cg.Db.Raw(sql).Row().Scan(&importeTotal)
-
-	return importeTotal
-}
-
 func (cg *CalculoGanancias) retirarItemsPrimerQuincenaVacaciones(items int) {
 	cg.Liquidacion.Liquidacionitems = cg.Liquidacion.Liquidacionitems[:items]
 }
