@@ -5,7 +5,7 @@ type CalculoIndumentariaEquipamientoCaracterObligatorio struct {
 }
 
 func (cg *CalculoIndumentariaEquipamientoCaracterObligatorio) getResultInternal() float64 {
-	return cg.getfgImporteMensualSiradigSegunTipoGrilla("importe", "GASTOS_ADQUISICION_INDUMENTARIA_Y_EQUIPAMIENTO_PARA_USO_EXCLUSIVO_EN_EL_LUGAR_DE_TRABAJO", "deducciondesgravacionsiradig")
+	return cg.getfgImporteTotalSiradigSegunTipoGrilla("importe", "GASTOS_ADQUISICION_INDUMENTARIA_Y_EQUIPAMIENTO_PARA_USO_EXCLUSIVO_EN_EL_LUGAR_DE_TRABAJO", "deducciondesgravacionsiradig")
 }
 
 func (cg *CalculoIndumentariaEquipamientoCaracterObligatorio) getResult() float64 {
