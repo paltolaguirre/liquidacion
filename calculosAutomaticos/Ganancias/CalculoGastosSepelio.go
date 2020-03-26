@@ -5,7 +5,7 @@ type CalculoGastosSepelio struct {
 }
 
 func (cg *CalculoGastosSepelio) getResultInternal() float64 {
-	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrilla("importe", "GASTOS_DE_SEPELIO", "deducciondesgravacionsiradig")
+	importeTotal := cg.getfgImporteMensualSiradigSegunTipoGrilla("importe", "GASTOS_DE_SEPELIO", "deducciondesgravacionsiradig")
 	importeTope := *cg.getTope()
 	return getfgImporteTotalTope(importeTotal, importeTope)
 }
