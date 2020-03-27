@@ -26,5 +26,5 @@ func (cg *CalculoTotalRemuneraciones) getNombre() string {
 }
 
 func (cg *CalculoTotalRemuneraciones) getEsMostrable() bool {
-	return true
+	return false
 }
