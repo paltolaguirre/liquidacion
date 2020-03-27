@@ -5,21 +5,11 @@ type CalculoGananciaNetaAcumSujetaAImp struct {
 }
 
 func (cg *CalculoGananciaNetaAcumSujetaAImp) getResultInternal() float64 {
-	var importeTotal float64 = 0
-
-	liquidacion := *cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
-	importeTotal = importeTotal + (&CalculoGananciaNeta{cg.CalculoGanancias}).getResult()
-
-	itemGanancia := obtenerItemGananciaFromLiquidacion(&liquidacion)
-	if itemGanancia.ID != 0 {
-		importeTotal = importeTotal + (&CalculoGananciaNetaAcumSujetaAImp{CalculoGanancias{itemGanancia, &liquidacion, cg.Db, false}}).getResult()
-	}
-
-	return importeTotal
+	return (&CalculoGananciaNeta{cg.CalculoGanancias}).getResult()
 }
 
 func (cg *CalculoGananciaNetaAcumSujetaAImp) getResult() float64 {
-	return cg.getResultOnDemandTemplate("GANANCIA_NETA_ACUM_SUJETA_A_IMP", 45, cg)
+	return cg.getResultOnDemandTemplate("GANANCIA_NETA_ACUM_SUJETA_A_IMP", 46, cg)
 }
 
 func (cg *CalculoGananciaNetaAcumSujetaAImp) getTope() *float64 {

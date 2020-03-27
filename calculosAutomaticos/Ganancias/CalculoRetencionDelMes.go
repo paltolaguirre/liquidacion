@@ -10,7 +10,7 @@ func (cg *CalculoRetencionDelMes) getResultInternal() float64 {
 }
 
 func (cg *CalculoRetencionDelMes) getResult() float64 {
-	return cg.getResultOnDemandTemplate("RETENCION_DEL_MES", 53, cg)
+	return cg.getResultOnDemandTemplate("RETENCION_DEL_MES", 54, cg)
 }
 
 func (cg *CalculoRetencionDelMes) getTope() *float64 {

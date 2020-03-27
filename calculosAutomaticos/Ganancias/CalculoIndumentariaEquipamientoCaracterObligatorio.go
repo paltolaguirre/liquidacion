@@ -9,7 +9,7 @@ func (cg *CalculoIndumentariaEquipamientoCaracterObligatorio) getResultInternal(
 }
 
 func (cg *CalculoIndumentariaEquipamientoCaracterObligatorio) getResult() float64 {
-	return cg.getResultOnDemandTemplate("INDUMENTARIA_EQUIPAMIENTO_CARACTER_OBLIGATORIO", 33, cg)
+	return cg.getResultOnDemandTemplate("INDUMENTARIA_EQUIPAMIENTO_CARACTER_OBLIGATORIO", 34, cg)
 }
 
 func (cg *CalculoIndumentariaEquipamientoCaracterObligatorio) getTope() *float64 {

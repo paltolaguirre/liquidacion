@@ -18,7 +18,7 @@ func (cg *CalculoSubtotalDeduccionesPersonales) getResultInternal() float64 {
 }
 
 func (cg *CalculoSubtotalDeduccionesPersonales) getResult() float64 {
-	return cg.getResultOnDemandTemplate("SUBTOTAL_DEDUCCIONES_PERSONALES", 43, cg)
+	return cg.getResultOnDemandTemplate("SUBTOTAL_DEDUCCIONES_PERSONALES", 44, cg)
 }
 
 func (cg *CalculoSubtotalDeduccionesPersonales) getTope() *float64 {
