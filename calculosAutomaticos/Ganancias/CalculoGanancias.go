@@ -274,6 +274,19 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 	return importeTotal
 }
 
+func (cg *CalculoGanancias) obtenerImporteHorasExtrasCien() float64 {
+	var importeConcepto = float64(0)
+
+	for _, liquidacionItem := range cg.Liquidacion.Liquidacionitems {
+		concepto := liquidacionItem.Concepto
+		if concepto.ID == -6 {
+			importeConcepto = *liquidacionItem.Importeunitario / float64(2)
+			break
+		}
+	}
+	return importeConcepto
+}
+
 func (cg *CalculoGanancias) getfgMesesAProrratear(concepto *structConcepto.Concepto) int {
 	fechadesde := strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "-01-01"
 	fechahasta := cg.Liquidacion.Fechaperiodoliquidacion.Format("2006-01-02")
@@ -431,7 +444,6 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrillaMesDesdeHasta
 
 	return importeTotal
 }
-
 
 func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
 	var importeTotal float64
