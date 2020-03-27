@@ -3,6 +3,7 @@ package Ganancias
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 
@@ -119,6 +120,7 @@ func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
 	(&CalculoAlicuotaArt90LeyGanancias{*cg}).getResult()
 	(&CalculoAlicuotaAplicableSinIncluirHorasExtras{*cg}).getResult()
 	(&CalculoImpuestoDeterminado{*cg}).getResult()
+	(&CalculoImpuestoRetenido{*cg}).getResult()
 	(&CalculoPagosACuenta{*cg}).getResult()
 	(&CalculoSaldoAPagar{*cg}).getResult()
 }
@@ -254,12 +256,17 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 				if concepto.Prorrateo == true {
 					mes = float64(cg.getfgMesesAProrratear(concepto))
 				}
-				importeLiquidacionitem := liquidacionitem.Importeunitario
-				if importeLiquidacionitem != nil {
+
+				if liquidacionitem.Importeunitario != nil {
+					importeLiquidacionitem := *liquidacionitem.Importeunitario
+
+					if *concepto.Tipoconceptoid == -3 {
+						importeLiquidacionitem = importeLiquidacionitem * -1
+					}
 					if concepto.ID == -6 {
-						importeConcepto = (*importeLiquidacionitem / float64(2)) / mes
+						importeConcepto = (importeLiquidacionitem / float64(2)) / mes
 					} else {
-						importeConcepto = *importeLiquidacionitem / mes
+						importeConcepto = importeLiquidacionitem / mes
 					}
 
 				}
@@ -270,6 +277,19 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 
 	}
 	return importeTotal
+}
+
+func (cg *CalculoGanancias) obtenerImporteHorasExtrasCien() float64 {
+	var importeConcepto = float64(0)
+
+	for _, liquidacionItem := range cg.Liquidacion.Liquidacionitems {
+		concepto := liquidacionItem.Concepto
+		if concepto.ID == -6 {
+			importeConcepto = *liquidacionItem.Importeunitario / float64(2)
+			break
+		}
+	}
+	return importeConcepto
 }
 
 func (cg *CalculoGanancias) getfgMesesAProrratear(concepto *structConcepto.Concepto) int {
@@ -430,7 +450,6 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrillaMesDesdeHasta
 	return importeTotal
 }
 
-
 func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
 	var importeTotal float64
 	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
@@ -456,4 +475,13 @@ func (cg *CalculoGanancias) obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodi
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
+}
+
+func round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
+}
+
+func (cg *CalculoGanancias) roundTo(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
 }
