@@ -19,7 +19,7 @@ func (cg *CalculoImpuestoFijo) getResultInternal() float64 {
 }
 
 func (cg *CalculoImpuestoFijo) getResult() float64 {
-	return cg.getResultOnDemandTemplate("DETERMINACION_IMPUESTO_FIJO", 49, cg)
+	return cg.getResultOnDemandTemplate("DETERMINACION_IMPUESTO_FIJO", 50, cg)
 }
 
 func (cg *CalculoImpuestoFijo) getTope() *float64 {

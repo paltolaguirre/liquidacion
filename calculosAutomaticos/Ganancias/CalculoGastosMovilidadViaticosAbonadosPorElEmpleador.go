@@ -16,7 +16,7 @@ func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getResultInterna
 }
 
 func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getResult() float64 {
-	return cg.getResultOnDemandTemplate("GASTOS_MOVILIDAD_VIATICOS_ABONADOS_POR_EL_EMPLEADOR", 20, cg)
+	return cg.getResultOnDemandTemplate("GASTOS_MOVILIDAD_VIATICOS_ABONADOS_POR_EL_EMPLEADOR", 24, cg)
 }
 
 func (cg *CalculoGastosMovilidadViaticosAbonadosPorElEmpleador) getTope() *float64 {

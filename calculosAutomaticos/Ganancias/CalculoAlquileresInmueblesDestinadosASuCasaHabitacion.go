@@ -11,7 +11,7 @@ func (cg *CalculoAlquileresInmueblesDestinadosASuCasaHabitacion) getResultIntern
 }
 
 func (cg *CalculoAlquileresInmueblesDestinadosASuCasaHabitacion) getResult() float64 {
-	return cg.getResultOnDemandTemplate("ALQUILERES_INMUEBLES_DESTINADOS_A_SU_CASA_HABITACION", 31, cg)
+	return cg.getResultOnDemandTemplate("ALQUILERES_INMUEBLES_DESTINADOS_A_SU_CASA_HABITACION", 32, cg)
 }
 
 func (cg *CalculoAlquileresInmueblesDestinadosASuCasaHabitacion) getTope() *float64 {
