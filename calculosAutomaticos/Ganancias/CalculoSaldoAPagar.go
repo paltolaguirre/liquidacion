@@ -5,9 +5,12 @@ type CalculoSaldoAPagar struct {
 }
 
 func (cg *CalculoSaldoAPagar) getResultInternal() float64 {
+	impuestoDeterminado := cg.roundTo((&CalculoImpuestoDeterminado{cg.CalculoGanancias}).getResult(), 4)
+	impuestoRetenido := cg.roundTo((&CalculoImpuestoRetenido{cg.CalculoGanancias}).getResult(), 4)
+	pagosACuenta := cg.roundTo((&CalculoPagosACuenta{cg.CalculoGanancias}).getResult(), 4)
 
-	return ((&CalculoImpuestoDeterminado{cg.CalculoGanancias}).getResult() - (&CalculoRetencionAcumulada{cg.CalculoGanancias}).getResult() - (&CalculoPagosACuenta{cg.CalculoGanancias}).getResult())
-
+	importeTotal := impuestoDeterminado - impuestoRetenido - pagosACuenta
+	return importeTotal
 }
 
 func (cg *CalculoSaldoAPagar) getResult() float64 {

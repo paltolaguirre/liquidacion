@@ -12,7 +12,7 @@ func (cg *CalculoAlicuotaArt90LeyGanancias) getResultInternal() float64 {
 	for i := 0; i < len(strescalaimpuestoaplicable); i++ {
 		escalaimpuestoaplicable := strescalaimpuestoaplicable[i]
 		if importeRemuneracionSujetaImpuesto > escalaimpuestoaplicable.Limiteinferior && importeRemuneracionSujetaImpuesto <= escalaimpuestoaplicable.Limitesuperior {
-			importeTotal = escalaimpuestoaplicable.Valorfijo
+			importeTotal = escalaimpuestoaplicable.Valorvariable * 100
 		}
 	}
 	return importeTotal

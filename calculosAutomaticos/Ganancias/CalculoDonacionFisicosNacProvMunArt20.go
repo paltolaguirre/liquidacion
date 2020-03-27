@@ -5,7 +5,7 @@ type CalculoDonacionFisicosNacProvMunArt20 struct {
 }
 
 func (cg *CalculoDonacionFisicosNacProvMunArt20) getResultInternal() float64 {
-	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrillaSinMes("importe", "DONACIONES", "deducciondesgravacionsiradig")
+	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrilla("importe", "DONACIONES", "deducciondesgravacionsiradig")
 	var importeTope float64
 	if importeTotal != 0 {
 		importeTope = *cg.getTope()

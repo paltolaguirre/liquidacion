@@ -3,6 +3,7 @@ package Ganancias
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 
@@ -74,7 +75,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 		anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 
-		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ? AND legajoid = ?", mesliquidacion, anioLiquidacion, strconv.Itoa(cg.Liquidacion.ID), cg.Liquidacion.Legajoid)
+		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ? AND legajoid = ? AND deleted_at is null", mesliquidacion, anioLiquidacion, strconv.Itoa(cg.Liquidacion.ID), cg.Liquidacion.Legajoid)
 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
 
@@ -119,6 +120,7 @@ func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
 	(&CalculoAlicuotaArt90LeyGanancias{*cg}).getResult()
 	(&CalculoAlicuotaAplicableSinIncluirHorasExtras{*cg}).getResult()
 	(&CalculoImpuestoDeterminado{*cg}).getResult()
+	(&CalculoImpuestoRetenido{*cg}).getResult()
 	(&CalculoPagosACuenta{*cg}).getResult()
 	(&CalculoSaldoAPagar{*cg}).getResult()
 }
@@ -272,6 +274,19 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 	return importeTotal
 }
 
+func (cg *CalculoGanancias) obtenerImporteHorasExtrasCien() float64 {
+	var importeConcepto = float64(0)
+
+	for _, liquidacionItem := range cg.Liquidacion.Liquidacionitems {
+		concepto := liquidacionItem.Concepto
+		if concepto.ID == -6 {
+			importeConcepto = *liquidacionItem.Importeunitario / float64(2)
+			break
+		}
+	}
+	return importeConcepto
+}
+
 func (cg *CalculoGanancias) getfgMesesAProrratear(concepto *structConcepto.Concepto) int {
 	fechadesde := strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "-01-01"
 	fechahasta := cg.Liquidacion.Fechaperiodoliquidacion.Format("2006-01-02")
@@ -395,7 +410,12 @@ func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *stru
 	var liquidacionMesAnterior structLiquidacion.Liquidacion
 	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
 	if len(liquidaciones) > 0 {
-		liquidacionMesAnterior = liquidaciones[0]
+		for _, liquidacion := range liquidaciones {
+			if liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" {
+				liquidacionMesAnterior = liquidacion
+				break
+			}
+		}
 	}
 	return &liquidacionMesAnterior
 }
@@ -412,11 +432,14 @@ func (cg *CalculoGanancias) getfgImporteGananciasOtroEmpleoSiradig(columnaimport
 	return importeTotal
 }
 
-func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrillaSinMes(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
+func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrillaMesDesdeHasta(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
 	var importeTotal float64
 	anioliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
+	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
 
-	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + ") FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anioliquidacion) + "' AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL AND ts.deleted_at IS NULL;"
+	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + "* GREATEST((1 + LEAST(to_number(to_char(meshasta, 'MM'),'99'), " +
+		mesLiquidacion + ") - to_number(to_char(mes, 'MM'),'99')), 0)) " +
+		"FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anioliquidacion) + "' AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL AND ts.deleted_at IS NULL;"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
@@ -435,4 +458,25 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeduc
 
 func (cg *CalculoGanancias) retirarItemsPrimerQuincenaVacaciones(items int) {
 	cg.Liquidacion.Liquidacionitems = cg.Liquidacion.Liquidacionitems[:items]
+}
+
+func (cg *CalculoGanancias) obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo(codigo string) float64 {
+	var importeTotal float64
+
+	anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
+	mesLiquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion) - 1
+
+	sql := "select importe from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesLiquidacion) + " order by fechaperiodoliquidacion))"
+	cg.Db.Raw(sql).Row().Scan(&importeTotal)
+
+	return importeTotal
+}
+
+func round(num float64) int {
+	return int(num + math.Copysign(0.5, num))
+}
+
+func (cg *CalculoGanancias) roundTo(num float64, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	return float64(round(num*output)) / output
 }

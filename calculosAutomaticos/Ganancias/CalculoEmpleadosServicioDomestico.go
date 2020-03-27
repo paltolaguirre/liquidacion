@@ -5,7 +5,7 @@ type CalculoEmpleadosServicioDomestico struct {
 }
 
 func (cg *CalculoEmpleadosServicioDomestico) getResultInternal() float64 {
-	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrilla("contribucion + retribucion", "DEDUCCION_DEL_PERSONAL_DOMESTICO", "deducciondesgravacionsiradig")
+	importeTotal := cg.getfgImporteTotalSiradigSegunTipoGrilla("coalesce(contribucion, 0) + coalesce(retribucion, 0)", "DEDUCCION_DEL_PERSONAL_DOMESTICO", "deducciondesgravacionsiradig")
 	importeTope := *cg.getTope()
 	return getfgImporteTotalTope(importeTotal, importeTope)
 }
