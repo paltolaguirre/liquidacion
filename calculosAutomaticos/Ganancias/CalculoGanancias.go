@@ -256,12 +256,17 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 				if concepto.Prorrateo == true {
 					mes = float64(cg.getfgMesesAProrratear(concepto))
 				}
-				importeLiquidacionitem := liquidacionitem.Importeunitario
-				if importeLiquidacionitem != nil {
+
+				if liquidacionitem.Importeunitario != nil {
+					importeLiquidacionitem := *liquidacionitem.Importeunitario
+
+					if *concepto.Tipoconceptoid == -3 {
+						importeLiquidacionitem = importeLiquidacionitem * -1
+					}
 					if concepto.ID == -6 {
-						importeConcepto = (*importeLiquidacionitem / float64(2)) / mes
+						importeConcepto = (importeLiquidacionitem / float64(2)) / mes
 					} else {
-						importeConcepto = *importeLiquidacionitem / mes
+						importeConcepto = importeLiquidacionitem / mes
 					}
 
 				}
