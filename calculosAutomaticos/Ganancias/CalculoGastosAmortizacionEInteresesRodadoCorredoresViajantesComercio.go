@@ -9,7 +9,7 @@ func (cg *CalculoGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio) 
 }
 
 func (cg *CalculoGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio) getResult() float64 {
-	return cg.getResultOnDemandTemplate("GASTOS_AMORTIZACION_E_INTERESES_RODADO_CORREDORES_VIAJANTES_COMERCIO", 28, cg)
+	return cg.getResultOnDemandTemplate("GASTOS_AMORTIZACION_E_INTERESES_RODADO_CORREDORES_VIAJANTES_COMERCIO", 29, cg)
 }
 
 func (cg *CalculoGastosAmortizacionEInteresesRodadoCorredoresViajantesComercio) getTope() *float64 {

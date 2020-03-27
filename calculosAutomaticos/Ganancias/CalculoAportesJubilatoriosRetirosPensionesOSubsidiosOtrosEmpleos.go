@@ -9,7 +9,7 @@ func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos) getR
 }
 
 func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS_OTROS_EMPLEOS", 21, cg)
+	return cg.getResultOnDemandTemplate("APORTES_JUBILATORIOS_RETIROS_PENSIONES_O_SUBSIDIOS_OTROS_EMPLEOS", 19, cg)
 }
 
 func (cg *CalculoAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos) getTope() *float64 {

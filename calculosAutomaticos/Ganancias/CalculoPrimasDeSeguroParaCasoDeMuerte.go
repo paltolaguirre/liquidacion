@@ -9,7 +9,7 @@ func (cg *CalculoPrimasDeSeguroParaCasoDeMuerte) getResultInternal() float64 {
 }
 
 func (cg *CalculoPrimasDeSeguroParaCasoDeMuerte) getResult() float64 {
-	return cg.getResultOnDemandTemplate("PRIMAS_DE_SEGURO_PARA_CASO_DE_MUERTE", 24, cg)
+	return cg.getResultOnDemandTemplate("PRIMAS_DE_SEGURO_PARA_CASO_DE_MUERTE", 25, cg)
 }
 
 func (cg *CalculoPrimasDeSeguroParaCasoDeMuerte) getTope() *float64 {

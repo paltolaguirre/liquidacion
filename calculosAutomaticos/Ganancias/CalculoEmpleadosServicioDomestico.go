@@ -11,7 +11,7 @@ func (cg *CalculoEmpleadosServicioDomestico) getResultInternal() float64 {
 }
 
 func (cg *CalculoEmpleadosServicioDomestico) getResult() float64 {
-	return cg.getResultOnDemandTemplate("EMPLEADOS_SERVICIO_DOMESTICO", 32, cg)
+	return cg.getResultOnDemandTemplate("EMPLEADOS_SERVICIO_DOMESTICO", 33, cg)
 }
 
 func (cg *CalculoEmpleadosServicioDomestico) getTope() *float64 {
