@@ -141,7 +141,11 @@ func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
 					}
 					importeLiquidacionitem := liquidacionitem.Importeunitario
 					if importeLiquidacionitem != nil {
-						importeConcepto = *importeLiquidacionitem / mes
+						if concepto.ID == -6 {
+							importeConcepto = (*importeLiquidacionitem / float64(2)) / mes
+						} else {
+							importeConcepto = *importeLiquidacionitem / mes
+						}
 					}
 
 					if *concepto.Tipoconceptoid == -4 || *concepto.Tipoconceptoid == -3 {
