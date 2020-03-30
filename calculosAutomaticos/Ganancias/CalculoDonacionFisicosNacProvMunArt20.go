@@ -14,7 +14,7 @@ func (cg *CalculoDonacionFisicosNacProvMunArt20) getResultInternal() float64 {
 }
 
 func (cg *CalculoDonacionFisicosNacProvMunArt20) getResult() float64 {
-	return cg.getResultOnDemandTemplate("DONACION_FISICOS_NAC_PROV_MUN_ART_20", 37, cg)
+	return cg.getResultOnDemandTemplate("DONACION_FISICOS_NAC_PROV_MUN_ART_20", 38, cg)
 }
 
 func (cg *CalculoDonacionFisicosNacProvMunArt20) getTope() *float64 {
