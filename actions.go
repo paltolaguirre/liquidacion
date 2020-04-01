@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/apiClientFormula"
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -98,8 +101,9 @@ type StrDatosAsientoContableManualBlanquear struct {
 }
 
 type StrCalculoAutomaticoConceptoId struct {
-	Conceptoid      *int     `json:"conceptoid"`
-	Importeunitario *float64 `json:"importeunitario" `
+	Conceptoid      *int                           `json:"conceptoid"`
+	Importeunitario *float64                       `json:"importeunitario" `
+	Acumuladores    []structLiquidacion.Acumulador `json:"acumuladores"`
 }
 
 var nombreMicroservicio string = "liquidacion"
@@ -167,7 +171,6 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 			bancoAporteJubilatorio := monoliticComunication.Obtenerbanco(w, r, tokenAutenticacion, strconv.Itoa(*bancoaportejubilatorioID))
 			liquidacion.Bancoaportejubilatorio = bancoAporteJubilatorio
 		}
-
 		framework.RespondJSON(w, http.StatusOK, liquidacion)
 	}
 
@@ -176,6 +179,8 @@ func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
 func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+
+	autenticacion := r.Header.Get("Authorization")
 	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
@@ -193,6 +198,25 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 		db := conexionBD.ObtenerDB(tenant)
 
 		defer conexionBD.CerrarDB(db)
+
+		if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
+			if existeConceptoImpuestoGanancias(&liquidacion_data) {
+				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+				return
+			}
+		}
+
+		for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
+
+			if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil{
+				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
+				if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
+					//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+					framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
+					return
+				}
+			}
+		}
 
 		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
 			framework.RespondError(w, http.StatusInternalServerError, err.Error())
@@ -213,9 +237,22 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion) bool {
+	var existeconceptoimpuestoganancias bool = false
+	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
+		concepto := *liquidacion.Liquidacionitems[i].Concepto
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+			existeconceptoimpuestoganancias = true
+			break
+		}
+	}
+	return existeconceptoimpuestoganancias
+}
+
 func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	autenticacion := r.Header.Get("Authorization")
 	if tokenValido {
 
 		params := mux.Vars(r)
@@ -230,8 +267,10 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := conexionBD.ObtenerDB(tenant)
+		db2 := conexionBD.ObtenerDB(tenant)
 
 		defer conexionBD.CerrarDB(db)
+		defer conexionBD.CerrarDB(db2)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 			decoder := json.NewDecoder(r.Body)
@@ -246,6 +285,13 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			liquidacionid := liquidacion_data.ID
 
+			if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
+				if existeConceptoImpuestoGanancias(&liquidacion_data) {
+					framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+					return
+				}
+			}
+
 			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
 				framework.RespondError(w, http.StatusInternalServerError, err.Error())
 				return
@@ -256,12 +302,38 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+
 			if p_liquidacionid == liquidacionid || liquidacionid == 0 {
 
 				liquidacion_data.ID = p_liquidacionid
 
 				//abro una transacción para que si hay un error no persista en la DB
 				tx := db.Begin()
+
+				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
+				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
+
+					if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
+						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
+						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
+							tx.Rollback()
+							//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+							framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
+							return
+						}
+					}
+
+					if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+						for _ , acumulador := range liquidacionItem.Acumuladores {
+							acumulador.ID = 0
+						}
+						if err := tx.Model(structLiquidacion.Acumulador{}).Unscoped().Where("liquidacionitemid = ?", liquidacionItem.ID).Delete(structLiquidacion.Acumulador{}).Error; err != nil {
+							tx.Rollback()
+							framework.RespondError(w, http.StatusInternalServerError, err.Error())
+							return
+						}
+					}
+				}
 
 				//modifico el legajo de acuerdo a lo enviado en el json
 				if err := tx.Save(&liquidacion_data).Error; err != nil {
@@ -275,6 +347,8 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 					framework.RespondError(w, http.StatusInternalServerError, err.Error())
 					return
 				}
+
+
 				//despues de modificar, recorro los descuentos asociados a la liquidacion para ver si alguno fue eliminado logicamente y lo elimino de la BD
 				/*	if err := tx.Model(structLiquidacion.Descuento{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Descuento{}).Error; err != nil {
 						tx.Rollback()
@@ -318,6 +392,14 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func recalcularLiquidacionItem(liquidacionItem *structLiquidacion.Liquidacionitem, liquidacion structLiquidacion.Liquidacion, db *gorm.DB, autenticacion string) {
+	solucionCalculo := calcularConcepto(liquidacionItem.Concepto.ID, &liquidacion, db, autenticacion)
+	liquidacionItem.Importeunitario = solucionCalculo.Importeunitario
+	liquidacionItem.Acumuladores = solucionCalculo.Acumuladores
+}
+
+
 
 func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 
@@ -898,6 +980,7 @@ func roundTo(num float64, precision int) float64 {
 func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+	autenticacion := r.Header.Get("Authorization")
 	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
@@ -914,17 +997,25 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 
 		defer conexionBD.CerrarDB(db)
 
+		defer func() {
+			if r := recover(); r != nil {
+				err := r.(error)
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+			}
+		}()
+
 		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 			if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt == nil {
-
 				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
 
-				if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+				liquidacionCalculoAutomaticoCopia := liquidacionCalculoAutomatico
+				resultado := calcularConcepto(concepto.ID, &liquidacionCalculoAutomaticoCopia, db, autenticacion)
 
-					calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
-					calculoAutomatico.Hacercalculoautomatico()
-					*liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+				if resultado != nil {
+					liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = resultado.Importeunitario
+					liquidacionCalculoAutomatico.Liquidacionitems[i].Acumuladores = resultado.Acumuladores
 				}
+
 			}
 		}
 
@@ -938,6 +1029,8 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 	var liquidacionCalculoAutomatico structLiquidacion.Liquidacion
 	var importeCalculado StrCalculoAutomaticoConceptoId
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
+
+	autenticacion := r.Header.Get("Authorization")
 	if tokenValido {
 
 		decoder := json.NewDecoder(r.Body)
@@ -962,27 +1055,117 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 			framework.RespondError(w, http.StatusNotFound, framework.IdParametroVacio)
 			return
 		}
-		var concepto structConcepto.Concepto
 
-		//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
-		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
 
-			if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
-				concepto = *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
-				break
+
+		defer func() {
+			if r := recover(); r != nil {
+				err := r.(error)
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
 			}
-		}
+		}()
 
-		importeCalculado.Conceptoid = &conceptoid
-		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
-			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, &liquidacionCalculoAutomatico)
-			calculoAutomatico.Hacercalculoautomatico()
-			importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
-			importeCalculado = StrCalculoAutomaticoConceptoId{&conceptoid, &importeCalculadoConceptoID}
+		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db, autenticacion)
+
+		if calculo != nil {
+			importeCalculado = *calculo
 		}
 
 	}
 
 	framework.RespondJSON(w, http.StatusOK, importeCalculado)
 
+}
+
+
+func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, db *gorm.DB, autenticacion string ) *StrCalculoAutomaticoConceptoId {
+
+	importeCalculado := StrCalculoAutomaticoConceptoId{}
+	//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
+	importeCalculado.Conceptoid = &conceptoid
+
+	var liquidacionitem *structLiquidacion.Liquidacionitem
+	var concepto *structConcepto.Concepto
+	var Tipocalculoautomatico structConcepto.Tipocalculoautomatico
+
+	for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+		if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
+			concepto = liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+			liquidacionitem = &liquidacionCalculoAutomatico.Liquidacionitems[i]
+			break
+		}
+	}
+
+	if concepto == nil || liquidacionitem == nil {
+		panic(errors.New("Error al obtener el concepto de la liquidacion"))
+	}
+
+	if concepto.Tipocalculoautomaticoid != nil && concepto.Tipocalculoautomatico == nil {
+		ID := *concepto.Tipocalculoautomaticoid
+		db.Set("gorm:auto_preload", true).First(&Tipocalculoautomatico, ID)
+		concepto.Tipocalculoautomatico = &Tipocalculoautomatico
+	}
+
+	if concepto.Tipocalculoautomatico == nil {
+		concepto.Tipocalculoautomatico = &structConcepto.Tipocalculoautomatico{}
+		concepto.Tipocalculoautomatico.Codigo = "NO_APLICA";
+	}
+
+	if concepto.Tipocalculoautomatico.Codigo == "NO_APLICA" {
+		return nil
+	}
+
+	if concepto.Tipocalculoautomatico.Codigo == "FORMULA" {
+
+		if concepto.Codigo == "IMPUESTO_GANANCIAS" {
+			importeCalculado = ImpuestoALasGanancias(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
+		} else 	if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+			importeCalculado = ImpuestoALasGananciasDevolucion(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
+		} else {
+			//CODIGO PARA EJECUTAR LAS FORMULAS
+			resultadoFormula, err := apiClientFormula.ExecuteFormulaLiquidacion(autenticacion, liquidacionCalculoAutomatico, *concepto.Formulanombre)
+			if err != nil {
+				panic(err)
+			}
+
+			importeCalculado.Importeunitario = &resultadoFormula
+		}
+
+	} else if concepto.Tipocalculoautomatico.Codigo == "PORCENTAJE" {
+		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
+			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(concepto, liquidacionCalculoAutomatico)
+			calculoAutomatico.Hacercalculoautomatico()
+			importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+			importeCalculado.Importeunitario = &importeCalculadoConceptoID
+		}
+	}
+
+	return &importeCalculado
+}
+
+func ImpuestoALasGanancias(concepto structConcepto.Concepto, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, liquidacionitem *structLiquidacion.Liquidacionitem, db *gorm.DB) StrCalculoAutomaticoConceptoId {
+	importeCalculado := StrCalculoAutomaticoConceptoId{}
+
+	liquidacionitem.Acumuladores = nil
+
+	if liquidacionCalculoAutomatico.Tipo.Codigo != "PRIMER_QUINCENA" && liquidacionCalculoAutomatico.Tipo.Codigo != "VACACIONES" {
+		importeCalculoImpuestoGanancias := roundTo((&Ganancias.CalculoGanancias{liquidacionitem, liquidacionCalculoAutomatico, db, true}).Calculate(), 2)
+		importeCalculado.Importeunitario = &importeCalculoImpuestoGanancias
+	} else {
+		panic(errors.New("La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias"))
+	}
+
+	importeCalculado.Acumuladores = liquidacionitem.Acumuladores
+	importeCalculado.Conceptoid = &concepto.ID
+
+	return importeCalculado
+}
+
+
+func ImpuestoALasGananciasDevolucion(concepto structConcepto.Concepto, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, liquidacionitem *structLiquidacion.Liquidacionitem, db *gorm.DB) StrCalculoAutomaticoConceptoId {
+	importeCalculado := ImpuestoALasGanancias(concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
+	importeFinal := (*importeCalculado.Importeunitario) * -1
+	importeCalculado.Importeunitario = &importeFinal
+	return importeCalculado
 }
