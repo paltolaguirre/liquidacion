@@ -22,6 +22,16 @@ type CalculoGanancias struct {
 	EjecutarCalculo bool
 }
 
+const calculoremunerativos = -1
+const calculoremunerativosmenosdescuentos = -3
+const calculoremunerativosmasnoremunerativos = -4
+const calculoremunerativosmasnoremunerativosmenosdescuentos = -5
+const conceptoHorasExtrasCien = -6
+
+const tipoconceptoremunerativos = -1
+const tipoconceptodescuento = -3
+const tipoconceptoretencion = -4
+
 func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, formula iformula) float64 {
 
 	var importeTotal float64
@@ -64,7 +74,7 @@ func (cg *CalculoGanancias) Calculate() float64 {
 	var liquidacion structLiquidacion.Liquidacion
 	copier.Copy(&liquidacion, &cg.Liquidacion)
 	cg.Liquidacion = &liquidacion
-	cg.crearYReemplazarLiquidacionItems()
+	cg.copiarYReemplazarLiquidacionItems()
 	cg.obtenerLiquidacionesItemsPrimerQuincenaVacaciones()
 	if cg.existeConceptoHorasExtrasCien() {
 		cg.recalcularImporteConceptos()
@@ -75,7 +85,7 @@ func (cg *CalculoGanancias) Calculate() float64 {
 
 }
 
-func (cg *CalculoGanancias) crearYReemplazarLiquidacionItems() {
+func (cg *CalculoGanancias) copiarYReemplazarLiquidacionItems() {
 	var arrayLiquidacionesItems []structLiquidacion.Liquidacionitem
 	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 		var liquidacionItem structLiquidacion.Liquidacionitem
@@ -166,7 +176,7 @@ func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
 
 					}
 
-					if *concepto.Tipoconceptoid == -4 || *concepto.Tipoconceptoid == -3 {
+					if *concepto.Tipoconceptoid == tipoconceptoretencion || *concepto.Tipoconceptoid == tipoconceptodescuento {
 						importeConcepto = importeConcepto * -1
 					}
 					importeTotal = importeTotal + importeConcepto
@@ -250,10 +260,10 @@ func (cg *CalculoGanancias) obtenerRemunerativosMenosDescuentos() float64 {
 			importeconcepto := liquidacionitem.Importeunitario
 			if importeconcepto != nil {
 
-				if tipoconcepto == -1 {
+				if tipoconcepto == tipoconceptoremunerativos {
 					totalRemunerativos = totalRemunerativos + *importeconcepto
 				}
-				if tipoconcepto == -3 {
+				if tipoconcepto == tipoconceptodescuento {
 					totalDescuentos = totalDescuentos + *importeconcepto
 				}
 			}
@@ -282,7 +292,7 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 				if liquidacionitem.Importeunitario != nil {
 					importeLiquidacionitem := *liquidacionitem.Importeunitario
 
-					if *concepto.Tipoconceptoid == -3 {
+					if *concepto.Tipoconceptoid == tipoconceptodescuento {
 						importeLiquidacionitem = importeLiquidacionitem * -1
 					}
 
@@ -303,7 +313,7 @@ func (cg *CalculoGanancias) obtenerImporteHorasExtrasCien() float64 {
 
 	for _, liquidacionItem := range cg.Liquidacion.Liquidacionitems {
 		concepto := liquidacionItem.Concepto
-		if concepto.ID == -6 {
+		if concepto.ID == conceptoHorasExtrasCien {
 			importeConcepto = *liquidacionItem.Importeunitario / float64(2)
 			break
 		}
@@ -520,7 +530,7 @@ func (cg *CalculoGanancias) existeConceptoHorasExtrasCien() bool {
 	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
 		concepto := liquidacionitem.Concepto
-		if concepto.ID == -6 {
+		if concepto.ID == conceptoHorasExtrasCien {
 			existeConceptoHorasExtrasCien = true
 			importeConcepto := *liquidacionitem.Importeunitario / float64(2)
 			cg.Liquidacion.Liquidacionitems[i].Importeunitario = &importeConcepto
@@ -548,11 +558,12 @@ func (cg *CalculoGanancias) recalcularImporteConceptos() {
 }
 
 func (cg *CalculoGanancias) esConceptoParaRecalcularImporte(concepto *structConcepto.Concepto) bool {
+	/*todo concepto con impuesto a las ganancias y tipo de calculo porcentaje (que utilice remunerativos) deberan recalcular su importe*/
 	var esconceptopararecalcularimporte = false
 	if concepto.Tipoimpuestogananciasid != nil {
 		if concepto.Tipodecalculoid != nil {
 			tipocalculo := *concepto.Tipodecalculoid
-			if tipocalculo == -1 || tipocalculo == -3 || tipocalculo == -4 || tipocalculo == -5 {
+			if tipocalculo == calculoremunerativos || tipocalculo == calculoremunerativosmenosdescuentos || tipocalculo == calculoremunerativosmasnoremunerativos || tipocalculo == calculoremunerativosmasnoremunerativosmenosdescuentos {
 				esconceptopararecalcularimporte = true
 			}
 		}
