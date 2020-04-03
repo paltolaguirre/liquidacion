@@ -106,7 +106,7 @@ func (cg *CalculoGanancias) copiarYReemplazarLiquidacionItems() {
 
 func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() int {
 	var liquidacionPrimerQuincena structLiquidacion.Liquidacion
-
+	existeHorasExtrasCien := cg.existeHorasExtrasCien()
 	items := len(cg.Liquidacion.Liquidacionitems)
 
 	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || cg.Liquidacion.Tipo.Codigo == "MENSUAL" {
@@ -119,7 +119,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 			agregarLiquidacionItem := true
 			liquidacionItem := liquidacionPrimerQuincena.Liquidacionitems[i]
 			concepto := liquidacionItem.Concepto
-			if cg.existeConceptoHorasExtrasCien() {
+			if existeHorasExtrasCien {
 				if cg.esConceptoParaRecalcularImporte(concepto) {
 					if cg.existeLiquidacionItemIntoArray(liquidacionItem) {
 						agregarLiquidacionItem = false
@@ -134,6 +134,18 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 	}
 
 	return items
+}
+
+func (cg *CalculoGanancias) existeHorasExtrasCien() bool {
+	var existeHorasExtrasCien = false
+	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
+		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
+		concepto := liquidacionitem.Concepto
+		if concepto.ID == conceptoHorasExtrasCien {
+			existeHorasExtrasCien = true
+		}
+	}
+	return existeHorasExtrasCien
 }
 
 func (cg *CalculoGanancias) existeLiquidacionItemIntoArray(liquidacionitem structLiquidacion.Liquidacionitem) bool {
