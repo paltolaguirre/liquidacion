@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos"
+	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
@@ -19,6 +21,16 @@ type CalculoGanancias struct {
 	Db              *gorm.DB
 	EjecutarCalculo bool
 }
+
+const calculoremunerativos = -1
+const calculoremunerativosmenosdescuentos = -3
+const calculoremunerativosmasnoremunerativos = -4
+const calculoremunerativosmasnoremunerativosmenosdescuentos = -5
+const conceptoHorasExtrasCien = -6
+
+const tipoconceptoremunerativos = -1
+const tipoconceptodescuento = -3
+const tipoconceptoretencion = -4
 
 func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, formula iformula) float64 {
 
@@ -58,17 +70,44 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 }
 
 func (cg *CalculoGanancias) Calculate() float64 {
-	cantidadItems := cg.obtenerLiquidacionesItemsPrimerQuincenaVacaciones()
+
+	cg.cloneRemplaceLiq()
+	cg.obtenerLiquidacionesItemsPrimerQuincenaVacaciones()
+	cg.recalcularImporteConceptosSiExisteHorasExtrasCien()
 	cg.invocarCalculosLiquidacionAnual()
 	calculo := (&CalculoRetencionDelMes{*cg}).getResult()
-	cg.retirarItemsPrimerQuincenaVacaciones(cantidadItems)
 	return calculo
 
 }
 
+func (cg *CalculoGanancias) cloneRemplaceLiq() {
+	var liquidacion structLiquidacion.Liquidacion
+	copier.Copy(&liquidacion, &cg.Liquidacion)
+	cg.Liquidacion = &liquidacion
+	cg.copiarYReemplazarLiquidacionItems()
+}
+
+func (cg *CalculoGanancias) recalcularImporteConceptosSiExisteHorasExtrasCien() {
+	if cg.existeHorasExtrasCien() {
+		cg.recalcularImporteHorasExtrasCien()
+		cg.recalcularImporteConceptos()
+	}
+}
+
+func (cg *CalculoGanancias) copiarYReemplazarLiquidacionItems() {
+	var arrayLiquidacionesItems []structLiquidacion.Liquidacionitem
+	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
+		var liquidacionItem structLiquidacion.Liquidacionitem
+		copier.Copy(&liquidacionItem, &cg.Liquidacion.Liquidacionitems[i])
+		arrayLiquidacionesItems = append(arrayLiquidacionesItems, liquidacionItem)
+	}
+
+	cg.Liquidacion.Liquidacionitems = arrayLiquidacionesItems
+}
+
 func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() int {
 	var liquidacionPrimerQuincena structLiquidacion.Liquidacion
-
+	existeHorasExtrasCien := cg.existeHorasExtrasCien()
 	items := len(cg.Liquidacion.Liquidacionitems)
 
 	if cg.Liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || cg.Liquidacion.Tipo.Codigo == "MENSUAL" {
@@ -78,9 +117,17 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ? AND legajoid = ? AND deleted_at is null", mesliquidacion, anioLiquidacion, strconv.Itoa(cg.Liquidacion.ID), cg.Liquidacion.Legajoid)
 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
-
+			agregarLiquidacionItem := true
 			liquidacionItem := liquidacionPrimerQuincena.Liquidacionitems[i]
-			if liquidacionItem.DeletedAt == nil {
+			concepto := liquidacionItem.Concepto
+			if existeHorasExtrasCien {
+				if cg.esConceptoParaRecalcularImporte(concepto) {
+					if cg.existeLiquidacionItemIntoArray(liquidacionItem) {
+						agregarLiquidacionItem = false
+					}
+				}
+			}
+			if liquidacionItem.DeletedAt == nil && agregarLiquidacionItem {
 				cg.Liquidacion.Liquidacionitems = append(cg.Liquidacion.Liquidacionitems, liquidacionItem)
 			}
 		}
@@ -88,6 +135,29 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 	}
 
 	return items
+}
+
+func (cg *CalculoGanancias) existeHorasExtrasCien() bool {
+	var existeHorasExtrasCien = false
+	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
+		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
+		concepto := liquidacionitem.Concepto
+		if concepto.ID == conceptoHorasExtrasCien {
+			existeHorasExtrasCien = true
+			break
+		}
+	}
+	return existeHorasExtrasCien
+}
+
+func (cg *CalculoGanancias) existeLiquidacionItemIntoArray(liquidacionitem structLiquidacion.Liquidacionitem) bool {
+	var noExisteLiquidacionItemIntoArray = false
+	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
+		if cg.Liquidacion.Liquidacionitems[i].Concepto.ID == liquidacionitem.Concepto.ID {
+			noExisteLiquidacionItemIntoArray = true
+		}
+	}
+	return noExisteLiquidacionItemIntoArray
 }
 
 func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
@@ -141,10 +211,12 @@ func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
 					}
 					importeLiquidacionitem := liquidacionitem.Importeunitario
 					if importeLiquidacionitem != nil {
+
 						importeConcepto = *importeLiquidacionitem / mes
+
 					}
 
-					if *concepto.Tipoconceptoid == -4 {
+					if *concepto.Tipoconceptoid == tipoconceptoretencion || *concepto.Tipoconceptoid == tipoconceptodescuento {
 						importeConcepto = importeConcepto * -1
 					}
 					importeTotal = importeTotal + importeConcepto
@@ -228,10 +300,10 @@ func (cg *CalculoGanancias) obtenerRemunerativosMenosDescuentos() float64 {
 			importeconcepto := liquidacionitem.Importeunitario
 			if importeconcepto != nil {
 
-				if tipoconcepto == -1 {
+				if tipoconcepto == tipoconceptoremunerativos {
 					totalRemunerativos = totalRemunerativos + *importeconcepto
 				}
-				if tipoconcepto == -3 {
+				if tipoconcepto == tipoconceptodescuento {
 					totalDescuentos = totalDescuentos + *importeconcepto
 				}
 			}
@@ -256,13 +328,15 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 				if concepto.Prorrateo == true {
 					mes = float64(cg.getfgMesesAProrratear(concepto))
 				}
-				importeLiquidacionitem := liquidacionitem.Importeunitario
-				if importeLiquidacionitem != nil {
-					if concepto.ID == -6 {
-						importeConcepto = (*importeLiquidacionitem / float64(2)) / mes
-					} else {
-						importeConcepto = *importeLiquidacionitem / mes
+
+				if liquidacionitem.Importeunitario != nil {
+					importeLiquidacionitem := *liquidacionitem.Importeunitario
+
+					if *concepto.Tipoconceptoid == tipoconceptodescuento {
+						importeLiquidacionitem = importeLiquidacionitem * -1
 					}
+
+					importeConcepto = importeLiquidacionitem / mes
 
 				}
 				importeTotal = importeTotal + importeConcepto
@@ -272,6 +346,19 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 
 	}
 	return importeTotal
+}
+
+func (cg *CalculoGanancias) obtenerImporteHorasExtrasCien() float64 {
+	var importeConcepto = float64(0)
+
+	for _, liquidacionItem := range cg.Liquidacion.Liquidacionitems {
+		concepto := liquidacionItem.Concepto
+		if concepto.ID == conceptoHorasExtrasCien {
+			importeConcepto = *liquidacionItem.Importeunitario / float64(2)
+			break
+		}
+	}
+	return importeConcepto
 }
 
 func (cg *CalculoGanancias) getfgMesesAProrratear(concepto *structConcepto.Concepto) int {
@@ -390,6 +477,18 @@ func (cg *CalculoGanancias) obtenerLiquidacionesIgualAnioLegajoMenorMes() *[]str
 	mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 	cg.Db.Order("to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') desc").Set("gorm:auto_preload", true).Find(&liquidaciones, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", mesliquidacion, strconv.Itoa(anioperiodoliquidacion), *cg.Liquidacion.Legajoid)
 
+	var calculoGanancias CalculoGanancias
+
+	for i := 0; i < len(liquidaciones); i++ {
+		calculoGanancias.Liquidacion = &liquidaciones[i]
+		cg.recalcularImporteConceptosSiExisteHorasExtrasCien()
+		if calculoGanancias.existeHorasExtrasCien() {
+			cg.recalcularImporteHorasExtrasCien()
+			calculoGanancias.recalcularImporteConceptos()
+			liquidaciones[i] = *calculoGanancias.Liquidacion
+		}
+	}
+
 	return &liquidaciones
 }
 
@@ -432,7 +531,6 @@ func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrillaMesDesdeHasta
 	return importeTotal
 }
 
-
 func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrilla(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
 	var importeTotal float64
 	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
@@ -467,4 +565,48 @@ func round(num float64) int {
 func (cg *CalculoGanancias) roundTo(num float64, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	return float64(round(num*output)) / output
+}
+
+func (cg *CalculoGanancias) recalcularImporteHorasExtrasCien() {
+	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
+		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
+		concepto := liquidacionitem.Concepto
+		if concepto.ID == conceptoHorasExtrasCien {
+			importeConcepto := *liquidacionitem.Importeunitario / float64(2)
+			cg.Liquidacion.Liquidacionitems[i].Importeunitario = &importeConcepto
+
+		}
+	}
+}
+
+func (cg *CalculoGanancias) recalcularImporteConceptos() {
+
+	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
+		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
+		concepto := liquidacionitem.Concepto
+		if cg.esConceptoParaRecalcularImporte(concepto) {
+
+			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(concepto, cg.Liquidacion)
+			calculoAutomatico.Hacercalculoautomatico()
+			importeCalculadoConceptoID := cg.roundTo(calculoAutomatico.GetImporteCalculado(), 4)
+
+			cg.Liquidacion.Liquidacionitems[i].Importeunitario = &importeCalculadoConceptoID
+
+		}
+
+	}
+}
+
+func (cg *CalculoGanancias) esConceptoParaRecalcularImporte(concepto *structConcepto.Concepto) bool {
+	/*todo concepto con impuesto a las ganancias y tipo de calculo porcentaje (que utilice remunerativos) deberan recalcular su importe*/
+	var esconceptopararecalcularimporte = false
+	if concepto.Tipoimpuestogananciasid != nil {
+		if concepto.Tipodecalculoid != nil {
+			tipocalculo := *concepto.Tipodecalculoid
+			if tipocalculo == calculoremunerativos || tipocalculo == calculoremunerativosmenosdescuentos || tipocalculo == calculoremunerativosmasnoremunerativos || tipocalculo == calculoremunerativosmasnoremunerativosmenosdescuentos {
+				esconceptopararecalcularimporte = true
+			}
+		}
+	}
+	return esconceptopararecalcularimporte
 }

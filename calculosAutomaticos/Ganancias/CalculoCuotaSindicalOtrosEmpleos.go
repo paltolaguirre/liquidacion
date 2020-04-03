@@ -9,7 +9,7 @@ func (cg *CalculoCuotaSindicalOtrosEmpleos) getResultInternal() float64 {
 }
 
 func (cg *CalculoCuotaSindicalOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("CUOTA_SINDICAL_OTROS_EMPLEOS", 23, cg)
+	return cg.getResultOnDemandTemplate("CUOTA_SINDICAL_OTROS_EMPLEOS", 21, cg)
 }
 
 func (cg *CalculoCuotaSindicalOtrosEmpleos) getTope() *float64 {

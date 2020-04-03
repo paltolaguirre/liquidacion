@@ -11,7 +11,7 @@ func (cg *CalculoInteresesCreditosHipotecarios) getResultInternal() float64 {
 }
 
 func (cg *CalculoInteresesCreditosHipotecarios) getResult() float64 {
-	return cg.getResultOnDemandTemplate("INTERESES_CREDITOS_HIPOTECARIOS", 29, cg)
+	return cg.getResultOnDemandTemplate("INTERESES_CREDITOS_HIPOTECARIOS", 30, cg)
 }
 
 func (cg *CalculoInteresesCreditosHipotecarios) getTope() *float64 {

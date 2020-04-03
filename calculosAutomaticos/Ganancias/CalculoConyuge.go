@@ -9,7 +9,7 @@ func (cg *CalculoConyuge) getResultInternal() float64 {
 }
 
 func (cg *CalculoConyuge) getResult() float64 {
-	return cg.getResultOnDemandTemplate("CONYUGE", 39, cg)
+	return cg.getResultOnDemandTemplate("CONYUGE", 40, cg)
 }
 
 func (cg *CalculoConyuge) getTope() *float64 {

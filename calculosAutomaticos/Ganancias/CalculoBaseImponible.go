@@ -16,7 +16,7 @@ func (cg *CalculoBaseImponible) getResultInternal() float64 {
 }
 
 func (cg *CalculoBaseImponible) getResult() float64 {
-	return cg.getResultOnDemandTemplate("BASE_IMPONIBLE", 47, cg)
+	return cg.getResultOnDemandTemplate("BASE_IMPONIBLE", 48, cg)
 }
 
 func (cg *CalculoBaseImponible) getTope() *float64 {

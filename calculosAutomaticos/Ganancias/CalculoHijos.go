@@ -29,7 +29,7 @@ func (cg *CalculoHijos) getResultInternal() float64 {
 }
 
 func (cg *CalculoHijos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("HIJOS", 40, cg)
+	return cg.getResultOnDemandTemplate("HIJOS", 41, cg)
 }
 
 func (cg *CalculoHijos) getTope() *float64 {
