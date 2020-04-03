@@ -119,9 +119,11 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 			agregarLiquidacionItem := true
 			liquidacionItem := liquidacionPrimerQuincena.Liquidacionitems[i]
 			concepto := liquidacionItem.Concepto
-			if cg.esConceptoParaRecalcularImporte(concepto) {
-				if cg.existeLiquidacionItemIntoArray(liquidacionItem) {
-					agregarLiquidacionItem = false
+			if cg.existeConceptoHorasExtrasCien() {
+				if cg.esConceptoParaRecalcularImporte(concepto) {
+					if cg.existeLiquidacionItemIntoArray(liquidacionItem) {
+						agregarLiquidacionItem = false
+					}
 				}
 			}
 			if liquidacionItem.DeletedAt == nil && agregarLiquidacionItem {
