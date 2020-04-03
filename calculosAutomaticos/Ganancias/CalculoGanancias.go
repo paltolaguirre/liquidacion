@@ -349,16 +349,18 @@ func (cg *CalculoGanancias) GetfgImporteTotalSegunTipoImpuestoGanancias(tipoImpu
 }
 
 func (cg *CalculoGanancias) obtenerImporteHorasExtrasCien() float64 {
-	var importeConcepto = float64(0)
+	var importeConcepto, importeTotal float64
 
 	for _, liquidacionItem := range cg.Liquidacion.Liquidacionitems {
 		concepto := liquidacionItem.Concepto
 		if concepto.ID == conceptoHorasExtrasCien {
-			importeConcepto = *liquidacionItem.Importeunitario / float64(2)
-			break
+			importeConcepto = *liquidacionItem.Importeunitario
+			importeTotal = importeTotal + importeConcepto
 		}
+
 	}
-	return importeConcepto
+
+	return importeTotal
 }
 
 func (cg *CalculoGanancias) getfgMesesAProrratear(concepto *structConcepto.Concepto) int {
