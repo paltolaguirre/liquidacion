@@ -71,18 +71,26 @@ func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, 
 
 func (cg *CalculoGanancias) Calculate() float64 {
 
-	var liquidacion structLiquidacion.Liquidacion
-	copier.Copy(&liquidacion, &cg.Liquidacion)
-	cg.Liquidacion = &liquidacion
-	cg.copiarYReemplazarLiquidacionItems()
+	cg.cloneRemplaceLiq()
 	cg.obtenerLiquidacionesItemsPrimerQuincenaVacaciones()
-	if cg.existeConceptoHorasExtrasCien() {
-		cg.recalcularImporteConceptos()
-	}
+	cg.recalcularImporteConceptosSiExisteHorasExtrasCien()
 	cg.invocarCalculosLiquidacionAnual()
 	calculo := (&CalculoRetencionDelMes{*cg}).getResult()
 	return calculo
 
+}
+
+func (cg *CalculoGanancias) cloneRemplaceLiq() {
+	var liquidacion structLiquidacion.Liquidacion
+	copier.Copy(&liquidacion, &cg.Liquidacion)
+	cg.Liquidacion = &liquidacion
+	cg.copiarYReemplazarLiquidacionItems()
+}
+
+func (cg *CalculoGanancias) recalcularImporteConceptosSiExisteHorasExtrasCien() {
+	if cg.existeConceptoHorasExtrasCien() {
+		cg.recalcularImporteConceptos()
+	}
 }
 
 func (cg *CalculoGanancias) copiarYReemplazarLiquidacionItems() {
@@ -108,9 +116,15 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ? AND legajoid = ? AND deleted_at is null", mesliquidacion, anioLiquidacion, strconv.Itoa(cg.Liquidacion.ID), cg.Liquidacion.Legajoid)
 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
-
+			agregarLiquidacionItem := true
 			liquidacionItem := liquidacionPrimerQuincena.Liquidacionitems[i]
-			if liquidacionItem.DeletedAt == nil {
+			concepto := liquidacionItem.Concepto
+			if cg.esConceptoParaRecalcularImporte(concepto) {
+				if cg.existeLiquidacionItemIntoArray(liquidacionItem) {
+					agregarLiquidacionItem = false
+				}
+			}
+			if liquidacionItem.DeletedAt == nil && agregarLiquidacionItem {
 				cg.Liquidacion.Liquidacionitems = append(cg.Liquidacion.Liquidacionitems, liquidacionItem)
 			}
 		}
@@ -118,6 +132,16 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 	}
 
 	return items
+}
+
+func (cg *CalculoGanancias) existeLiquidacionItemIntoArray(liquidacionitem structLiquidacion.Liquidacionitem) bool {
+	var noExisteLiquidacionItemIntoArray = false
+	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
+		if cg.Liquidacion.Liquidacionitems[i].Concepto.ID == liquidacionitem.Concepto.ID {
+			noExisteLiquidacionItemIntoArray = true
+		}
+	}
+	return noExisteLiquidacionItemIntoArray
 }
 
 func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
@@ -441,6 +465,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionesIgualAnioLegajoMenorMes() *[]str
 
 	for i := 0; i < len(liquidaciones); i++ {
 		calculoGanancias.Liquidacion = &liquidaciones[i]
+		cg.recalcularImporteConceptosSiExisteHorasExtrasCien()
 		if calculoGanancias.existeConceptoHorasExtrasCien() {
 			calculoGanancias.recalcularImporteConceptos()
 			liquidaciones[i] = *calculoGanancias.Liquidacion
@@ -552,6 +577,7 @@ func (cg *CalculoGanancias) recalcularImporteConceptos() {
 			importeCalculadoConceptoID := cg.roundTo(calculoAutomatico.GetImporteCalculado(), 4)
 
 			cg.Liquidacion.Liquidacionitems[i].Importeunitario = &importeCalculadoConceptoID
+
 		}
 
 	}
