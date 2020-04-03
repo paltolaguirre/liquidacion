@@ -88,7 +88,8 @@ func (cg *CalculoGanancias) cloneRemplaceLiq() {
 }
 
 func (cg *CalculoGanancias) recalcularImporteConceptosSiExisteHorasExtrasCien() {
-	if cg.existeConceptoHorasExtrasCien() {
+	if cg.existeHorasExtrasCien() {
+		cg.recalcularImporteHorasExtrasCien()
 		cg.recalcularImporteConceptos()
 	}
 }
@@ -143,6 +144,7 @@ func (cg *CalculoGanancias) existeHorasExtrasCien() bool {
 		concepto := liquidacionitem.Concepto
 		if concepto.ID == conceptoHorasExtrasCien {
 			existeHorasExtrasCien = true
+			break
 		}
 	}
 	return existeHorasExtrasCien
@@ -480,7 +482,8 @@ func (cg *CalculoGanancias) obtenerLiquidacionesIgualAnioLegajoMenorMes() *[]str
 	for i := 0; i < len(liquidaciones); i++ {
 		calculoGanancias.Liquidacion = &liquidaciones[i]
 		cg.recalcularImporteConceptosSiExisteHorasExtrasCien()
-		if calculoGanancias.existeConceptoHorasExtrasCien() {
+		if calculoGanancias.existeHorasExtrasCien() {
+			cg.recalcularImporteHorasExtrasCien()
 			calculoGanancias.recalcularImporteConceptos()
 			liquidaciones[i] = *calculoGanancias.Liquidacion
 		}
@@ -564,19 +567,16 @@ func (cg *CalculoGanancias) roundTo(num float64, precision int) float64 {
 	return float64(round(num*output)) / output
 }
 
-func (cg *CalculoGanancias) existeConceptoHorasExtrasCien() bool {
-	var existeConceptoHorasExtrasCien = false
+func (cg *CalculoGanancias) recalcularImporteHorasExtrasCien() {
 	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
 		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
 		concepto := liquidacionitem.Concepto
 		if concepto.ID == conceptoHorasExtrasCien {
-			existeConceptoHorasExtrasCien = true
 			importeConcepto := *liquidacionitem.Importeunitario / float64(2)
 			cg.Liquidacion.Liquidacionitems[i].Importeunitario = &importeConcepto
 
 		}
 	}
-	return existeConceptoHorasExtrasCien
 }
 
 func (cg *CalculoGanancias) recalcularImporteConceptos() {
