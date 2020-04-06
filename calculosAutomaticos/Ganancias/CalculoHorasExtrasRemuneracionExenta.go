@@ -7,8 +7,9 @@ type CalculoHorasExtrasRemuneracionExenta struct {
 func (cg *CalculoHorasExtrasRemuneracionExenta) getResultInternal() float64 {
 	importeRemExenta := cg.GetfgImporteTotalSegunTipoImpuestoGanancias("HORAS_EXTRAS_REMUNERACION_EXENTA")
 	importeRemGravada := cg.obtenerImporteHorasExtrasCien()
+	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("HORAS_EXTRAS_REMUNERACION_EXENTA")
 
-	return importeRemExenta + importeRemGravada
+	return importeRemExenta + importeRemGravada + importeAcumuladorMesAnterior
 
 }
 

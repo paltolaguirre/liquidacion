@@ -98,11 +98,7 @@ func (calculoautomatico *Calculoautomatico) calcularImporteSegunTipoConcepto(tip
 		if liquidacionitem.DeletedAt == nil {
 			if *liquidacionitem.Concepto.Tipoconceptoid == tipoConcepto && liquidacionitem.Concepto.ID != calculoautomatico.Concepto.ID {
 				if liquidacionitem.Importeunitario != importeNil {
-					importeLiquidacionItem := *liquidacionitem.Importeunitario
-					if liquidacionitem.Concepto.ID == -6 {
-						importeLiquidacionItem = importeLiquidacionItem / float64(2)
-					}
-					importeCalculado = importeCalculado + importeLiquidacionItem
+					importeCalculado = importeCalculado + *liquidacionitem.Importeunitario
 				}
 			}
 		}
