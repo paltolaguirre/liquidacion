@@ -553,8 +553,9 @@ func (cg *CalculoGanancias) obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodi
 
 	anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 	mesLiquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion) - 1
+	legajoID := *cg.Liquidacion.Legajoid
 
-	sql := "select importe from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesLiquidacion) + " order by fechaperiodoliquidacion))"
+	sql := "select importe from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesLiquidacion) + " AND tipoid = -1 AND legajoid = " + strconv.Itoa(legajoID) + " order by fechaperiodoliquidacion))"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
