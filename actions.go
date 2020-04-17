@@ -129,9 +129,9 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 		if queries["fechadesde"] == nil && queries["fechahasta"] == nil {
 			db.Set("gorm:auto_preload", true).Find(&liquidaciones)
 		} else {
-			var p_fechadesde string = r.URL.Query()["fechadesde"][0]
-			var p_fechahasta string = r.URL.Query()["fechahasta"][0]
-			db.Set("gorm:auto_preload", true).Where("fechaperiodoliquidacion BETWEEN ? AND ?", p_fechadesde, p_fechahasta).Find(&liquidaciones)
+			var p_fechadesde string = r.URL.Query()["fechadesde"][0] + " 00:00:00-03"
+			var p_fechahasta string = r.URL.Query()["fechahasta"][0] + " 00:00:00-03"
+			db.Set("gorm:auto_preload", true).Where("fecha BETWEEN ? AND ?", p_fechadesde, p_fechahasta).Find(&liquidaciones)
 		}
 
 		framework.RespondJSON(w, http.StatusOK, liquidaciones)
