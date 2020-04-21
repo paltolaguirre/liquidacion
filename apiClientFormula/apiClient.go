@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Function/structFunction"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 	"github.com/xubiosueldos/framework/configuracion"
@@ -12,13 +13,13 @@ import (
 	"net/http"
 )
 
-func ExecuteFormulaLiquidacion(authorization string, liquidacion *structLiquidacion.Liquidacion, formulaName string) (float64, error) {
+func ExecuteFormulaLiquidacion(authorization string, liquidacion *structLiquidacion.Liquidacion, formulaName string, concepto *structConcepto.Concepto) (float64, error) {
 
 	config := configuracion.GetInstance()
 	url := configuracion.GetUrlMicroservicio(config.Puertomicroservicioformula) + "formula/execute"
 
 	executeBody := FormulaExecute{
-		Context: Context{Currentliquidacion: *liquidacion},
+		Context: Context{Currentliquidacion: *liquidacion, Currentconcepto: *concepto},
 		Invoke: structFunction.Invoke{
 			Functionname: formulaName,
 		},
