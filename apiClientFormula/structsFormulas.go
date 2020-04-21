@@ -2,6 +2,7 @@ package apiClientFormula
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Function/structFunction"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
 )
@@ -19,4 +20,5 @@ type Executor struct {
 
 type Context struct {
 	Currentliquidacion structLiquidacion.Liquidacion `json:"currentliquidacion"`
+	Currentconcepto structConcepto.Concepto `json:"currentconcepto"`
 }
