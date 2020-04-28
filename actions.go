@@ -850,7 +850,13 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				/* se modifica liquidacion a duplicar */
 				liquidacion.ID = 0
 				liquidacion.Tipoid = duplicarLiquidacionesData.Liquidaciondefaultvalues.Tipoid
-				liquidacion.Tipo = nil
+				if err := db.Set("gorm:auto_preload", true).First(&liquidacion.Tipo, "id = ?", liquidacion.Tipoid).Error; gorm.IsRecordNotFoundError(err) {
+					procesamientoStatus.Id = *liquidacion.Tipoid
+					procesamientoStatus.Tipo = "ERROR"
+					procesamientoStatus.Codigo = http.StatusNotFound
+					procesamientoStatus.Mensaje = err.Error()
+					procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+				}
 				liquidacion.Fecha = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fecha
 				liquidacion.Fechaultimodepositoaportejubilatorio = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaultimodepositoaportejubilatorio
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
@@ -864,6 +870,11 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 					liquidacion.Liquidacionitems[index].CreatedAt = time.Time{}
 					liquidacion.Liquidacionitems[index].UpdatedAt = time.Time{}
 					liquidacion.Liquidacionitems[index].Liquidacionid = 0
+					liquidacion.Liquidacionitems[index].Acumuladores = nil
+					if !liquidacion.Liquidacionitems[index].Concepto.Eseditable {
+						recalcularLiquidacionItem(&liquidacion.Liquidacionitems[index], liquidacion, db, r.Header.Get("Authorization"))
+					}
+
 				}
 
 				/*for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
