@@ -452,7 +452,7 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliarAnual(columnaDetalleCargoFa
 			}
 
 			if mesdadobaja == 0 {
-				importeTotal = (valorfijo / 12) * -float64(12-(mesdadoalta-1)) * (porcentaje / 100)
+				importeTotal = (valorfijo / 12) * float64(12-(mesdadoalta-1)) * (porcentaje / 100)
 			} else {
 				if mesdadobaja <= 12 {
 					importeTotal = (valorfijo / 12) * float64(mesdadobaja-(mesdadoalta-1)) * (porcentaje / 100)
