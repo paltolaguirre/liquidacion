@@ -620,10 +620,8 @@ func (cg *CalculoGanancias) obtenerImporteSac() float64 {
 	legajoID := cg.Liquidacion.Legajoid
 	var importeSac float64 = 0
 
-	if mesliquidacion == "06" || mesliquidacion == "12" {
-		sql := "SELECT importeunitario FROM liquidacion l INNER JOIN legajo le ON l.legajoid = le.id INNER JOIN liquidacionitem li ON l.id = li.liquidacionid WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + mesliquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " AND li.conceptoid = -2 AND l.tipoid = -5"
-		cg.Db.Raw(sql).Row().Scan(&importeSac)
-	}
+	sql := "SELECT importeunitario FROM liquidacion l INNER JOIN legajo le ON l.legajoid = le.id INNER JOIN liquidacionitem li ON l.id = li.liquidacionid WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + mesliquidacion + "' AND le.id = " + strconv.Itoa(*legajoID) + " AND li.conceptoid = -2"
+	cg.Db.Raw(sql).Row().Scan(&importeSac)
 
 	return importeSac
 }
