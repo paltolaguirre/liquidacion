@@ -9,8 +9,6 @@ func (cg *CalculoSubtotalRemuneracionGravada) getResultInternal() float64 {
 	var importeTotal float64
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoRemuneracionBruta{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoRemuneracionNoHabitual{cg.CalculoGanancias}).getResult())
-	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoSACPrimerCuota{cg.CalculoGanancias}).getResult())
-	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoSACSegundaCuota{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoHorasExtrasGravadas{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoMovilidadYViaticosGravada{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoMaterialDidacticoPersonalDocenteRemuneracion{cg.CalculoGanancias}).getResult())
@@ -21,9 +19,9 @@ func (cg *CalculoSubtotalRemuneracionGravada) getResultInternal() float64 {
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoHorasExtrasGravadasOtrosEmpleos{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoMovilidadYViaticosGravadaOtrosEmpleos{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos{cg.CalculoGanancias}).getResult())
-
+	importeLiquidacionSAC := cg.obtenerImporteSac()
 	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("SUBTOTAL_REMUNERACION_GRAVADA")
-	importeTotal = Sum(arraySubtotalRemuneracionGravada) + importeAcumuladorMesAnterior
+	importeTotal = Sum(arraySubtotalRemuneracionGravada) + importeLiquidacionSAC + importeAcumuladorMesAnterior
 
 	return importeTotal
 }
