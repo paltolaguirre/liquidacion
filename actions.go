@@ -267,9 +267,9 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := conexionBD.ObtenerDB(tenant)
-		db2 := conexionBD.ObtenerDB(tenant)
-
 		defer conexionBD.CerrarDB(db)
+
+		db2 := conexionBD.ObtenerDB(tenant)
 		defer conexionBD.CerrarDB(db2)
 
 		if !liquidacionContabilizada(p_liquidacionid, db) {
@@ -309,6 +309,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 				//abro una transacción para que si hay un error no persista en la DB
 				tx := db.Begin()
+				defer tx.Rollback()
 
 				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
 				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
@@ -316,7 +317,6 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 					if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
 						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
 						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
-							tx.Rollback()
 							//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
 							framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
 							return
@@ -328,7 +328,6 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 							acumulador.ID = 0
 						}
 						if err := tx.Model(structLiquidacion.Acumulador{}).Unscoped().Where("liquidacionitemid = ?", liquidacionItem.ID).Delete(structLiquidacion.Acumulador{}).Error; err != nil {
-							tx.Rollback()
 							framework.RespondError(w, http.StatusInternalServerError, err.Error())
 							return
 						}
@@ -337,13 +336,11 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 				//modifico el legajo de acuerdo a lo enviado en el json
 				if err := tx.Save(&liquidacion_data).Error; err != nil {
-					tx.Rollback()
 					framework.RespondError(w, http.StatusInternalServerError, err.Error())
 					return
 				}
 
 				if err := tx.Model(structLiquidacion.Liquidacionitem{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Liquidacionitem{}).Error; err != nil {
-					tx.Rollback()
 					framework.RespondError(w, http.StatusInternalServerError, err.Error())
 					return
 				}
@@ -853,7 +850,13 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				/* se modifica liquidacion a duplicar */
 				liquidacion.ID = 0
 				liquidacion.Tipoid = duplicarLiquidacionesData.Liquidaciondefaultvalues.Tipoid
-				liquidacion.Tipo = nil
+				if err := db.Set("gorm:auto_preload", true).First(&liquidacion.Tipo, "id = ?", liquidacion.Tipoid).Error; gorm.IsRecordNotFoundError(err) {
+					procesamientoStatus.Id = *liquidacion.Tipoid
+					procesamientoStatus.Tipo = "ERROR"
+					procesamientoStatus.Codigo = http.StatusNotFound
+					procesamientoStatus.Mensaje = err.Error()
+					procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+				}
 				liquidacion.Fecha = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fecha
 				liquidacion.Fechaultimodepositoaportejubilatorio = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaultimodepositoaportejubilatorio
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
@@ -867,6 +870,11 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 					liquidacion.Liquidacionitems[index].CreatedAt = time.Time{}
 					liquidacion.Liquidacionitems[index].UpdatedAt = time.Time{}
 					liquidacion.Liquidacionitems[index].Liquidacionid = 0
+					liquidacion.Liquidacionitems[index].Acumuladores = nil
+					if !liquidacion.Liquidacionitems[index].Concepto.Eseditable {
+						recalcularLiquidacionItem(&liquidacion.Liquidacionitems[index], liquidacion, db, r.Header.Get("Authorization"))
+					}
+
 				}
 
 				/*for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
