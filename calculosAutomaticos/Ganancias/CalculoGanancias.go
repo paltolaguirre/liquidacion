@@ -523,11 +523,9 @@ func (cg *CalculoGanancias) getfgImporteGananciasOtroEmpleoSiradig(columnaimport
 func (cg *CalculoGanancias) getfgImporteTotalSiradigSegunTipoGrillaMesDesdeHasta(columnadeducciondesgravacionsiradig string, tipodeducciondesgravacionsiradig string, nombretablasiradig string) float64 {
 	var importeTotal float64
 	anioliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
-	mesLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Format("01")
+	mesLiquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 
-	sql := "SELECT SUM(" + columnadeducciondesgravacionsiradig + "* GREATEST((1 + LEAST(to_number(to_char(meshasta, 'MM'),'99'), " +
-		mesLiquidacion + ") - to_number(to_char(mes, 'MM'),'99')), 0)) " +
-		"FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anioliquidacion) + "' AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL AND ts.deleted_at IS NULL;"
+	sql := "SELECT " + columnadeducciondesgravacionsiradig + " FROM " + nombretablasiradig + " ts INNER JOIN siradigtipogrilla stg ON stg.id = ts.siradigtipogrillaid INNER JOIN siradig sdg on sdg.id = ts.siradigid WHERE stg.codigo = '" + tipodeducciondesgravacionsiradig + "' AND sdg.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND EXTRACT(year from sdg.periodosiradig) ='" + strconv.Itoa(anioliquidacion) + "' AND to_number(to_char(mes, 'MM'),'99') <= " + strconv.Itoa(mesLiquidacion) + " AND stg.deleted_at IS NULL AND sdg.deleted_at IS NULL AND ts.deleted_at IS NULL;"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
