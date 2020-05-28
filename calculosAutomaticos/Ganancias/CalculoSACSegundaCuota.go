@@ -6,7 +6,7 @@ type CalculoSACSegundaCuota struct {
 
 func (cg *CalculoSACSegundaCuota) getResultInternal() float64 {
 	correspondeSegundoSemetre := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion) > 6
-	return cg.getfgSacCuotas(correspondeSegundoSemetre)
+	return cg.getSac(correspondeSegundoSemetre)
 }
 
 func (cg *CalculoSACSegundaCuota) getResult() float64 {
