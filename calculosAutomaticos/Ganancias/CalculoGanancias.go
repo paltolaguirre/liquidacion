@@ -31,6 +31,8 @@ const conceptoHorasExtrasCien = -6
 const tipoconceptoremunerativos = -1
 const tipoconceptodescuento = -3
 const tipoconceptoretencion = -4
+const conceptoSAC = -2
+const liquidacionTipoSAC = -5
 
 func (cg *CalculoGanancias) getResultOnDemandTemplate(codigo string, orden int, formula iformula) float64 {
 
@@ -195,32 +197,130 @@ func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
 	(&CalculoSaldoAPagar{*cg}).getResult()
 }
 
-func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
+func (cg *CalculoGanancias) getSac(correspondeSemestre bool) float64 {
+	if correspondeSemestre {
+		return cg.calculoSACSemestre()
+	} else {
+		return 0
+	}
+}
+
+func (cg *CalculoGanancias) calculoSACSemestre() float64 {
+	if cg.esDiciembre() {
+		return cg.calculoSACDiciembre()
+	}
+
+	if cg.esJunio() {
+		return cg.calculoSACJunio()
+	}
+
+	return cg.getfgSacCuotas(true)
+}
+
+func (cg *CalculoGanancias) calculoSACDiciembre() float64 {
+	if cg.esTipoSac() {
+		if cg.existeLiquidacionNoSACNoviembre() {
+			return cg.calculoCuotaFinalSacDiciembre()
+		} else {
+			panic(errors.New("Para realizar una liquidacion del tipo SAC en el mes de diciembre se necesita haber cargado la liquidacion mensual de noviembre "))
+		}
+	} else {
+		if cg.tieneConceptoSac() {
+			if cg.existeLiquidacionSACDiciembre() {
+				panic(errors.New("No es posible utilizar simultáneamente el concepto de tipo SAC en una liquidación de tipo SAC y en una liquidación de tipo mensual (para realizar un ajuste de sac deberá utilizar un concepto diferente)"))
+			} else {
+				return cg.calculoCuotaFinalSac()
+			}
+		} else {
+			return 0
+		}
+	}
+}
+
+func (cg *CalculoGanancias) calculoCuotaFinalSac() float64 {
+	return cg.getfgSacEstimado(true) - cg.getSacYaConsiderado()
+}
+
+func (cg *CalculoGanancias) calculoCuotaFinalSacJunioTipoSac() float64 {
+	return cg.getfgSacEstimado(false) - cg.getSacYaConsiderado()
+}
+
+func (cg *CalculoGanancias) calculoCuotaFinalSacDiciembre() float64 {
+	return cg.getfgSacEstimado(false) - cg.getSacYaConsideradoDiciembre()
+}
+
+func (cg *CalculoGanancias) getSacYaConsiderado() float64 {
+	var codigo string
+	if cg.Liquidacion.Fechaperiodoliquidacion.Month() >= time.July {
+		codigo = "SAC_SEGUNDA_CUOTA"
+	} else {
+		codigo = "SAC_PRIMER_CUOTA"
+	}
+	var importeTotal float64
+	sql := "select sum(importe) from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + " AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND ID != " + strconv.Itoa(cg.Liquidacion.ID) + "))"
+	cg.Db.Raw(sql).Row().Scan(&importeTotal)
+
+	return importeTotal
+}
+
+func (cg *CalculoGanancias) getSacYaConsideradoDiciembre() float64 {
+	var importeTotal float64
+	sql := "select sum(importe) from acumulador where codigo = 'SAC_SEGUNDA_CUOTA' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < " + cg.Liquidacion.Fechaperiodoliquidacion.Month().String() + " AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + "))"
+	cg.Db.Raw(sql).Row().Scan(&importeTotal)
+
+	return importeTotal
+}
+
+func (cg *CalculoGanancias) calculoSACJunio() float64 {
+	if cg.tieneConceptoSac() {
+		if cg.esTipoSac() {
+			if cg.existeLiquidacionNoSACJunio() {
+				return cg.calculoCuotaFinalSac()
+			} else {
+				//TODO error
+				panic(errors.New("Para realizar una liquidacion del tipo SAC en el mes de junio se necesita haber cargado la liquidacion mensual de junio "))
+			}
+		} else {
+			if cg.existeLiquidacionSACJunio() {
+				panic(errors.New("No es posible utilizar simultáneamente el concepto de tipo SAC en una liquidación de tipo SAC y en una liquidación de tipo mensual"))
+			} else {
+				return cg.calculoCuotaFinalSac()
+			}
+		}
+	} else {
+		return cg.getfgSacCuotas(true)
+	}
+}
+
+func (cg *CalculoGanancias) getfgSacCuotas(ignorasac bool) float64 {
+
+	return cg.getfgSacEstimado(ignorasac) / 12
+}
+
+func (cg *CalculoGanancias) getfgSacEstimado(ignorasac bool) float64 {
 	var importeTotal, importeConcepto float64
 
-	if correspondeSemestre {
-		for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
-			liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
+	for i := 0; i < len(cg.Liquidacion.Liquidacionitems); i++ {
+		liquidacionitem := cg.Liquidacion.Liquidacionitems[i]
 
-			if liquidacionitem.DeletedAt == nil {
-				concepto := liquidacionitem.Concepto
-				var mes float64 = 1
-				if concepto.Basesac == true {
-					if concepto.Prorrateo == true {
-						mes = float64(cg.getfgMesesAProrratear(concepto))
-					}
-					importeLiquidacionitem := liquidacionitem.Importeunitario
-					if importeLiquidacionitem != nil {
-
-						importeConcepto = *importeLiquidacionitem / mes
-
-					}
-
-					if *concepto.Tipoconceptoid == tipoconceptoretencion || *concepto.Tipoconceptoid == tipoconceptodescuento {
-						importeConcepto = importeConcepto * -1
-					}
-					importeTotal = importeTotal + importeConcepto
+		if liquidacionitem.DeletedAt == nil {
+			concepto := liquidacionitem.Concepto
+			var mes float64 = 1
+			if concepto.Basesac == true && (ignorasac || !esSac(concepto)) {
+				if concepto.Prorrateo == true {
+					mes = float64(cg.getfgMesesAProrratear(concepto))
 				}
+				importeLiquidacionitem := liquidacionitem.Importeunitario
+				if importeLiquidacionitem != nil {
+
+					importeConcepto = *importeLiquidacionitem / mes
+
+				}
+
+				if *concepto.Tipoconceptoid == tipoconceptoretencion || *concepto.Tipoconceptoid == tipoconceptodescuento {
+					importeConcepto = importeConcepto * -1
+				}
+				importeTotal = importeTotal + importeConcepto
 			}
 		}
 
@@ -228,8 +328,7 @@ func (cg *CalculoGanancias) getfgSacCuotas(correspondeSemestre bool) float64 {
 
 		importeTotal = importeTotal + cg.obtenerConceptosProrrateoMesesAnteriores()
 	}
-
-	return importeTotal / 12
+	return importeTotal
 }
 
 type importeMes struct {
@@ -622,4 +721,64 @@ func (cg *CalculoGanancias) obtenerImporteSac() float64 {
 	cg.Db.Raw(sql).Row().Scan(&importeSac)
 
 	return importeSac
+}
+
+func (cg *CalculoGanancias) esDiciembre() bool {
+	return cg.Liquidacion.Fechaperiodoliquidacion.Month() == time.December
+}
+
+func (cg *CalculoGanancias) esJunio() bool {
+	return cg.Liquidacion.Fechaperiodoliquidacion.Month() == time.June
+}
+
+func (cg *CalculoGanancias) tieneConceptoSac() bool {
+	for _, item := range cg.Liquidacion.Liquidacionitems {
+		if esSac(item.Concepto) {
+			return true
+		}
+	}
+	return false
+}
+
+func esSac(concepto *structConcepto.Concepto) bool {
+	if concepto.ID == conceptoSAC {
+		return true
+	}
+	return false
+}
+
+func (cg *CalculoGanancias) esTipoSac() bool {
+	return cg.Liquidacion.Tipoid != nil && *cg.Liquidacion.Tipoid == liquidacionTipoSAC
+}
+
+func (cg *CalculoGanancias) existeLiquidacionSACJunio() bool {
+	var cantidad int
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + time.June.String() + "' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipo = -5"
+	cg.Db.Raw(sql).Row().Scan(&cantidad)
+
+	return cantidad > 0
+}
+
+func (cg *CalculoGanancias) existeLiquidacionNoSACJunio() bool {
+	var cantidad int
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + time.June.String() + "' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipo in (-1, -2, -3) "
+	cg.Db.Raw(sql).Row().Scan(&cantidad)
+
+	return cantidad > 0
+}
+
+func (cg *CalculoGanancias) existeLiquidacionNoSACNoviembre() bool {
+	var cantidad int
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + time.November.String() + "' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipo in (-1, -2, -3) "
+	cg.Db.Raw(sql).Row().Scan(&cantidad)
+
+	return cantidad > 0
+}
+
+func (cg *CalculoGanancias) existeLiquidacionSACDiciembre() bool {
+	var cantidad int
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + time.December.String() + "' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipo = -5"
+	cg.Db.Raw(sql).Row().Scan(&cantidad)
+
+	return cantidad > 0
 }
