@@ -116,7 +116,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionesItemsPrimerQuincenaVacaciones() 
 		mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 		anioLiquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
 
-		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ? AND legajoid = ? AND deleted_at is null", mesliquidacion, anioLiquidacion, strconv.Itoa(cg.Liquidacion.ID), cg.Liquidacion.Legajoid)
+		cg.Db.Set("gorm:auto_preload", true).Find(&liquidacionPrimerQuincena, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND id != ? AND legajoid = ? AND deleted_at is null AND tipoid != -5", mesliquidacion, anioLiquidacion, strconv.Itoa(cg.Liquidacion.ID), cg.Liquidacion.Legajoid)
 
 		for i := 0; i < len(liquidacionPrimerQuincena.Liquidacionitems); i++ {
 			agregarLiquidacionItem := true
@@ -238,7 +238,7 @@ func (cg *CalculoGanancias) calculoSACDiciembre() float64 {
 }
 
 func (cg *CalculoGanancias) calculoCuotaFinalSac() float64 {
-	return cg.getfgSacEstimado(true) - cg.getSacYaConsiderado()
+	return cg.getfgSacEfectivo() - cg.getSacYaConsiderado()
 }
 
 func (cg *CalculoGanancias) calculoCuotaFinalSacJunioTipoSac() float64 {
@@ -257,7 +257,7 @@ func (cg *CalculoGanancias) getSacYaConsiderado() float64 {
 		codigo = "SAC_PRIMER_CUOTA"
 	}
 	var importeTotal float64
-	sql := "select sum(importe) from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + " AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND ID != " + strconv.Itoa(cg.Liquidacion.ID) + "))"
+	sql := "select sum(importe) from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND ID != " + strconv.Itoa(cg.Liquidacion.ID) + "))"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
@@ -265,7 +265,7 @@ func (cg *CalculoGanancias) getSacYaConsiderado() float64 {
 
 func (cg *CalculoGanancias) getSacYaConsideradoDiciembre() float64 {
 	var importeTotal float64
-	sql := "select sum(importe) from acumulador where codigo = 'SAC_SEGUNDA_CUOTA' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < " + cg.Liquidacion.Fechaperiodoliquidacion.Month().String() + " AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + "))"
+	sql := "select sum(importe) from acumulador where codigo = 'SAC_SEGUNDA_CUOTA' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < 12 AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + "))"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
@@ -275,7 +275,7 @@ func (cg *CalculoGanancias) calculoSACJunio() float64 {
 	if cg.tieneConceptoSac() {
 		if cg.esTipoSac() {
 			if cg.existeLiquidacionNoSACJunio() {
-				return cg.calculoCuotaFinalSac()
+				return cg.calculoCuotaFinalSacJunioTipoSac()
 			} else {
 				//TODO error
 				panic(errors.New("Para realizar una liquidacion del tipo SAC en el mes de junio se necesita haber cargado la liquidacion mensual de junio "))
@@ -306,7 +306,7 @@ func (cg *CalculoGanancias) getfgSacEstimado(ignorasac bool) float64 {
 		if liquidacionitem.DeletedAt == nil {
 			concepto := liquidacionitem.Concepto
 			var mes float64 = 1
-			if concepto.Basesac == true && (ignorasac || !esSac(concepto)) {
+			if concepto.Basesac == true || (!ignorasac && esSac(concepto)) {
 				if concepto.Prorrateo == true {
 					mes = float64(cg.getfgMesesAProrratear(concepto))
 				}
@@ -452,7 +452,7 @@ func (cg *CalculoGanancias) obtenerImporteHorasExtrasCien() float64 {
 
 	for _, liquidacionItem := range cg.Liquidacion.Liquidacionitems {
 		concepto := liquidacionItem.Concepto
-		if concepto.ID == conceptoHorasExtrasCien {
+		if liquidacionItem.DeletedAt == nil && concepto.ID == conceptoHorasExtrasCien {
 			importeConcepto = *liquidacionItem.Importeunitario
 			importeTotal = importeTotal + importeConcepto
 		}
@@ -599,7 +599,7 @@ func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *stru
 	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
 	if len(liquidaciones) > 0 {
 		for _, liquidacion := range liquidaciones {
-			if liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" {
+			if liquidacion.DeletedAt == nil && (liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA") {
 				liquidacionMesAnterior = liquidacion
 				break
 			}
@@ -734,7 +734,7 @@ func (cg *CalculoGanancias) esJunio() bool {
 
 func (cg *CalculoGanancias) tieneConceptoSac() bool {
 	for _, item := range cg.Liquidacion.Liquidacionitems {
-		if esSac(item.Concepto) {
+		if item.DeletedAt == nil && esSac(item.Concepto) {
 			return true
 		}
 	}
@@ -754,7 +754,7 @@ func (cg *CalculoGanancias) esTipoSac() bool {
 
 func (cg *CalculoGanancias) existeLiquidacionSACJunio() bool {
 	var cantidad int
-	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + time.June.String() + "' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipo = -5"
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '06' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipoid = -5"
 	cg.Db.Raw(sql).Row().Scan(&cantidad)
 
 	return cantidad > 0
@@ -762,7 +762,7 @@ func (cg *CalculoGanancias) existeLiquidacionSACJunio() bool {
 
 func (cg *CalculoGanancias) existeLiquidacionNoSACJunio() bool {
 	var cantidad int
-	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + time.June.String() + "' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipo in (-1, -2, -3) "
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '06' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipoid in (-1, -2, -3) "
 	cg.Db.Raw(sql).Row().Scan(&cantidad)
 
 	return cantidad > 0
@@ -770,7 +770,7 @@ func (cg *CalculoGanancias) existeLiquidacionNoSACJunio() bool {
 
 func (cg *CalculoGanancias) existeLiquidacionNoSACNoviembre() bool {
 	var cantidad int
-	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + time.November.String() + "' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipo in (-1, -2, -3) "
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '11' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipoid in (-1, -2, -3) "
 	cg.Db.Raw(sql).Row().Scan(&cantidad)
 
 	return cantidad > 0
@@ -778,8 +778,18 @@ func (cg *CalculoGanancias) existeLiquidacionNoSACNoviembre() bool {
 
 func (cg *CalculoGanancias) existeLiquidacionSACDiciembre() bool {
 	var cantidad int
-	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '" + time.December.String() + "' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipo = -5"
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '11' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipoid = -5"
 	cg.Db.Raw(sql).Row().Scan(&cantidad)
 
 	return cantidad > 0
+}
+
+func (cg *CalculoGanancias) getfgSacEfectivo() float64 {
+	var total float64
+	for _, item := range cg.Liquidacion.Liquidacionitems {
+		if item.DeletedAt == nil && esSac(item.Concepto) && item.Importeunitario != nil{
+			total = *item.Importeunitario
+		}
+	}
+	return total
 }
