@@ -506,7 +506,6 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliar(columnaDetalleCargoFamilia
 			valorfijo = valorfijo * 1.22
 		}
 
-
 		if mesdadoalta > mesperiodoliquidacion {
 			importeTotal = 0
 		} else {
@@ -594,18 +593,74 @@ func (cg *CalculoGanancias) obtenerLiquidacionesIgualAnioLegajoMenorMes() *[]str
 	return &liquidaciones
 }
 
-func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *structLiquidacion.Liquidacion {
-	var liquidacionMesAnterior structLiquidacion.Liquidacion
-	liquidaciones := *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
-	if len(liquidaciones) > 0 {
-		for _, liquidacion := range liquidaciones {
-			if liquidacion.DeletedAt == nil && (liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA") {
-				liquidacionMesAnterior = liquidacion
-				break
-			}
+func (cg *CalculoGanancias) obtenerLiquidacionesIgualAnioLegajoMenorIgualMes() *[]structLiquidacion.Liquidacion {
+	var liquidaciones []structLiquidacion.Liquidacion
+	anioperiodoliquidacion := cg.Liquidacion.Fechaperiodoliquidacion.Year()
+	mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
+	cg.Db.Order("to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') desc").Set("gorm:auto_preload", true).Find(&liquidaciones, "to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') <= ? AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ? AND ID != ?", mesliquidacion, strconv.Itoa(anioperiodoliquidacion), *cg.Liquidacion.Legajoid, cg.Liquidacion.ID)
+
+	var calculoGanancias CalculoGanancias
+
+	for i := 0; i < len(liquidaciones); i++ {
+		calculoGanancias.Liquidacion = &liquidaciones[i]
+		cg.recalcularImporteConceptosSiExisteHorasExtrasCien()
+		if calculoGanancias.existeHorasExtrasCien() {
+			cg.recalcularImporteHorasExtrasCien()
+			calculoGanancias.recalcularImporteConceptos()
+			liquidaciones[i] = *calculoGanancias.Liquidacion
 		}
 	}
-	return &liquidacionMesAnterior
+
+	return &liquidaciones
+}
+
+func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *structLiquidacion.Liquidacion {
+	var liquidacionMesAnterior *structLiquidacion.Liquidacion
+	var liquidaciones []structLiquidacion.Liquidacion
+	contieneMesActual := (cg.esJunio() && cg.esTipoSac()) || (cg.esDiciembre() && !cg.esTipoSac())
+
+	if contieneMesActual {
+		/*
+		Casos especiales:
+		Si estoy en JUNIO y soy de tipo SAC, necesito la liquidacion de JUNIO
+		Si estoy en DICIEMBRE y no soy tipo sac, necesito la liquidacion de tipo SAC de DICIEMBRE
+		*/
+		liquidaciones = *cg.obtenerLiquidacionesIgualAnioLegajoMenorIgualMes()
+	} else {
+		/*
+			Casos especiales:
+			Si estoy en JUNIO y no soy de tipo SAC, necesito la liquidacion de MAYO
+			Si estoy en DICIEMBRE y soy tipo sac, necesito la liquidacion de tipo SAC de NOVIEMBRE
+			Si estoy en JULIO, necesito la liquidacion de tipo SAC de JUNIO
+		*/
+		liquidaciones = *cg.obtenerLiquidacionesIgualAnioLegajoMenorMes()
+	}
+
+	if len(liquidaciones) > 0 {
+		for _, liquidacion := range liquidaciones {
+			if liquidacion.DeletedAt == nil && (liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || liquidacion.Tipo.Codigo == "SAC") {
+				/*
+				Casos especiales:
+				Si estoy en JULIO y hay TIPO SAC en JUNIO, obtengo ese.
+				Si estoy en DICIEMBRE y NO soy tipo SAC, obtengo el SAC de diciembre en caso de que esté.
+				*/
+				if (cg.esDiciembre() && !cg.esTipoSac() && esTipoSac(liquidacion)) || (cg.esJulio() && esTipoSac(liquidacion)) {
+					liquidacionMesAnterior = &liquidacion
+					break
+				}
+			}
+		}
+		if liquidacionMesAnterior == nil {
+			for _, liquidacion := range liquidaciones {
+				if liquidacion.DeletedAt == nil && (liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA") {
+					liquidacionMesAnterior = &liquidacion
+					break
+				}
+			}
+		}
+
+	}
+	return liquidacionMesAnterior
 }
 
 func (cg *CalculoGanancias) getfgImporteGananciasOtroEmpleoSiradig(columnaimportegananciasotroempleosiradig string) float64 {
@@ -732,6 +787,10 @@ func (cg *CalculoGanancias) esJunio() bool {
 	return cg.Liquidacion.Fechaperiodoliquidacion.Month() == time.June
 }
 
+func (cg *CalculoGanancias) esJulio() bool {
+	return cg.Liquidacion.Fechaperiodoliquidacion.Month() == time.July
+}
+
 func (cg *CalculoGanancias) tieneConceptoSac() bool {
 	for _, item := range cg.Liquidacion.Liquidacionitems {
 		if item.DeletedAt == nil && esSac(item.Concepto) {
@@ -750,6 +809,10 @@ func esSac(concepto *structConcepto.Concepto) bool {
 
 func (cg *CalculoGanancias) esTipoSac() bool {
 	return cg.Liquidacion.Tipoid != nil && *cg.Liquidacion.Tipoid == liquidacionTipoSAC
+}
+
+func esTipoSac(liquidacion structLiquidacion.Liquidacion) bool {
+	return liquidacion.Tipoid != nil && *liquidacion.Tipoid == liquidacionTipoSAC
 }
 
 func (cg *CalculoGanancias) existeLiquidacionSACJunio() bool {
@@ -787,7 +850,7 @@ func (cg *CalculoGanancias) existeLiquidacionSACDiciembre() bool {
 func (cg *CalculoGanancias) getfgSacEfectivo() float64 {
 	var total float64
 	for _, item := range cg.Liquidacion.Liquidacionitems {
-		if item.DeletedAt == nil && esSac(item.Concepto) && item.Importeunitario != nil{
+		if item.DeletedAt == nil && esSac(item.Concepto) && item.Importeunitario != nil {
 			total = *item.Importeunitario
 		}
 	}

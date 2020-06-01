@@ -7,18 +7,25 @@ type CalculoSubtotalIngresosAcumulados struct {
 func (cg *CalculoSubtotalIngresosAcumulados) getResultInternal() float64 {
 
 	var importeTotal float64 = 0
-	importeTotal = importeTotal + (&CalculoSubtotalIngresos{cg.CalculoGanancias}).getResult()
 
-	var arraySubtotalDeduccionesGenerales []float64
+	if cg.esTipoSac() {
+		importeTotal = cg.getSac(true)
+		//Solo lo ejecuto, pero no lo sumo
+		(&CalculoSubtotalIngresos{cg.CalculoGanancias}).getResult()
+	} else {
+		importeTotal = importeTotal + (&CalculoSubtotalIngresos{cg.CalculoGanancias}).getResult()
 
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidios{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesObraSocial{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoCuotaSindical{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesObraSocialOtrosEmpleos{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoCuotaSindicalOtrosEmpleos{cg.CalculoGanancias}).getResult())
+		var arraySubtotalDeduccionesGenerales []float64
 
-	importeTotal = importeTotal - Sum(arraySubtotalDeduccionesGenerales)
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidios{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesObraSocial{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoCuotaSindical{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesObraSocialOtrosEmpleos{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoCuotaSindicalOtrosEmpleos{cg.CalculoGanancias}).getResult())
+
+		importeTotal = importeTotal - Sum(arraySubtotalDeduccionesGenerales)
+	}
 
 	liquidacionAnterior := *cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
 	itemGananciaAnterior := obtenerItemGananciaFromLiquidacion(&liquidacionAnterior)
