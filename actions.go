@@ -413,7 +413,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 func esUltimaLiquidacionDelAño(liquidacionid int, db *gorm.DB) bool {
 	var liquidacionActual structLiquidacion.Liquidacion
 	var liquidacionMasReciente structLiquidacion.Liquidacion
-	db.First(&liquidacionActual, "id = " + strconv.Itoa(liquidacionid))
+	db.First(&liquidacionActual, "id = "+strconv.Itoa(liquidacionid))
 	db.Order("to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') desc, fecha desc, created_at desc").Set("gorm:auto_preload", true).First(&liquidacionMasReciente, "to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", strconv.Itoa(liquidacionActual.Fechaperiodoliquidacion.Year()), *liquidacionActual.Legajoid)
 	return liquidacionActual.ID == liquidacionMasReciente.ID
 }
