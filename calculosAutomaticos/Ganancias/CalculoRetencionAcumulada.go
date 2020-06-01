@@ -13,6 +13,8 @@ func (cg *CalculoRetencionAcumulada) getResultInternal() float64 {
 	mesliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 	var totalconceptosimpuestoganancias float64
 	var totalconceptosimpuestogananciasdevolucion float64
+	var totalextraganancias float64
+	var totalextragananciasdevolucion float64
 
 	sql := "SELECT SUM(li.importeunitario) FROM Liquidacion l INNER JOIN Liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') < " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS' AND l.deleted_at IS NULL AND le.deleted_at IS NULL AND li.deleted_at IS NULL AND c.deleted_at IS NULL"
 	cg.Db.Raw(sql).Row().Scan(&totalconceptosimpuestoganancias)
@@ -20,7 +22,24 @@ func (cg *CalculoRetencionAcumulada) getResultInternal() float64 {
 	sql = "SELECT SUM(li.importeunitario) FROM Liquidacion l INNER JOIN Liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') < " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS_DEVOLUCION' AND l.deleted_at IS NULL AND le.deleted_at IS NULL AND li.deleted_at IS NULL AND c.deleted_at IS NULL"
 	cg.Db.Raw(sql).Row().Scan(&totalconceptosimpuestogananciasdevolucion)
 
-	return totalconceptosimpuestoganancias - totalconceptosimpuestogananciasdevolucion
+	if cg.esJunio() && cg.esTipoSac() {
+
+		sql := "SELECT SUM(li.importeunitario) FROM Liquidacion l INNER JOIN Liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS' AND l.deleted_at IS NULL AND le.deleted_at IS NULL AND li.deleted_at IS NULL AND c.deleted_at IS NULL and l.tipoid != -5"
+		cg.Db.Raw(sql).Row().Scan(&totalextraganancias)
+
+		sql = "SELECT SUM(li.importeunitario) FROM Liquidacion l INNER JOIN Liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS_DEVOLUCION' AND l.deleted_at IS NULL AND le.deleted_at IS NULL AND li.deleted_at IS NULL AND c.deleted_at IS NULL and l.tipoid != -5"
+		cg.Db.Raw(sql).Row().Scan(&totalextragananciasdevolucion)
+	}
+
+	if cg.esDiciembre() && !cg.esTipoSac() {
+		sql := "SELECT SUM(li.importeunitario) FROM Liquidacion l INNER JOIN Liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS' AND l.deleted_at IS NULL AND le.deleted_at IS NULL AND li.deleted_at IS NULL AND c.deleted_at IS NULL and l.tipoid = -5"
+		cg.Db.Raw(sql).Row().Scan(&totalextraganancias)
+
+		sql = "SELECT SUM(li.importeunitario) FROM Liquidacion l INNER JOIN Liquidacionitem li ON l.id = li.liquidacionid INNER JOIN legajo le ON le.id = l.legajoid INNER JOIN concepto c ON c.id = li.conceptoid WHERE to_number(to_char(l.fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesliquidacion) + " AND to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioperiodoliquidacion) + "' AND le.id = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND c.codigo = 'IMPUESTO_GANANCIAS_DEVOLUCION' AND l.deleted_at IS NULL AND le.deleted_at IS NULL AND li.deleted_at IS NULL AND c.deleted_at IS NULL and l.tipoid = -5"
+		cg.Db.Raw(sql).Row().Scan(&totalextragananciasdevolucion)
+	}
+
+	return totalconceptosimpuestoganancias - totalconceptosimpuestogananciasdevolucion + totalextraganancias - totalextragananciasdevolucion
 }
 
 func (cg *CalculoRetencionAcumulada) getResult() float64 {
