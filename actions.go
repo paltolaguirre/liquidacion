@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/apiClientFormula"
-	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
 	"io/ioutil"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/apiClientFormula"
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
 
 	"github.com/xubiosueldos/conexionBD"
 
@@ -191,53 +192,57 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 			framework.RespondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		if canInsertUpdate(liquidacion_data) {
+			defer r.Body.Close()
 
-		defer r.Body.Close()
+			tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+			db := conexionBD.ObtenerDB(tenant)
 
-		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-		db := conexionBD.ObtenerDB(tenant)
+			defer conexionBD.CerrarDB(db)
 
-		defer conexionBD.CerrarDB(db)
+			existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
 
-		existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
+			if err != nil {
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+			}
 
-		if err != nil {
-			framework.RespondError(w, http.StatusBadRequest, err.Error())
-		}
+			if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
+				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+				return
+			}
 
-		if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
-			framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-			return
-		}
-
-		for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
-
-			if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
-				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
-				if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
-					//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
-					framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
-					return
+			for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
+				if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
+					recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
+					if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
+						//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+						framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
+						return
+					}
 				}
 			}
-		}
 
-		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
-			framework.RespondError(w, http.StatusInternalServerError, err.Error())
+			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
+				framework.RespondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Bancoaportejubilatorioid)).Error; err != nil {
+				framework.RespondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			if err := db.Create(&liquidacion_data).Error; err != nil {
+				framework.RespondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			framework.RespondJSON(w, http.StatusCreated, liquidacion_data)
+
+		} else {
+			framework.RespondError(w, http.StatusInternalServerError, "La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
 			return
 		}
-
-		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Bancoaportejubilatorioid)).Error; err != nil {
-			framework.RespondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if err := db.Create(&liquidacion_data).Error; err != nil {
-			framework.RespondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		framework.RespondJSON(w, http.StatusCreated, liquidacion_data)
 	}
 }
 
@@ -324,82 +329,60 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if p_liquidacionid == liquidacionid || liquidacionid == 0 {
+			if canInsertUpdate(liquidacion_data) {
 
 				liquidacion_data.ID = p_liquidacionid
 
-				//abro una transacción para que si hay un error no persista en la DB
-				tx := db.Begin()
-				defer tx.Rollback()
+				if p_liquidacionid == liquidacionid || liquidacionid == 0 {
 
-				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
-				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
+					//abro una transacción para que si hay un error no persista en la DB
+					tx := db.Begin()
+					defer tx.Rollback()
 
-					if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
-						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
-						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
-							//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
-							framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
-							return
+					//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
+					for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
+
+						if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
+							recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
+							if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
+								//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+								framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
+								return
+							}
+						}
+
+						if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+							for _, acumulador := range liquidacionItem.Acumuladores {
+								acumulador.ID = 0
+							}
+							if err := tx.Model(structLiquidacion.Acumulador{}).Unscoped().Where("liquidacionitemid = ?", liquidacionItem.ID).Delete(structLiquidacion.Acumulador{}).Error; err != nil {
+								framework.RespondError(w, http.StatusInternalServerError, err.Error())
+								return
+							}
 						}
 					}
 
-					if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-						for _, acumulador := range liquidacionItem.Acumuladores {
-							acumulador.ID = 0
-						}
-						if err := tx.Model(structLiquidacion.Acumulador{}).Unscoped().Where("liquidacionitemid = ?", liquidacionItem.ID).Delete(structLiquidacion.Acumulador{}).Error; err != nil {
-							framework.RespondError(w, http.StatusInternalServerError, err.Error())
-							return
-						}
+					//modifico el legajo de acuerdo a lo enviado en el json
+					if err := tx.Save(&liquidacion_data).Error; err != nil {
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
 					}
-				}
 
-				//modifico el legajo de acuerdo a lo enviado en el json
-				if err := tx.Save(&liquidacion_data).Error; err != nil {
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
+					if err := tx.Model(structLiquidacion.Liquidacionitem{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Liquidacionitem{}).Error; err != nil {
+						framework.RespondError(w, http.StatusInternalServerError, err.Error())
+						return
+					}
+
+					tx.Commit()
+
+					framework.RespondJSON(w, http.StatusOK, liquidacion_data)
+
+				} else {
+					framework.RespondError(w, http.StatusNotFound, framework.IdParametroDistintoStruct)
 					return
 				}
-
-				if err := tx.Model(structLiquidacion.Liquidacionitem{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Liquidacionitem{}).Error; err != nil {
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
-
-				//despues de modificar, recorro los descuentos asociados a la liquidacion para ver si alguno fue eliminado logicamente y lo elimino de la BD
-				/*	if err := tx.Model(structLiquidacion.Descuento{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Descuento{}).Error; err != nil {
-						tx.Rollback()
-						framework.RespondError(w, http.StatusInternalServerError, err.Error())
-						return
-					}
-
-					//despues de modificar, recorro los importes remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-					if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
-						tx.Rollback()
-						framework.RespondError(w, http.StatusInternalServerError, err.Error())
-						return
-					}
-
-					//despues de modificar, recorro los importes no remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-					if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
-						tx.Rollback()
-						framework.RespondError(w, http.StatusInternalServerError, err.Error())
-						return
-					}
-
-					//despues de modificar, recorro las retenciones asociadas a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-					if err := tx.Model(structLiquidacion.Retencion{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Retencion{}).Error; err != nil {
-						tx.Rollback()
-						framework.RespondError(w, http.StatusInternalServerError, err.Error())
-						return
-					}*/
-
-				tx.Commit()
-
-				framework.RespondJSON(w, http.StatusOK, liquidacion_data)
-
 			} else {
-				framework.RespondError(w, http.StatusNotFound, framework.IdParametroDistintoStruct)
+				framework.RespondError(w, http.StatusInternalServerError, "La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
 				return
 			}
 		} else {
@@ -1198,4 +1181,35 @@ func ImpuestoALasGananciasDevolucion(concepto structConcepto.Concepto, liquidaci
 	importeFinal := (*importeCalculado.Importeunitario) * -1
 	importeCalculado.Importeunitario = &importeFinal
 	return importeCalculado
+}
+
+func canInsertUpdate(liquidacion structLiquidacion.Liquidacion) bool {
+	fechaperiodoliquidacionigualfechasituacionrevistados := true
+	fechaperiodoliquidacionigualfechasituacionrevistatres := true
+
+	mesLiquidacion := liquidacion.Fechaperiodoliquidacion.Format("01")
+	anioLiquidacion := liquidacion.Fechaperiodoliquidacion.Year()
+
+	mesSituacionRevistaUno := liquidacion.Fechasituacionrevistauno.Format("01")
+	anioSituacionRevistaUno := liquidacion.Fechasituacionrevistauno.Year()
+
+	fechaperiodoliquidacionigualfechasituacionrevistauno := (mesLiquidacion == mesSituacionRevistaUno && anioLiquidacion == anioSituacionRevistaUno)
+
+	if liquidacion.Fechasituacionrevistados != nil {
+		mesSituacionRevistaDos := liquidacion.Fechasituacionrevistados.Format("01")
+		anioSituacionRevistaDos := liquidacion.Fechasituacionrevistados.Year()
+
+		fechaperiodoliquidacionigualfechasituacionrevistados = (mesLiquidacion == mesSituacionRevistaDos && anioLiquidacion == anioSituacionRevistaDos)
+
+	}
+
+	if liquidacion.Fechasituacionrevistatres != nil {
+		mesSituacionRevistaTres := liquidacion.Fechasituacionrevistatres.Format("01")
+		anioSituacionRevistaTres := liquidacion.Fechasituacionrevistatres.Year()
+
+		fechaperiodoliquidacionigualfechasituacionrevistatres = (mesLiquidacion == mesSituacionRevistaTres && anioLiquidacion == anioSituacionRevistaTres)
+
+	}
+
+	return fechaperiodoliquidacionigualfechasituacionrevistauno && fechaperiodoliquidacionigualfechasituacionrevistados && fechaperiodoliquidacionigualfechasituacionrevistatres
 }
