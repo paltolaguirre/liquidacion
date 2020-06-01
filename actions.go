@@ -285,6 +285,11 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 		db2 := conexionBD.ObtenerDB(tenant)
 		defer conexionBD.CerrarDB(db2)
 
+		if !esUltimaLiquidacionDelAño(p_liquidacionid, db) {
+			framework.RespondError(w, http.StatusBadRequest, "Para modificar esta liquidacion primero debe eliminar la liquidacion siguiente")
+			return
+		}
+
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 			decoder := json.NewDecoder(r.Body)
 
@@ -403,6 +408,14 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+}
+
+func esUltimaLiquidacionDelAño(liquidacionid int, db *gorm.DB) bool {
+	var liquidacionActual structLiquidacion.Liquidacion
+	var liquidacionMasReciente structLiquidacion.Liquidacion
+	db.First(&liquidacionActual, "id = " + strconv.Itoa(liquidacionid))
+	db.Order("to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') desc, fecha desc, created_at desc").Set("gorm:auto_preload", true).First(&liquidacionMasReciente, "to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", strconv.Itoa(liquidacionActual.Fechaperiodoliquidacion.Year()), *liquidacionActual.Legajoid)
+	return liquidacionActual.ID == liquidacionMasReciente.ID
 }
 
 func recalcularLiquidacionItem(liquidacionItem *structLiquidacion.Liquidacionitem, liquidacion structLiquidacion.Liquidacion, db *gorm.DB, autenticacion string) {
