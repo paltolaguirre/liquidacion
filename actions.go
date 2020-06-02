@@ -204,6 +204,7 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				framework.RespondError(w, http.StatusBadRequest, err.Error())
+				return
 			}
 
 			if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
@@ -312,6 +313,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				framework.RespondError(w, http.StatusBadRequest, err.Error())
+				return
 			}
 
 			if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
