@@ -1,5 +1,7 @@
 package Ganancias
 
+import "github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
+
 type CalculoSubtotalIngresosAcumulados struct {
 	CalculoGanancias
 }
@@ -26,12 +28,16 @@ func (cg *CalculoSubtotalIngresosAcumulados) getResultInternal() float64 {
 
 		importeTotal = importeTotal - Sum(arraySubtotalDeduccionesGenerales)
 	}
+	var itemGananciaAnterior *structLiquidacion.Liquidacionitem
+	liquidacionAnterior := cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
 
-	liquidacionAnterior := *cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
-	itemGananciaAnterior := obtenerItemGananciaFromLiquidacion(&liquidacionAnterior)
+	if liquidacionAnterior != nil {
+		itemGananciaAnterior = obtenerItemGananciaFromLiquidacion(liquidacionAnterior)
+	}
 
-	if itemGananciaAnterior.ID != 0 {
-		importeTotal = importeTotal + (&CalculoSubtotalIngresosAcumulados{CalculoGanancias{itemGananciaAnterior, &liquidacionAnterior, cg.Db, false}}).getResult()
+
+	if itemGananciaAnterior != nil {
+		importeTotal = importeTotal + (&CalculoSubtotalIngresosAcumulados{CalculoGanancias{itemGananciaAnterior, liquidacionAnterior, cg.Db, false}}).getResult()
 	}
 
 	return importeTotal
