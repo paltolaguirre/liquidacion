@@ -212,6 +212,13 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			err = estaCargandoSacComoCorresponde(liquidacion_data, db)
+
+			if err != nil {
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
 			for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 				if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
 					recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
@@ -247,12 +254,31 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
+func estaCargandoSacComoCorresponde(liquidacion structLiquidacion.Liquidacion, db *gorm.DB) error{
+	var liquidacionNoPermitida structLiquidacion.Liquidacion
+	if liquidacion.Fechaperiodoliquidacion.Month() == time.June && *liquidacion.Tipoid == liquidacionTipoSacID {
+
+		if err := db.Set("gorm:auto_preload", true).First(&liquidacionNoPermitida, "id != ? AND tipoid != ? AND legajoid = ? AND deleted_at is null", liquidacion.ID, liquidacion.Tipoid, liquidacion.Legajoid).Error; gorm.IsRecordNotFoundError(err) {
+			return errors.New("Para cargar una liquidacion de tipo SAC en junio, primero debe cargar la liquidacion mensual/quincenal del legajo para ese mes")
+		}
+		return nil
+	} else if liquidacion.Fechaperiodoliquidacion.Month() == time.December && *liquidacion.Tipoid == liquidacionTipoSacID {
+		if err := db.Set("gorm:auto_preload", true).First(&liquidacionNoPermitida, "id != ? AND (tipoid = -1 OR tipoid = -3) AND legajoid = ? AND deleted_at is null", liquidacion.ID, liquidacion.Legajoid).Error; gorm.IsRecordNotFoundError(err) {
+			return nil
+		}
+		return errors.New("Para cargar una liquidacion de tipo SAC en diciembre, no pueden existir liquidaciones de tipo mensual/segunda quincena en ese mismo mes")
+	}
+
+	return nil
+}
+
 func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion) (bool, error) {
 	var existeconceptoimpuestoganancias bool = false
 	var err error
 	for _, item := range liquidacion.Liquidacionitems {
 		conceptoid := *item.Conceptoid
-		if conceptoid == impuestoALasGananciasID || conceptoid == impuestoALasGananciasDevolucionID {
+		if item.DeletedAt != nil && (conceptoid == impuestoALasGananciasID || conceptoid == impuestoALasGananciasDevolucionID) {
 			if *item.Importeunitario < 0 {
 				return true, errors.New("El concepto de impuesto a las ganancias no puede tener importe negativo.")
 			}
@@ -266,6 +292,7 @@ func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion)
 const (
 	impuestoALasGananciasID           = -29
 	impuestoALasGananciasDevolucionID = -30
+	liquidacionTipoSacID = -5
 )
 
 func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
