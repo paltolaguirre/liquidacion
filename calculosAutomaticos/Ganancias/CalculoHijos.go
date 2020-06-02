@@ -15,7 +15,7 @@ func (cg *CalculoHijos) getResultInternal() float64 {
 	var detallescargofamiliarsiradig []structSiradig.Detallecargofamiliarsiradig
 	var porcentaje float64 = 0
 	valorfijoMNI := cg.getfgValorFijoImpuestoGanancia("deduccionespersonales", "valorfijomni")
-	sql := "SELECT * FROM detallecargofamiliarsiradig WHERE hijoid NOTNULL AND estaacargo = true AND montoanual < " + strconv.FormatFloat(valorfijoMNI, 'f', 5, 64) + "AND detallecargofamiliarsiradig.deleted_at IS NULL"
+	sql := "SELECT * FROM detallecargofamiliarsiradig inner join hijo on hijo.id = detallecargofamiliarsiradig.hijoid WHERE estaacargo = true AND montoanual < " + strconv.FormatFloat(valorfijoMNI, 'f', 5, 64) + "AND detallecargofamiliarsiradig.deleted_at IS NULL AND hijo.legajoid =" + strconv.Itoa(*cg.Liquidacion.Legajoid)
 	cg.Db.Raw(sql).Scan(&detallescargofamiliarsiradig)
 
 	for i := 0; i < len(detallescargofamiliarsiradig); i++ {

@@ -31,7 +31,7 @@ func obtenerTipoImpuesto(concepto *structConcepto.Concepto, db *gorm.DB) string 
 		tipoimpuesto = concepto.Tipoimpuestoganancias.Codigo
 		return tipoimpuesto
 	}
-	if concepto.Tipoimpuestogananciasid != nil  {
+	if concepto.Tipoimpuestogananciasid != nil {
 		sql := "SELECT codigo FROM tipoimpuestoganancias WHERE id = " + strconv.Itoa(*concepto.Tipoimpuestogananciasid)
 		db.Raw(sql).Row().Scan(&tipoimpuesto)
 	}
@@ -51,8 +51,8 @@ func obtenerItemGananciaFromLiquidacion(liquidacion *structLiquidacion.Liquidaci
 	var itemGanancia structLiquidacion.Liquidacionitem
 	liquidacionItems := liquidacion.Liquidacionitems
 	for j := 0; j < len(liquidacionItems); j++ {
-		if liquidacionItems[j].Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItems[j].Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-			if (*liquidacionItems[j].Importeunitario >= 0){
+		if *liquidacionItems[j].Conceptoid == itemGananciaid || *liquidacionItems[j].Conceptoid == itemGananciaDevolucionid {
+			if *liquidacionItems[j].Importeunitario >= 0 {
 				itemGanancia = liquidacionItems[j]
 				break
 			}
@@ -61,3 +61,8 @@ func obtenerItemGananciaFromLiquidacion(liquidacion *structLiquidacion.Liquidaci
 	}
 	return &itemGanancia
 }
+
+const (
+	itemGananciaid           = -29
+	itemGananciaDevolucionid = -30
+)

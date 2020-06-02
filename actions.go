@@ -200,15 +200,26 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 			defer conexionBD.CerrarDB(db)
 
-			if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
-				if existeConceptoImpuestoGanancias(&liquidacion_data) {
-					framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-					return
-				}
+			existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
+
+			if err != nil {
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
+				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+				return
+			}
+
+			err = estaCargandoSacComoCorresponde(liquidacion_data, db)
+
+			if err != nil {
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+				return
 			}
 
 			for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
-
 				if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
 					recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
 					if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
@@ -243,17 +254,46 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion) bool {
+
+func estaCargandoSacComoCorresponde(liquidacion structLiquidacion.Liquidacion, db *gorm.DB) error{
+	var liquidacionNoPermitida structLiquidacion.Liquidacion
+	if liquidacion.Fechaperiodoliquidacion.Month() == time.June && *liquidacion.Tipoid == liquidacionTipoSacID {
+
+		if err := db.Set("gorm:auto_preload", true).First(&liquidacionNoPermitida, "id != ? AND tipoid != ? AND legajoid = ? AND deleted_at is null", liquidacion.ID, liquidacion.Tipoid, liquidacion.Legajoid).Error; gorm.IsRecordNotFoundError(err) {
+			return errors.New("Para cargar una liquidacion de tipo SAC en junio, primero debe cargar la liquidacion mensual/quincenal del legajo para ese mes")
+		}
+		return nil
+	} else if liquidacion.Fechaperiodoliquidacion.Month() == time.December && *liquidacion.Tipoid == liquidacionTipoSacID {
+		if err := db.Set("gorm:auto_preload", true).First(&liquidacionNoPermitida, "id != ? AND (tipoid = -1 OR tipoid = -3) AND legajoid = ? AND deleted_at is null", liquidacion.ID, liquidacion.Legajoid).Error; gorm.IsRecordNotFoundError(err) {
+			return nil
+		}
+		return errors.New("Para cargar una liquidacion de tipo SAC en diciembre, no pueden existir liquidaciones de tipo mensual/segunda quincena en ese mismo mes")
+	}
+
+	return nil
+}
+
+func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion) (bool, error) {
 	var existeconceptoimpuestoganancias bool = false
-	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
-		concepto := *liquidacion.Liquidacionitems[i].Concepto
-		if concepto.Codigo == "IMPUESTO_GANANCIAS" || concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+	var err error
+	for _, item := range liquidacion.Liquidacionitems {
+		conceptoid := *item.Conceptoid
+		if item.DeletedAt != nil && (conceptoid == impuestoALasGananciasID || conceptoid == impuestoALasGananciasDevolucionID) {
+			if *item.Importeunitario < 0 {
+				return true, errors.New("El concepto de impuesto a las ganancias no puede tener importe negativo.")
+			}
 			existeconceptoimpuestoganancias = true
 			break
 		}
 	}
-	return existeconceptoimpuestoganancias
+	return existeconceptoimpuestoganancias, err
 }
+
+const (
+	impuestoALasGananciasID           = -29
+	impuestoALasGananciasDevolucionID = -30
+	liquidacionTipoSacID = -5
+)
 
 func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
@@ -278,6 +318,11 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 		db2 := conexionBD.ObtenerDB(tenant)
 		defer conexionBD.CerrarDB(db2)
 
+		if !esUltimaLiquidacionDelAño(p_liquidacionid, db) {
+			framework.RespondError(w, http.StatusBadRequest, "Para modificar esta liquidacion primero debe eliminar la liquidacion siguiente")
+			return
+		}
+
 		if !liquidacionContabilizada(p_liquidacionid, db) {
 			decoder := json.NewDecoder(r.Body)
 
@@ -289,30 +334,35 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			}
 			defer r.Body.Close()
 
+			liquidacionid := liquidacion_data.ID
+
+			existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
+
+			if err != nil {
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
+				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+				return
+			}
+
+			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
+				framework.RespondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Bancoaportejubilatorioid)).Error; err != nil {
+				framework.RespondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
 			if canInsertUpdate(liquidacion_data) {
 
-				liquidacionid := liquidacion_data.ID
-
-				if liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES" {
-					if existeConceptoImpuestoGanancias(&liquidacion_data) {
-						framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-						return
-					}
-				}
-
-				if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
-
-				if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Bancoaportejubilatorioid)).Error; err != nil {
-					framework.RespondError(w, http.StatusInternalServerError, err.Error())
-					return
-				}
+				liquidacion_data.ID = p_liquidacionid
 
 				if p_liquidacionid == liquidacionid || liquidacionid == 0 {
-
-					liquidacion_data.ID = p_liquidacionid
 
 					//abro una transacción para que si hay un error no persista en la DB
 					tx := db.Begin()
@@ -352,34 +402,6 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 
-					//despues de modificar, recorro los descuentos asociados a la liquidacion para ver si alguno fue eliminado logicamente y lo elimino de la BD
-					/*	if err := tx.Model(structLiquidacion.Descuento{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Descuento{}).Error; err != nil {
-							tx.Rollback()
-							framework.RespondError(w, http.StatusInternalServerError, err.Error())
-							return
-						}
-
-						//despues de modificar, recorro los importes remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-						if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
-							tx.Rollback()
-							framework.RespondError(w, http.StatusInternalServerError, err.Error())
-							return
-						}
-
-						//despues de modificar, recorro los importes no remunerativos asociados a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-						if err := tx.Model(structLiquidacion.Importenoremunerativo{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Importenoremunerativo{}).Error; err != nil {
-							tx.Rollback()
-							framework.RespondError(w, http.StatusInternalServerError, err.Error())
-							return
-						}
-
-						//despues de modificar, recorro las retenciones asociadas a la liquidacion para ver si fue eliminado logicamente y lo elimino de la BD
-						if err := tx.Model(structLiquidacion.Retencion{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Retencion{}).Error; err != nil {
-							tx.Rollback()
-							framework.RespondError(w, http.StatusInternalServerError, err.Error())
-							return
-						}*/
-
 					tx.Commit()
 
 					framework.RespondJSON(w, http.StatusOK, liquidacion_data)
@@ -398,6 +420,14 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+}
+
+func esUltimaLiquidacionDelAño(liquidacionid int, db *gorm.DB) bool {
+	var liquidacionActual structLiquidacion.Liquidacion
+	var liquidacionMasReciente structLiquidacion.Liquidacion
+	db.First(&liquidacionActual, "id = "+strconv.Itoa(liquidacionid))
+	db.Order("to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') desc, fecha desc, created_at desc").Set("gorm:auto_preload", true).First(&liquidacionMasReciente, "to_char(fechaperiodoliquidacion, 'YYYY') = ? AND legajoid = ?", strconv.Itoa(liquidacionActual.Fechaperiodoliquidacion.Year()), *liquidacionActual.Legajoid)
+	return liquidacionActual.ID == liquidacionMasReciente.ID
 }
 
 func recalcularLiquidacionItem(liquidacionItem *structLiquidacion.Liquidacionitem, liquidacion structLiquidacion.Liquidacion, db *gorm.DB, autenticacion string) {
