@@ -902,6 +902,13 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				liquidacion.Estacontabilizada = false
 				liquidacion.Asientomanualtransaccionid = 0
 				liquidacion.Asientomanualnombre = ""
+				liquidacion.Cantidaddiastrabajados = duplicarLiquidacionesData.Liquidaciondefaultvalues.Cantidaddiastrabajados
+				liquidacion.Situacionrevistauno = duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistauno
+				liquidacion.Fechasituacionrevistauno = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechasituacionrevistauno
+				liquidacion.Situacionrevistados = duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistados
+				liquidacion.Fechasituacionrevistados = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechasituacionrevistados
+				liquidacion.Situacionrevistatres = duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistatres
+				liquidacion.Fechasituacionrevistatres = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechasituacionrevistatres
 
 				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
 					liquidacion.Liquidacionitems[index].ID = 0
