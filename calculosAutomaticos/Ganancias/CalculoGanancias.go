@@ -257,7 +257,7 @@ func (cg *CalculoGanancias) getSacYaConsiderado() float64 {
 		codigo = "SAC_PRIMER_CUOTA"
 	}
 	var importeTotal float64
-	sql := "select sum(importe) from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND ID != " + strconv.Itoa(cg.Liquidacion.ID) + "))"
+	sql := "select sum(importe) from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid in (-29, -30) and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND ID != " + strconv.Itoa(cg.Liquidacion.ID) + "))"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
