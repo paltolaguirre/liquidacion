@@ -232,7 +232,12 @@ func (cg *CalculoGanancias) calculoSACDiciembre() float64 {
 				return cg.calculoCuotaFinalSac()
 			}
 		} else {
-			return 0
+			if cg.existeLiquidacionSACDiciembre() {
+				return 0
+			} else {
+				return cg.getfgSacCuotas(true)
+			}
+
 		}
 	}
 }
