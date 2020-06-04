@@ -846,7 +846,7 @@ func (cg *CalculoGanancias) existeLiquidacionNoSACNoviembre() bool {
 
 func (cg *CalculoGanancias) existeLiquidacionSACDiciembre() bool {
 	var cantidad int
-	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '11' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipoid = -5"
+	sql := "SELECT count(*) FROM liquidacion l WHERE to_char(l.fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(l.fechaperiodoliquidacion, 'MM') = '12' AND l.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND l.tipoid = -5"
 	cg.Db.Raw(sql).Row().Scan(&cantidad)
 
 	return cantidad > 0
