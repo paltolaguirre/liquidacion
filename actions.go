@@ -254,8 +254,7 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
-func estaCargandoSacComoCorresponde(liquidacion structLiquidacion.Liquidacion, db *gorm.DB) error{
+func estaCargandoSacComoCorresponde(liquidacion structLiquidacion.Liquidacion, db *gorm.DB) error {
 	var liquidacionNoPermitida structLiquidacion.Liquidacion
 	if liquidacion.Fechaperiodoliquidacion.Month() == time.June && *liquidacion.Tipoid == liquidacionTipoSacID {
 
@@ -292,7 +291,7 @@ func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion)
 const (
 	impuestoALasGananciasID           = -29
 	impuestoALasGananciasDevolucionID = -30
-	liquidacionTipoSacID = -5
+	liquidacionTipoSacID              = -5
 )
 
 func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
@@ -902,7 +901,17 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				liquidacion.Estacontabilizada = false
 				liquidacion.Asientomanualtransaccionid = 0
 				liquidacion.Asientomanualnombre = ""
-
+				liquidacion.Cantidaddiastrabajados = duplicarLiquidacionesData.Liquidaciondefaultvalues.Cantidaddiastrabajados
+				liquidacion.Situacionrevistauno = duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistauno
+				liquidacion.Fechasituacionrevistauno = &duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
+				if duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistados != nil {
+					liquidacion.Situacionrevistados = duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistados
+					liquidacion.Fechasituacionrevistados = &duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
+				}
+				if duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistatres != nil {
+					liquidacion.Situacionrevistatres = duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistatres
+					liquidacion.Fechasituacionrevistatres = &duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
+				}
 				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
 					liquidacion.Liquidacionitems[index].ID = 0
 					liquidacion.Liquidacionitems[index].CreatedAt = time.Time{}
