@@ -497,7 +497,6 @@ func LiquidacionRemove(w http.ResponseWriter, r *http.Request) {
 func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("La URL accedida: " + r.URL.String())
 	var mapCuentasImportes = make(map[int]float64)
-	var strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla
 	var strCuentasImportes []strCuentaImporte
 	tokenValido, tokenAutenticacion := apiclientautenticacion.CheckTokenValido(w, r)
 	if tokenValido {
@@ -528,11 +527,8 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 		if len(liquidaciones) > 0 {
 			if checkLiquidacionesNoContabilizadas(liquidaciones, liquidaciones_ids, db) {
 				for i := 0; i < len(liquidaciones); i++ {
-					obtenerCuentasImportesYTipoDeGrillas(liquidaciones[i], &strCuentaImporteTipoGrillas, r)
+					obtenerCuentasImportes(liquidaciones[i], &strCuentasImportes, r)
 				}
-
-				obtenerCuentasImportes(strCuentaImporteTipoGrillas, &strCuentasImportes)
-
 				agruparCuentas(strCuentasImportes, mapCuentasImportes)
 
 			} else {
@@ -586,129 +582,24 @@ func marcarLiquidacionesComoContabilizadas(liquidaciones []structLiquidacion.Liq
 	}
 }
 
-func obtenerCuentasImportesYTipoDeGrillas(liquidacion structLiquidacion.Liquidacion, strCuentaImporteTipoGrillas *[]strCuentaImporteTipoGrilla, r *http.Request) {
+func obtenerCuentasImportes(liquidacion structLiquidacion.Liquidacion, strCuentasImportes *[]strCuentaImporte, r *http.Request) {
 	fmt.Println("Se obtienen las cuentas de la Liquidacion: " + strconv.Itoa(liquidacion.ID))
-	var cuentaContable *int
-
-	/*for i := 0; i < len(liquidacion.Importesremunerativos); i++ {
-
-		importeremunerativo := liquidacion.Importesremunerativos[i]
-		concepto := importeremunerativo.Concepto
-		cuentaContable = concepto.CuentaContable
-		importeUnitario := *importeremunerativo.Importeunitario
-
-		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 1}
-		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
-
-	}
-
-	for j := 0; j < len(liquidacion.Importesnoremunerativos); j++ {
-
-		importenoremunerativo := liquidacion.Importesnoremunerativos[j]
-		concepto := importenoremunerativo.Concepto
-		cuentaContable = concepto.CuentaContable
-		importeUnitario := *importenoremunerativo.Importeunitario
-
-		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 2}
-		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
-	}
-
-	for k := 0; k < len(liquidacion.Descuentos); k++ {
-
-		descuento := liquidacion.Descuentos[k]
-		concepto := descuento.Concepto
-		cuentaContable = concepto.CuentaContable
-		importeUnitario := *descuento.Importeunitario
-
-		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 3}
-		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
-
-	}
-
-	for m := 0; m < len(liquidacion.Retenciones); m++ {
-		retencion := liquidacion.Retenciones[m]
-		concepto := retencion.Concepto
-		cuentaContable = concepto.CuentaContable
-		importeUnitario := *retencion.Importeunitario
-
-		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 4}
-		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
-	}
-
-	for n := 0; n < len(liquidacion.Aportespatronales); n++ {
-
-		aportepatronal := liquidacion.Aportespatronales[n]
-		concepto := aportepatronal.Concepto
-		cuentaContable = concepto.CuentaContable
-		importeUnitario := *aportepatronal.Importeunitario
-
-		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: 5}
-		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
-	}
-	*/
 
 	for i := 0; i < len(liquidacion.Liquidacionitems); i++ {
 		item := liquidacion.Liquidacionitems[i]
 		concepto := item.Concepto
-		cuentaContable = concepto.CuentaContable
+		cuentaContableDebe := concepto.CuentaContable
+		cuentaContableHaber := concepto.Cuentacontablepasivoid
 		importeUnitario := *item.Importeunitario
 
-		cuentaImporteTipoGrilla := strCuentaImporteTipoGrilla{Cuentaid: *cuentaContable, Importecuenta: importeUnitario, Tipogrilla: *concepto.Tipoconceptoid}
-		*strCuentaImporteTipoGrillas = append(*strCuentaImporteTipoGrillas, cuentaImporteTipoGrilla)
+		cuentaImporte := strCuentaImporte{Cuentaid: *cuentaContableDebe, Importecuenta: importeUnitario}
+		cuentaImportePasivo := strCuentaImporte{Cuentaid: *cuentaContableHaber, Importecuenta: importeUnitario * -1}
+		*strCuentasImportes = append(*strCuentasImportes, cuentaImporte)
+		*strCuentasImportes = append(*strCuentasImportes, cuentaImportePasivo)
 	}
 
-	fmt.Println("Array strCuentaImporteTipoGrillas: ", *strCuentaImporteTipoGrillas)
+	fmt.Println("Array strCuentaImporte: ", *strCuentasImportes)
 
-}
-
-func obtenerCuentasImportes(strCuentaImporteTipoGrillas []strCuentaImporteTipoGrilla, strCuentasImportes *[]strCuentaImporte) {
-
-	sueldosYJornalesAPagar := -49
-	cargasSocialesAPagar := -48
-
-	for i := 0; i < len(strCuentaImporteTipoGrillas); i++ {
-		cuentaImporteTipoGrilla := strCuentaImporteTipoGrillas[i]
-		cuentaID := cuentaImporteTipoGrilla.Cuentaid
-		importeUnitario := cuentaImporteTipoGrilla.Importecuenta
-		tipoGrilla := cuentaImporteTipoGrilla.Tipogrilla
-
-		switch tipoGrilla {
-		case -1:
-			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
-
-			cuentaImporteHaber := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario * -1}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
-
-		case -2:
-			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
-
-			cuentaImporteHaber := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario * -1}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
-
-		case -3:
-			cuentaImporteHaber := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario * -1}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
-
-			cuentaImporteDebe := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
-
-		case -4:
-			cuentaImporteHaber := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario * -1}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
-
-			cuentaImporteDebe := strCuentaImporte{Cuentaid: sueldosYJornalesAPagar, Importecuenta: importeUnitario}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
-
-		case -5:
-			cuentaImporteDebe := strCuentaImporte{Cuentaid: cuentaID, Importecuenta: importeUnitario}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteDebe)
-
-			cuentaImporteHaber := strCuentaImporte{Cuentaid: cargasSocialesAPagar, Importecuenta: importeUnitario * -1}
-			*strCuentasImportes = append(*strCuentasImportes, cuentaImporteHaber)
-		}
-	}
 }
 
 func agruparCuentas(strCuentasImportes []strCuentaImporte, mapCuentasImportes map[int]float64) {
