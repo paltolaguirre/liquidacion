@@ -200,10 +200,11 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 		defer conexionBD.CerrarDB(db)
 
 		existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
-
-		if err != nil {
-			framework.RespondError(w, http.StatusBadRequest, err.Error())
-		}
+		
+        if err != nil {
+				framework.RespondError(w, http.StatusBadRequest, err.Error())
+				return
+        }
 
 		if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
 			framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
@@ -307,6 +308,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				framework.RespondError(w, http.StatusBadRequest, err.Error())
+				return
 			}
 
 			if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
