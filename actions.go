@@ -332,6 +332,11 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			}
 			defer r.Body.Close()
 
+			if !canInsertUpdate(liquidacion_data) {
+				framework.RespondError(w, http.StatusInternalServerError, "La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
+				return
+			}
+
 			liquidacionid := liquidacion_data.ID
 
 			existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
