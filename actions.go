@@ -194,6 +194,11 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 
 		defer r.Body.Close()
 
+		if !canInsertUpdate(liquidacion_data) {
+			framework.RespondError(w, http.StatusInternalServerError, "La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
+			return
+		}
+
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := conexionBD.ObtenerDB(tenant)
 
@@ -1225,4 +1230,36 @@ func ImpuestoALasGananciasDevolucion(concepto structConcepto.Concepto, liquidaci
 	importeFinal := (*importeCalculado.Importeunitario) * -1
 	importeCalculado.Importeunitario = &importeFinal
 	return importeCalculado
+}
+
+
+func canInsertUpdate(liquidacion structLiquidacion.Liquidacion) bool {
+	fechaperiodoliquidacionigualfechasituacionrevistados := true
+	fechaperiodoliquidacionigualfechasituacionrevistatres := true
+
+	mesLiquidacion := liquidacion.Fechaperiodoliquidacion.Format("01")
+	anioLiquidacion := liquidacion.Fechaperiodoliquidacion.Year()
+
+	mesSituacionRevistaUno := liquidacion.Fechasituacionrevistauno.Format("01")
+	anioSituacionRevistaUno := liquidacion.Fechasituacionrevistauno.Year()
+
+	fechaperiodoliquidacionigualfechasituacionrevistauno := (mesLiquidacion == mesSituacionRevistaUno && anioLiquidacion == anioSituacionRevistaUno)
+
+	if liquidacion.Fechasituacionrevistados != nil {
+		mesSituacionRevistaDos := liquidacion.Fechasituacionrevistados.Format("01")
+		anioSituacionRevistaDos := liquidacion.Fechasituacionrevistados.Year()
+
+		fechaperiodoliquidacionigualfechasituacionrevistados = (mesLiquidacion == mesSituacionRevistaDos && anioLiquidacion == anioSituacionRevistaDos)
+
+	}
+
+	if liquidacion.Fechasituacionrevistatres != nil {
+		mesSituacionRevistaTres := liquidacion.Fechasituacionrevistatres.Format("01")
+		anioSituacionRevistaTres := liquidacion.Fechasituacionrevistatres.Year()
+
+		fechaperiodoliquidacionigualfechasituacionrevistatres = (mesLiquidacion == mesSituacionRevistaTres && anioLiquidacion == anioSituacionRevistaTres)
+
+	}
+
+	return fechaperiodoliquidacionigualfechasituacionrevistauno && fechaperiodoliquidacionigualfechasituacionrevistados && fechaperiodoliquidacionigualfechasituacionrevistatres
 }
