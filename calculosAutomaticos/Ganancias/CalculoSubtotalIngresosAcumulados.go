@@ -1,5 +1,7 @@
 package Ganancias
 
+import "github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
+
 type CalculoSubtotalIngresosAcumulados struct {
 	CalculoGanancias
 }
@@ -7,24 +9,35 @@ type CalculoSubtotalIngresosAcumulados struct {
 func (cg *CalculoSubtotalIngresosAcumulados) getResultInternal() float64 {
 
 	var importeTotal float64 = 0
-	importeTotal = importeTotal + (&CalculoSubtotalIngresos{cg.CalculoGanancias}).getResult()
 
-	var arraySubtotalDeduccionesGenerales []float64
+	if cg.esTipoSac() {
+		importeTotal = cg.getSac(true)
+		//Solo lo ejecuto, pero no lo sumo
+		(&CalculoSubtotalIngresos{cg.CalculoGanancias}).getResult()
+	} else {
+		importeTotal = importeTotal + (&CalculoSubtotalIngresos{cg.CalculoGanancias}).getResult()
 
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidios{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesObraSocial{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoCuotaSindical{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesObraSocialOtrosEmpleos{cg.CalculoGanancias}).getResult())
-	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoCuotaSindicalOtrosEmpleos{cg.CalculoGanancias}).getResult())
+		var arraySubtotalDeduccionesGenerales []float64
 
-	importeTotal = importeTotal - Sum(arraySubtotalDeduccionesGenerales)
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidios{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesObraSocial{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoCuotaSindical{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesJubilatoriosRetirosPensionesOSubsidiosOtrosEmpleos{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoAportesObraSocialOtrosEmpleos{cg.CalculoGanancias}).getResult())
+		arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoCuotaSindicalOtrosEmpleos{cg.CalculoGanancias}).getResult())
 
-	liquidacionAnterior := *cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
-	itemGananciaAnterior := obtenerItemGananciaFromLiquidacion(&liquidacionAnterior)
+		importeTotal = importeTotal - Sum(arraySubtotalDeduccionesGenerales)
+	}
+	var itemGananciaAnterior *structLiquidacion.Liquidacionitem
+	liquidacionAnterior := cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
 
-	if itemGananciaAnterior.ID != 0 {
-		importeTotal = importeTotal + (&CalculoSubtotalIngresosAcumulados{CalculoGanancias{itemGananciaAnterior, &liquidacionAnterior, cg.Db, false}}).getResult()
+	if liquidacionAnterior != nil {
+		itemGananciaAnterior = obtenerItemGananciaFromLiquidacion(liquidacionAnterior)
+	}
+
+
+	if itemGananciaAnterior != nil {
+		importeTotal = importeTotal + (&CalculoSubtotalIngresosAcumulados{CalculoGanancias{itemGananciaAnterior, liquidacionAnterior, cg.Db, false}}).getResult()
 	}
 
 	return importeTotal
