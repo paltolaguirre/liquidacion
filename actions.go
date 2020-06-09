@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/apiClientFormula"
+	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
 	"io/ioutil"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-
-	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/apiClientFormula"
-	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
 
 	"github.com/xubiosueldos/conexionBD"
 
@@ -192,65 +191,65 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 			framework.RespondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		if canInsertUpdate(liquidacion_data) {
-			defer r.Body.Close()
 
-			tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
-			db := conexionBD.ObtenerDB(tenant)
+		defer r.Body.Close()
 
-			defer conexionBD.CerrarDB(db)
-
-			existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
-
-			if err != nil {
-				framework.RespondError(w, http.StatusBadRequest, err.Error())
-				return
-			}
-
-			if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
-				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-				return
-			}
-
-			err = estaCargandoSacComoCorresponde(liquidacion_data, db)
-
-			if err != nil {
-				framework.RespondError(w, http.StatusBadRequest, err.Error())
-				return
-			}
-
-			for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
-				if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
-					recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
-					if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
-						//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
-						framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
-						return
-					}
-				}
-			}
-
-			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
-				framework.RespondError(w, http.StatusInternalServerError, err.Error())
-				return
-			}
-
-			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Bancoaportejubilatorioid)).Error; err != nil {
-				framework.RespondError(w, http.StatusInternalServerError, err.Error())
-				return
-			}
-
-			if err := db.Create(&liquidacion_data).Error; err != nil {
-				framework.RespondError(w, http.StatusInternalServerError, err.Error())
-				return
-			}
-
-			framework.RespondJSON(w, http.StatusCreated, liquidacion_data)
-
-		} else {
+		if !canInsertUpdate(liquidacion_data) {
 			framework.RespondError(w, http.StatusInternalServerError, "La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
 			return
 		}
+
+		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
+		db := conexionBD.ObtenerDB(tenant)
+
+		defer conexionBD.CerrarDB(db)
+
+		existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
+
+		if err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
+			framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+			return
+		}
+
+		err = estaCargandoSacComoCorresponde(liquidacion_data, db)
+
+		if err != nil {
+			framework.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
+			if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
+				recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db, autenticacion)
+				if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
+					//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" , roundTo(*liquidacionItem.Importeunitario, 2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+					framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
+					return
+				}
+			}
+		}
+
+		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
+			framework.RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Bancoaportejubilatorioid)).Error; err != nil {
+			framework.RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if err := db.Create(&liquidacion_data).Error; err != nil {
+			framework.RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		framework.RespondJSON(w, http.StatusCreated, liquidacion_data)
 	}
 }
 
@@ -357,60 +356,54 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if canInsertUpdate(liquidacion_data) {
+			if p_liquidacionid == liquidacionid || liquidacionid == 0 {
 
 				liquidacion_data.ID = p_liquidacionid
 
-				if p_liquidacionid == liquidacionid || liquidacionid == 0 {
+				//abro una transacción para que si hay un error no persista en la DB
+				tx := db.Begin()
+				defer tx.Rollback()
 
-					//abro una transacción para que si hay un error no persista en la DB
-					tx := db.Begin()
-					defer tx.Rollback()
+				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
+				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
-					//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
-					for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
-
-						if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
-							recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
-							if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
-								//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
-								framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
-								return
-							}
-						}
-
-						if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-							for _, acumulador := range liquidacionItem.Acumuladores {
-								acumulador.ID = 0
-							}
-							if err := tx.Model(structLiquidacion.Acumulador{}).Unscoped().Where("liquidacionitemid = ?", liquidacionItem.ID).Delete(structLiquidacion.Acumulador{}).Error; err != nil {
-								framework.RespondError(w, http.StatusInternalServerError, err.Error())
-								return
-							}
+					if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
+						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
+						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
+							//framework.RespondError(w, http.StatusBadRequest, "El concepto " + *liquidacion_data.Liquidacionitems[i].Concepto.Nombre + " es no editable y su calculo automatico (" + fmt.Sprintf("%f" ,roundTo(*liquidacionItem.Importeunitario,2)) + ") no coincide con el valor actual " + fmt.Sprintf("%f", roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario,2)) + ". Intente recalcular.")
+							framework.RespondError(w, http.StatusBadRequest, "Alguno de los importes de los conceptos no editables no coincide con el importe calculado automaticamente. Presione el botón Recalcular Conceptos Automaticos.")
+							return
 						}
 					}
 
-					//modifico el legajo de acuerdo a lo enviado en el json
-					if err := tx.Save(&liquidacion_data).Error; err != nil {
-						framework.RespondError(w, http.StatusInternalServerError, err.Error())
-						return
+					if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+						for _, acumulador := range liquidacionItem.Acumuladores {
+							acumulador.ID = 0
+						}
+						if err := tx.Model(structLiquidacion.Acumulador{}).Unscoped().Where("liquidacionitemid = ?", liquidacionItem.ID).Delete(structLiquidacion.Acumulador{}).Error; err != nil {
+							framework.RespondError(w, http.StatusInternalServerError, err.Error())
+							return
+						}
 					}
+				}
 
-					if err := tx.Model(structLiquidacion.Liquidacionitem{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Liquidacionitem{}).Error; err != nil {
-						framework.RespondError(w, http.StatusInternalServerError, err.Error())
-						return
-					}
-
-					tx.Commit()
-
-					framework.RespondJSON(w, http.StatusOK, liquidacion_data)
-
-				} else {
-					framework.RespondError(w, http.StatusNotFound, framework.IdParametroDistintoStruct)
+				//modifico el legajo de acuerdo a lo enviado en el json
+				if err := tx.Save(&liquidacion_data).Error; err != nil {
+					framework.RespondError(w, http.StatusInternalServerError, err.Error())
 					return
 				}
+
+				if err := tx.Model(structLiquidacion.Liquidacionitem{}).Unscoped().Where("liquidacionid = ? AND deleted_at is not null", liquidacionid).Delete(structLiquidacion.Liquidacionitem{}).Error; err != nil {
+					framework.RespondError(w, http.StatusInternalServerError, err.Error())
+					return
+				}
+
+				tx.Commit()
+
+				framework.RespondJSON(w, http.StatusOK, liquidacion_data)
+
 			} else {
-				framework.RespondError(w, http.StatusInternalServerError, "La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
+				framework.RespondError(w, http.StatusNotFound, framework.IdParametroDistintoStruct)
 				return
 			}
 		} else {
