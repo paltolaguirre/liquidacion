@@ -13,13 +13,13 @@ import (
 	"net/http"
 )
 
-func ExecuteFormulaLiquidacion(authorization string, liquidacion *structLiquidacion.Liquidacion, formulaName string, concepto *structConcepto.Concepto) (float64, error) {
+func ExecuteFormulaLiquidacion(authorization string, liquidacion *structLiquidacion.Liquidacion, formulaName string, concepto *structConcepto.Concepto, liquidacionitem *structLiquidacion.Liquidacionitem) (float64, error) {
 
 	config := configuracion.GetInstance()
 	url := configuracion.GetUrlMicroservicio(config.Puertomicroservicioformula) + "formula/execute"
 
 	executeBody := FormulaExecute{
-		Context: Context{Currentliquidacion: *liquidacion, Currentconcepto: *concepto},
+		Context: Context{Currentliquidacion: *liquidacion, Currentconcepto: *concepto, Currentliquidacionitem: *liquidacionitem},
 		Invoke: structFunction.Invoke{
 			Functionname: formulaName,
 		},
