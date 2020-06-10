@@ -1065,7 +1065,7 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 			importeCalculado = ImpuestoALasGananciasDevolucion(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
 		} else {
 			//CODIGO PARA EJECUTAR LAS FORMULAS
-			resultadoFormula, err := apiClientFormula.ExecuteFormulaLiquidacion(autenticacion, liquidacionCalculoAutomatico, *concepto.Formulanombre, concepto)
+			resultadoFormula, err := apiClientFormula.ExecuteFormulaLiquidacion(autenticacion, liquidacionCalculoAutomatico, *concepto.Formulanombre, concepto, liquidacionitem)
 			if err != nil {
 				panic(err)
 			}
