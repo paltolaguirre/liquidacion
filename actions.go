@@ -160,6 +160,13 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 			where += fmt.Sprintf("to_char(fechaperiodoliquidacion, 'YYYY-MM') <= '%s'", queries["periodohasta"][0])
 		}
 
+		if queries["liquidaciontipoid"] != nil && queries["liquidaciontipoid"][0] != "0" {
+			if where != "" {
+				where += " AND "
+			}
+			where += fmt.Sprintf("tipoid = %s", queries["liquidaciontipoid"][0])
+		}
+
 		if where == "" {
 			db.Set("gorm:auto_preload", true).Order("fechaperiodoliquidacion desc").Find(&liquidaciones)
 		} else {
