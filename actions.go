@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/apiClientFormula"
 	"git-codecommit.us-east-1.amazonaws.com/v1/repos/sueldos-liquidacion/calculosAutomaticos/Ganancias"
+	"github.com/xubiosueldos/conexionBD/Novedad/structNovedad"
+	"github.com/xubiosueldos/conexionBD/structGormModel"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -126,12 +128,49 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 
 		var liquidaciones []structLiquidacion.Liquidacion
 
-		if queries["fechadesde"] == nil && queries["fechahasta"] == nil {
-			db.Set("gorm:auto_preload", true).Find(&liquidaciones)
-		} else {
+		var where string
+
+		if queries["fechadesde"] != nil {
 			var p_fechadesde string = r.URL.Query()["fechadesde"][0] + " 00:00:00-03"
+			if where != "" {
+				where += " AND "
+			}
+			where += fmt.Sprintf("fecha >= '%s'", p_fechadesde)
+		}
+
+		if queries["fechahasta"] != nil {
 			var p_fechahasta string = r.URL.Query()["fechahasta"][0] + " 00:00:00-03"
-			db.Set("gorm:auto_preload", true).Where("fecha BETWEEN ? AND ?", p_fechadesde, p_fechahasta).Find(&liquidaciones)
+			if where != "" {
+				where += " AND "
+			}
+			where += fmt.Sprintf("fecha >= '%s'", p_fechahasta)
+		}
+
+		if queries["periododesde"] != nil {
+			if where != "" {
+				where += " AND "
+			}
+			where += fmt.Sprintf("to_char(fechaperiodoliquidacion, 'YYYY-MM') >= '%s'", queries["periododesde"][0])
+		}
+
+		if queries["periodohasta"] != nil {
+			if where != "" {
+				where += " AND "
+			}
+			where += fmt.Sprintf("to_char(fechaperiodoliquidacion, 'YYYY-MM') <= '%s'", queries["periodohasta"][0])
+		}
+
+		if queries["liquidaciontipoid"] != nil && queries["liquidaciontipoid"][0] != "0" {
+			if where != "" {
+				where += " AND "
+			}
+			where += fmt.Sprintf("tipoid = %s", queries["liquidaciontipoid"][0])
+		}
+
+		if where == "" {
+			db.Set("gorm:auto_preload", true).Order("fechaperiodoliquidacion desc").Find(&liquidaciones)
+		} else {
+			db.Set("gorm:auto_preload", true).Order("fechaperiodoliquidacion desc").Where(where).Find(&liquidaciones)
 		}
 
 		framework.RespondJSON(w, http.StatusOK, liquidaciones)
@@ -290,6 +329,9 @@ func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion)
 const (
 	impuestoALasGananciasID           = -29
 	impuestoALasGananciasDevolucionID = -30
+	liquidacionTipoMensualID          = -1
+	liquidacionTipoPrimeraQuincenaID  = -2
+	liquidacionTipoSegundaQuincenaID  = -3
 	liquidacionTipoSacID              = -5
 )
 
@@ -763,6 +805,7 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 		for index := 0; index < len(duplicarLiquidacionesData.Idstoreplicate); index++ {
 			var liquidacionID = duplicarLiquidacionesData.Idstoreplicate[index]
 			var liquidacion structLiquidacion.Liquidacion
+			var liquidacionTipo structLiquidacion.Liquidaciontipo
 			var procesamientoStatus ProcesamientoStatus
 
 			//gorm:auto_preload se usa para que complete todos los struct con su informacion
@@ -776,13 +819,14 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 				/* se modifica liquidacion a duplicar */
 				liquidacion.ID = 0
 				liquidacion.Tipoid = duplicarLiquidacionesData.Liquidaciondefaultvalues.Tipoid
-				if err := db.Set("gorm:auto_preload", true).First(&liquidacion.Tipo, "id = ?", liquidacion.Tipoid).Error; gorm.IsRecordNotFoundError(err) {
+				if err := db.Set("gorm:auto_preload", true).First(&liquidacionTipo, "id = ?", *liquidacion.Tipoid).Error; gorm.IsRecordNotFoundError(err) {
 					procesamientoStatus.Id = *liquidacion.Tipoid
 					procesamientoStatus.Tipo = "ERROR"
 					procesamientoStatus.Codigo = http.StatusNotFound
 					procesamientoStatus.Mensaje = err.Error()
 					procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
 				}
+				liquidacion.Tipo = &liquidacionTipo
 				liquidacion.Fecha = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fecha
 				liquidacion.Fechaultimodepositoaportejubilatorio = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaultimodepositoaportejubilatorio
 				liquidacion.Fechaperiododepositado = duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiododepositado
@@ -801,59 +845,34 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 					liquidacion.Situacionrevistatres = duplicarLiquidacionesData.Liquidaciondefaultvalues.Situacionrevistatres
 					liquidacion.Fechasituacionrevistatres = &duplicarLiquidacionesData.Liquidaciondefaultvalues.Fechaperiodoliquidacion
 				}
+
+				var liquidacionItems []structLiquidacion.Liquidacionitem
 				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
-					liquidacion.Liquidacionitems[index].ID = 0
-					liquidacion.Liquidacionitems[index].CreatedAt = time.Time{}
-					liquidacion.Liquidacionitems[index].UpdatedAt = time.Time{}
-					liquidacion.Liquidacionitems[index].Liquidacionid = 0
-					liquidacion.Liquidacionitems[index].Acumuladores = nil
+					var concepto structConcepto.Concepto
+					if err := db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", *liquidacion.Liquidacionitems[index].Conceptoid).Error; gorm.IsRecordNotFoundError(err) {
+						procesamientoStatus.Id = *liquidacion.Liquidacionitems[index].Conceptoid
+						procesamientoStatus.Tipo = "ERROR"
+						procesamientoStatus.Codigo = http.StatusNotFound
+						procesamientoStatus.Mensaje = err.Error()
+						procesamientoMasivo.Result = append(procesamientoMasivo.Result, procesamientoStatus)
+					}
+					if !concepto.Esnovedad {
+						liquidacion.Liquidacionitems[index].ID = 0
+						liquidacion.Liquidacionitems[index].CreatedAt = time.Time{}
+						liquidacion.Liquidacionitems[index].UpdatedAt = time.Time{}
+						liquidacion.Liquidacionitems[index].Liquidacionid = 0
+						liquidacion.Liquidacionitems[index].Acumuladores = nil
+						liquidacionItems = append(liquidacionItems, liquidacion.Liquidacionitems[index])
+					}
+				}
+				agregarNovedades(&liquidacionItems, liquidacion.Fechaperiodoliquidacion, liquidacionTipo, db, *liquidacion.Legajoid)
+				liquidacion.Liquidacionitems = liquidacionItems
+
+				for index := 0; index < len(liquidacion.Liquidacionitems); index++ {
 					if !liquidacion.Liquidacionitems[index].Concepto.Eseditable {
 						recalcularLiquidacionItem(&liquidacion.Liquidacionitems[index], liquidacion, db, r.Header.Get("Authorization"))
 					}
-
 				}
-
-				/*for index := 0; index < len(liquidacion.Importesremunerativos); index++ {
-					liquidacion.Importesremunerativos[index].ID = 0
-					liquidacion.Importesremunerativos[index].CreatedAt = time.Time{}
-					liquidacion.Importesremunerativos[index].UpdatedAt = time.Time{}
-					liquidacion.Importesremunerativos[index].Liquidacionid = 0
-				}
-				for index := 0; index < len(liquidacion.Importesnoremunerativos); index++ {
-					liquidacion.Importesnoremunerativos[index].ID = 0
-					liquidacion.Importesnoremunerativos[index].CreatedAt = time.Time{}
-					liquidacion.Importesnoremunerativos[index].UpdatedAt = time.Time{}
-					liquidacion.Importesnoremunerativos[index].Liquidacionid = 0
-				}
-				for index := 0; index < len(liquidacion.Descuentos); index++ {
-					liquidacion.Descuentos[index].ID = 0
-					liquidacion.Descuentos[index].CreatedAt = time.Time{}
-					liquidacion.Descuentos[index].UpdatedAt = time.Time{}
-					liquidacion.Descuentos[index].Liquidacionid = 0
-				}
-				for index := 0; index < len(liquidacion.Retenciones); index++ {
-					liquidacion.Retenciones[index].ID = 0
-					liquidacion.Retenciones[index].CreatedAt = time.Time{}
-					liquidacion.Retenciones[index].UpdatedAt = time.Time{}
-					liquidacion.Retenciones[index].Liquidacionid = 0
-				}
-				for index := 0; index < len(liquidacion.Aportespatronales); index++ {
-					liquidacion.Aportespatronales[index].ID = 0
-					liquidacion.Aportespatronales[index].CreatedAt = time.Time{}
-					liquidacion.Aportespatronales[index].UpdatedAt = time.Time{}
-					liquidacion.Aportespatronales[index].Liquidacionid = 0
-				}*/
-
-				/*liquidacionJSON, _ := json.Marshal(liquidacion)
-				fmt.Println(string(liquidacionJSON))*/
-
-				/*decoder2 := json.NewDecoder(strings.NewReader(string(liquidacionJSON)))
-
-				var liquidacion2 structLiquidacion.Liquidacion
-				if err := decoder2.Decode(&liquidacion2); err != nil {
-					framework.RespondError(w, http.StatusBadRequest, err.Error())
-					return
-				}*/
 
 				if err := db.Create(&liquidacion).Error; err != nil {
 					procesamientoStatus.Id = liquidacionID
@@ -874,6 +893,50 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 
 		framework.RespondJSON(w, http.StatusCreated, procesamientoMasivo)
 	}
+}
+
+func agregarNovedades(liquidacionItems *[]structLiquidacion.Liquidacionitem, fechaperiodoliquidacion time.Time, tipo structLiquidacion.Liquidaciontipo, db *gorm.DB, legajoid int) {
+	var novedades[] structNovedad.Novedad
+	switch tipo.ID {
+	case liquidacionTipoMensualID:
+		db.Set("gorm:auto_preload", true).Find(&novedades, "to_char(fecha, 'YYYY') = ? AND to_char(fecha, 'MM') = ? AND legajoid = ?", fechaperiodoliquidacion.Year(), fechaperiodoliquidacion.Format("01"), legajoid)
+		break
+	case liquidacionTipoPrimeraQuincenaID:
+		db.Set("gorm:auto_preload", true).Find(&novedades, "to_char(fecha, 'YYYY') = ? AND to_char(fecha, 'MM') = ? AND to_char(fecha, 'DD') <= '15' AND legajoid = ?", fechaperiodoliquidacion.Year(), fechaperiodoliquidacion.Format("01"), legajoid)
+		break
+	case liquidacionTipoSegundaQuincenaID:
+		db.Set("gorm:auto_preload", true).Find(&novedades, "to_char(fecha, 'YYYY') = ? AND to_char(fecha, 'MM') = ? AND to_char(fecha, 'DD') > '15' AND legajoid = ?", fechaperiodoliquidacion.Year(), fechaperiodoliquidacion.Format("01"), legajoid)
+		break
+	}
+
+	for _, novedad := range novedades {
+		var novedadImporte *float64
+		if *novedad.Concepto.Tipocalculoautomaticoid == -3 {
+
+		} else {
+			novedadImporteFloat := float64(*novedad.Importe)
+			novedadImporte = &novedadImporteFloat
+		}
+
+		liquidacionitem := structLiquidacion.Liquidacionitem{
+			GormModel:       structGormModel.GormModel{
+				ID:        0,
+				CreatedAt: time.Time{},
+				UpdatedAt: time.Time{},
+				DeletedAt: nil,
+			},
+			Concepto:        novedad.Concepto,
+			Conceptoid:      novedad.Conceptoid,
+			Importeunitario: novedadImporte,
+			Liquidacionid:   0,
+			Cantidad:        novedad.Cantidad,
+			Acumuladores:    nil,
+		}
+
+		*liquidacionItems = append(*liquidacionItems, liquidacionitem)
+
+	}
+
 }
 
 func LiquidacionAsientoManualDescontabilizar(w http.ResponseWriter, r *http.Request) {
@@ -1017,7 +1080,7 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 			}
 		}
 
-		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, liquidacionitem,db, autenticacion)
+		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, liquidacionitem, db, autenticacion)
 
 		if calculo != nil {
 			importeCalculado = *calculo
