@@ -19,6 +19,7 @@ type Executor struct {
 }
 
 type Context struct {
-	Currentliquidacion structLiquidacion.Liquidacion `json:"currentliquidacion"`
-	Currentconcepto structConcepto.Concepto `json:"currentconcepto"`
+	Currentliquidacion     structLiquidacion.Liquidacion     `json:"currentliquidacion"`
+	Currentconcepto        structConcepto.Concepto           `json:"currentconcepto"`
+	Currentliquidacionitem structLiquidacion.Liquidacionitem `json:"currentliquidacionitem"`
 }

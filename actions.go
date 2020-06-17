@@ -456,7 +456,7 @@ func esUltimaLiquidacionDelAño(liquidacionid int, db *gorm.DB) bool {
 }
 
 func recalcularLiquidacionItem(liquidacionItem *structLiquidacion.Liquidacionitem, liquidacion structLiquidacion.Liquidacion, db *gorm.DB, autenticacion string) {
-	solucionCalculo := calcularConcepto(liquidacionItem.Concepto.ID, &liquidacion, db, autenticacion)
+	solucionCalculo := calcularConcepto(liquidacionItem.Concepto.ID, &liquidacion, liquidacionItem, db, autenticacion)
 	liquidacionItem.Importeunitario = solucionCalculo.Importeunitario
 	liquidacionItem.Acumuladores = solucionCalculo.Acumuladores
 }
@@ -976,12 +976,12 @@ func LiquidacionCalculoAutomatico(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
-			if liquidacionCalculoAutomatico.Liquidacionitems[i].DeletedAt == nil {
-				concepto := *liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
+		for i, liquidacionitem := range liquidacionCalculoAutomatico.Liquidacionitems {
+			if liquidacionitem.DeletedAt == nil {
+				concepto := *liquidacionitem.Concepto
 
 				liquidacionCalculoAutomaticoCopia := liquidacionCalculoAutomatico
-				resultado := calcularConcepto(concepto.ID, &liquidacionCalculoAutomaticoCopia, db, autenticacion)
+				resultado := calcularConcepto(concepto.ID, &liquidacionCalculoAutomaticoCopia, &liquidacionitem, db, autenticacion)
 
 				if resultado != nil {
 					liquidacionCalculoAutomatico.Liquidacionitems[i].Importeunitario = resultado.Importeunitario
@@ -1035,7 +1035,17 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 			}
 		}()
 
-		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, db, autenticacion)
+		var liquidacionitem *structLiquidacion.Liquidacionitem
+
+		for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+
+			if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
+				liquidacionitem = &liquidacionCalculoAutomatico.Liquidacionitems[i]
+				break
+			}
+		}
+
+		calculo := calcularConcepto(conceptoid, &liquidacionCalculoAutomatico, liquidacionitem,db, autenticacion)
 
 		if calculo != nil {
 			importeCalculado = *calculo
@@ -1047,26 +1057,18 @@ func LiquidacionCalculoAutomaticoConceptoId(w http.ResponseWriter, r *http.Reque
 
 }
 
-func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, db *gorm.DB, autenticacion string) *StrCalculoAutomaticoConceptoId {
+func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquidacion.Liquidacion, liquidacionitem *structLiquidacion.Liquidacionitem, db *gorm.DB, autenticacion string) *StrCalculoAutomaticoConceptoId {
 
 	importeCalculado := StrCalculoAutomaticoConceptoId{}
 	//db.Set("gorm:auto_preload", true).First(&concepto, "id = ?", conceptoid)
 	importeCalculado.Conceptoid = &conceptoid
 
-	var liquidacionitem *structLiquidacion.Liquidacionitem
-	var concepto *structConcepto.Concepto
+	var concepto structConcepto.Concepto
 	var Tipocalculoautomatico structConcepto.Tipocalculoautomatico
 
-	for i := 0; i < len(liquidacionCalculoAutomatico.Liquidacionitems); i++ {
+	db.First(&concepto, "id = ?", conceptoid)
 
-		if liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto.ID == conceptoid {
-			concepto = liquidacionCalculoAutomatico.Liquidacionitems[i].Concepto
-			liquidacionitem = &liquidacionCalculoAutomatico.Liquidacionitems[i]
-			break
-		}
-	}
-
-	if concepto == nil || liquidacionitem == nil {
+	if concepto.ID == 0 || liquidacionitem == nil {
 		panic(errors.New("Error al obtener el concepto de la liquidacion"))
 	}
 
@@ -1088,12 +1090,12 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 	if concepto.Tipocalculoautomatico.Codigo == "FORMULA" {
 
 		if concepto.Codigo == "IMPUESTO_GANANCIAS" {
-			importeCalculado = ImpuestoALasGanancias(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
+			importeCalculado = ImpuestoALasGanancias(concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
 		} else if concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
-			importeCalculado = ImpuestoALasGananciasDevolucion(*concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
+			importeCalculado = ImpuestoALasGananciasDevolucion(concepto, liquidacionCalculoAutomatico, liquidacionitem, db)
 		} else {
 			//CODIGO PARA EJECUTAR LAS FORMULAS
-			resultadoFormula, err := apiClientFormula.ExecuteFormulaLiquidacion(autenticacion, liquidacionCalculoAutomatico, *concepto.Formulanombre, concepto)
+			resultadoFormula, err := apiClientFormula.ExecuteFormulaLiquidacion(autenticacion, liquidacionCalculoAutomatico, *concepto.Formulanombre, &concepto, liquidacionitem)
 			if err != nil {
 				panic(err)
 			}
@@ -1103,7 +1105,7 @@ func calcularConcepto(conceptoid int, liquidacionCalculoAutomatico *structLiquid
 
 	} else if concepto.Tipocalculoautomatico.Codigo == "PORCENTAJE" {
 		if concepto.Porcentaje != nil && concepto.Tipodecalculoid != nil {
-			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(concepto, liquidacionCalculoAutomatico)
+			calculoAutomatico := calculosAutomaticos.NewCalculoAutomatico(&concepto, liquidacionCalculoAutomatico)
 			calculoAutomatico.Hacercalculoautomatico()
 			importeCalculadoConceptoID := roundTo(calculoAutomatico.GetImporteCalculado(), 4)
 			importeCalculado.Importeunitario = &importeCalculadoConceptoID
