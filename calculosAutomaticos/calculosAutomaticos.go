@@ -3,6 +3,7 @@ package calculosAutomaticos
 import (
 	"github.com/xubiosueldos/conexionBD/Concepto/structConcepto"
 	"github.com/xubiosueldos/conexionBD/Liquidacion/structLiquidacion"
+	"math"
 )
 
 type Calculoautomatico struct {
@@ -46,7 +47,7 @@ func (calculoautomatico *Calculoautomatico) Hacercalculoautomatico() {
 		importeCalculadoPorPorcentaje = importeCalculado * porcentaje
 
 	}
-	calculoautomatico.SetImporteCalculado(importeCalculadoPorPorcentaje)
+	calculoautomatico.SetAndRoundImporteCalculado(importeCalculadoPorPorcentaje)
 }
 
 func (calculoautomatico *Calculoautomatico) calculoRemunerativos() float64 {
@@ -111,6 +112,6 @@ func (calculoautomatico *Calculoautomatico) GetImporteCalculado() float64 {
 	return calculoautomatico.Importecalculado
 }
 
-func (calculoautomatico *Calculoautomatico) SetImporteCalculado(importe float64) {
-	calculoautomatico.Importecalculado = importe
+func (calculoautomatico *Calculoautomatico) SetAndRoundImporteCalculado(importe float64) {
+	calculoautomatico.Importecalculado = math.Round(importe * 100) / 100
 }
