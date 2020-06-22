@@ -328,11 +328,12 @@ func (cg *CalculoGanancias) getfgSacEstimado(ignorasac bool) float64 {
 				importeTotal = importeTotal + importeConcepto
 			}
 		}
-
-		importeTotal = importeTotal + cg.getfgBaseSacOtrosEmpleos()
-
-		importeTotal = importeTotal + cg.obtenerConceptosProrrateoMesesAnteriores()
 	}
+
+	importeTotal = importeTotal + cg.getfgBaseSacOtrosEmpleos()
+
+	importeTotal = importeTotal + cg.obtenerConceptosProrrateoMesesAnteriores()
+
 	return importeTotal
 }
 
