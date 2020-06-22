@@ -134,38 +134,38 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 			var p_fechadesde string = r.URL.Query()["fechadesde"][0] + " 00:00:00-03"
 			var p_fechahasta string = r.URL.Query()["fechahasta"][0] + " 00:00:00-03"
 			db.Set("gorm:auto_preload", true).Where("fecha BETWEEN ? AND ?", p_fechadesde, p_fechahasta).Find(&liquidaciones)
-		}
-
-		if queries["periododesde"] != nil {
-			if where != "" {
-				where += " AND "
-			}
-			where += fmt.Sprintf("to_char(fechaperiodoliquidacion, 'YYYY-MM') >= '%s'", queries["periododesde"][0])
-		}
-
-		if queries["periodohasta"] != nil {
-			if where != "" {
-				where += " AND "
-			}
-			where += fmt.Sprintf("to_char(fechaperiodoliquidacion, 'YYYY-MM') <= '%s'", queries["periodohasta"][0])
-		}
-
-		if queries["liquidaciontipoid"] != nil && queries["liquidaciontipoid"][0] != "0" {
-			if where != "" {
-				where += " AND "
-			}
-			where += fmt.Sprintf("tipoid = %s", queries["liquidaciontipoid"][0])
-		}
-
-		if where == "" {
-			db.Set("gorm:auto_preload", true).Order("fechaperiodoliquidacion desc").Find(&liquidaciones)
 		} else {
-			db.Set("gorm:auto_preload", true).Order("fechaperiodoliquidacion desc").Where(where).Find(&liquidaciones)
+
+			if queries["periododesde"] != nil {
+				if where != "" {
+					where += " AND "
+				}
+				where += fmt.Sprintf("to_char(fechaperiodoliquidacion, 'YYYY-MM') >= '%s'", queries["periododesde"][0])
+			}
+
+			if queries["periodohasta"] != nil {
+				if where != "" {
+					where += " AND "
+				}
+				where += fmt.Sprintf("to_char(fechaperiodoliquidacion, 'YYYY-MM') <= '%s'", queries["periodohasta"][0])
+			}
+
+			if queries["liquidaciontipoid"] != nil && queries["liquidaciontipoid"][0] != "0" {
+				if where != "" {
+					where += " AND "
+				}
+				where += fmt.Sprintf("tipoid = %s", queries["liquidaciontipoid"][0])
+			}
+
+			if where == "" {
+				db.Set("gorm:auto_preload", true).Order("fechaperiodoliquidacion desc").Find(&liquidaciones)
+			} else {
+				db.Set("gorm:auto_preload", true).Order("fechaperiodoliquidacion desc").Where(where).Find(&liquidaciones)
+			}
 		}
 
 		framework.RespondJSON(w, http.StatusOK, liquidaciones)
 	}
-
 }
 
 func LiquidacionShow(w http.ResponseWriter, r *http.Request) {
