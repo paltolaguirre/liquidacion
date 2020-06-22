@@ -130,20 +130,10 @@ func LiquidacionList(w http.ResponseWriter, r *http.Request) {
 
 		var where string
 
-		if queries["fechadesde"] != nil {
+		if queries["fechadesde"] != nil || queries["fechahasta"] != nil {
 			var p_fechadesde string = r.URL.Query()["fechadesde"][0] + " 00:00:00-03"
-			if where != "" {
-				where += " AND "
-			}
-			where += fmt.Sprintf("fecha >= '%s'", p_fechadesde)
-		}
-
-		if queries["fechahasta"] != nil {
 			var p_fechahasta string = r.URL.Query()["fechahasta"][0] + " 00:00:00-03"
-			if where != "" {
-				where += " AND "
-			}
-			where += fmt.Sprintf("fecha >= '%s'", p_fechahasta)
+			db.Set("gorm:auto_preload", true).Where("fecha BETWEEN ? AND ?", p_fechadesde, p_fechahasta).Find(&liquidaciones)
 		}
 
 		if queries["periododesde"] != nil {
