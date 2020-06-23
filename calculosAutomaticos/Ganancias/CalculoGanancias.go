@@ -507,6 +507,9 @@ func (cg *CalculoGanancias) getfgDetalleCargoFamiliar(columnaDetalleCargoFamilia
 		mesdadobaja := getfgMes(detallecargofamiliar.Meshasta)
 		mesdadoalta := getfgMes(detallecargofamiliar.Mesdesde)
 		valorfijo := cg.getfgValorFijoImpuestoGanancia("deduccionespersonales", valorfijocolumna)
+		if cg.trabajoEnFechaPatagonica() {
+			valorfijo = 1.22 * valorfijo
+		}
 
 		if tienevalorbeneficio == true {
 			valorfijo = valorfijo * 1.22
@@ -861,4 +864,12 @@ func (cg *CalculoGanancias) getfgSacEfectivo() float64 {
 		}
 	}
 	return total
+}
+
+func (cg *CalculoGanancias) trabajoEnFechaPatagonica() bool {
+	var cantidad int
+	sql := "SELECT count(*) FROM beneficiosiradig as bs left join siradig as s on bs.siradigid = s.id WHERE to_char(s.periodosiradig, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(bs.mesdesde, 'MM') <= '" + cg.Liquidacion.Fechaperiodoliquidacion.Format("01") + "' AND to_char(bs.meshasta, 'MM') >= '" + cg.Liquidacion.Fechaperiodoliquidacion.Format("01") + "' AND s.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND bs.siradigtipogrillaid = -24"
+	cg.Db.Raw(sql).Row().Scan(&cantidad)
+
+	return cantidad > 0
 }
