@@ -6,6 +6,9 @@ type CalculoDeduccionEspecial struct {
 
 func (cg *CalculoDeduccionEspecial) getResultInternal() float64 {
 	valorfijoMNI := cg.getfgValorFijoImpuestoGanancia("deduccionespersonales", "valorfijoddei")
+	if cg.trabajoEnFechaPatagonica() {
+		valorfijoMNI = 1.22 * valorfijoMNI
+	}
 	mesperiodoliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 	return (valorfijoMNI / 12) * float64(mesperiodoliquidacion)
 }
