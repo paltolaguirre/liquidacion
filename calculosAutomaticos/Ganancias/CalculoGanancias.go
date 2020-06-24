@@ -868,7 +868,7 @@ func (cg *CalculoGanancias) getfgSacEfectivo() float64 {
 
 func (cg *CalculoGanancias) trabajoEnFechaPatagonica() bool {
 	var cantidad int
-	sql := "SELECT count(*) FROM beneficiosiradig as bs left join siradig as s on bs.siradigid = s.id WHERE to_char(s.periodosiradig, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(bs.mesdesde, 'MM') <= '" + cg.Liquidacion.Fechaperiodoliquidacion.Format("01") + "' AND to_char(bs.meshasta, 'MM') >= '" + cg.Liquidacion.Fechaperiodoliquidacion.Format("01") + "' AND s.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND bs.siradigtipogrillaid = -24"
+	sql := "SELECT count(*) FROM beneficiosiradig as bs left join siradig as s on bs.siradigid = s.id WHERE to_char(s.periodosiradig, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND to_char(bs.mesdesde, 'MM') <= '" + cg.Liquidacion.Fechaperiodoliquidacion.Format("01") + "' AND to_char(bs.meshasta, 'MM') >= '" + cg.Liquidacion.Fechaperiodoliquidacion.Format("01") + "' AND s.legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND bs.siradigtipogrillaid = -24 AND bs.deleted_at is null and s.deleted_at is null"
 	cg.Db.Raw(sql).Row().Scan(&cantidad)
 
 	return cantidad > 0
