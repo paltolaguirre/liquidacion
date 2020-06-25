@@ -6,6 +6,9 @@ type CalculoMinimoNoImponible struct {
 
 func (cg *CalculoMinimoNoImponible) getResultInternal() float64 {
 	valorfijoMNI := cg.getfgValorFijoImpuestoGanancia("deduccionespersonales", "valorfijomni")
+	if cg.trabajoEnFechaPatagonica() {
+		valorfijoMNI = 1.22 * valorfijoMNI
+	}
 	mesperiodoliquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion)
 	return (valorfijoMNI / 12) * float64(mesperiodoliquidacion)
 }
