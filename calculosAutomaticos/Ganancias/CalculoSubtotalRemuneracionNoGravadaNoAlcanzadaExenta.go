@@ -18,7 +18,6 @@ func (cg *CalculoSubtotalRemuneracionNoGravadaNoAlcanzadaExenta) getResultIntern
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoSACPrimerCuotaExentasNoAlcanzadas{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoSACSegundaCuotaExentasNoAlcanzadas{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoRetribucionesNoHabitualesExentasNoAlcanzadas{cg.CalculoGanancias}).getResult())
-	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoAjustesPeriodosAnterioresRemuneracionesGravadas{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta = append(arraySubtotalRemuneracionNoGravadaNoAlcanzadaExenta, (&CalculoAjustesPeriodosAnterioresRemuneracionesExentasNoAlcanzadas{cg.CalculoGanancias}).getResult())
 
 	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("SUBTOTAL_REMUNERACION_NO_GRAVADA_NO_ALCANZADA_EXENTA")

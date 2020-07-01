@@ -19,6 +19,7 @@ func (cg *CalculoSubtotalRemuneracionGravada) getResultInternal() float64 {
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoHorasExtrasGravadasOtrosEmpleos{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoMovilidadYViaticosGravadaOtrosEmpleos{cg.CalculoGanancias}).getResult())
 	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoMaterialDidacticoPersonalDocenteRemuneracionOtrosEmpleos{cg.CalculoGanancias}).getResult())
+	arraySubtotalRemuneracionGravada = append(arraySubtotalRemuneracionGravada, (&CalculoAjustesPeriodosAnterioresRemuneracionesGravadas{cg.CalculoGanancias}).getResult())
 	importeLiquidacionSAC := cg.obtenerImporteSac()
 	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("SUBTOTAL_REMUNERACION_GRAVADA")
 	importeTotal = Sum(arraySubtotalRemuneracionGravada) + importeLiquidacionSAC + importeAcumuladorMesAnterior
