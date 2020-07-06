@@ -30,6 +30,8 @@ func (cg *CalculoSubtotalDeduccionesGenerales) getResultInternal() float64 {
 	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoGastosMovilidadViaticosAbonadosPorElEmpleador{cg.CalculoGanancias}).getResult())
 	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoIndumentariaEquipamientoCaracterObligatorio{cg.CalculoGanancias}).getResult())
 	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoOtrasDeducciones{cg.CalculoGanancias}).getResult())
+	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoOtrasDeduccionesActoresRetribucionPagadaALosRepresentantesRG244208{cg.CalculoGanancias}).getResult())
+	arraySubtotalDeduccionesGenerales = append(arraySubtotalDeduccionesGenerales, (&CalculoOtrasDeduccionesFondosCompensadoresPrevision{cg.CalculoGanancias}).getResult())
 
 	importeAcumuladorMesAnterior := cg.obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodigo("SUBTOTAL_DEDUCCIONES_GENERALES")
 	importeTotal = Sum(arraySubtotalDeduccionesGenerales) + importeAcumuladorMesAnterior
