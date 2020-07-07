@@ -47,11 +47,12 @@ func getfgImporteTotalTope(importeTotal float64, tope float64) float64 {
 	}
 }
 
-func obtenerItemGananciaFromLiquidacion(liquidacion *structLiquidacion.Liquidacion) *structLiquidacion.Liquidacionitem {
+func obtenerItemGananciaFromLiquidacion(liquidacion *structLiquidacion.Liquidacion, db *gorm.DB) *structLiquidacion.Liquidacionitem {
 	var itemGanancia structLiquidacion.Liquidacionitem
 	liquidacionItems := liquidacion.Liquidacionitems
 	for j := 0; j < len(liquidacionItems); j++ {
-		if *liquidacionItems[j].Conceptoid == itemGananciaid || *liquidacionItems[j].Conceptoid == itemGananciaDevolucionid {
+		db.Set("gorm:auto_preload", true).First(liquidacionItems[j].Concepto, "id = ?", liquidacionItems[j].Conceptoid)
+		if liquidacionItems[j].Concepto.Esganancias {
 			if *liquidacionItems[j].Importeunitario >= 0 {
 				itemGanancia = liquidacionItems[j]
 				break
@@ -61,8 +62,3 @@ func obtenerItemGananciaFromLiquidacion(liquidacion *structLiquidacion.Liquidaci
 	}
 	return &itemGanancia
 }
-
-const (
-	itemGananciaid           = -29
-	itemGananciaDevolucionid = -30
-)

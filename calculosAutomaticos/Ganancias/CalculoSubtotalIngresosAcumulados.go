@@ -32,7 +32,7 @@ func (cg *CalculoSubtotalIngresosAcumulados) getResultInternal() float64 {
 	liquidacionAnterior := cg.obtenerLiquidacionIgualAnioLegajoMesAnterior()
 
 	if liquidacionAnterior != nil {
-		itemGananciaAnterior = obtenerItemGananciaFromLiquidacion(liquidacionAnterior)
+		itemGananciaAnterior = obtenerItemGananciaFromLiquidacion(liquidacionAnterior, cg.Db)
 	}
 
 
