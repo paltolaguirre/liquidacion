@@ -220,33 +220,14 @@ func LiquidacionAdd(w http.ResponseWriter, r *http.Request) {
 			framework.RespondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-
 		defer r.Body.Close()
-
-		if !canInsertUpdate(liquidacion_data) {
-			framework.RespondError(w, http.StatusInternalServerError, "La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
-			return
-		}
 
 		tenant := apiclientautenticacion.ObtenerTenant(tokenAutenticacion)
 		db := conexionBD.ObtenerDB(tenant)
 
 		defer conexionBD.CerrarDB(db)
 
-		existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
-
-		if err != nil {
-			framework.RespondError(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
-			framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-			return
-		}
-
-		err = estaCargandoSacComoCorresponde(liquidacion_data, db)
-
+		err := canInsertUpdate(liquidacion_data, db)
 		if err != nil {
 			framework.RespondError(w, http.StatusBadRequest, err.Error())
 			return
@@ -364,24 +345,14 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 			}
 			defer r.Body.Close()
 
-			if !canInsertUpdate(liquidacion_data) {
-				framework.RespondError(w, http.StatusInternalServerError, "La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
-				return
-			}
-
-			liquidacionid := liquidacion_data.ID
-
-			existe, err := existeConceptoImpuestoGanancias(&liquidacion_data)
+			err := canInsertUpdate(liquidacion_data, db)
 
 			if err != nil {
 				framework.RespondError(w, http.StatusBadRequest, err.Error())
 				return
 			}
 
-			if (liquidacion_data.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion_data.Tipo.Codigo == "VACACIONES") && existe {
-				framework.RespondError(w, http.StatusBadRequest, "La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-				return
-			}
+			liquidacionid := liquidacion_data.ID
 
 			if err := monoliticComunication.Checkexistebanco(w, r, tokenAutenticacion, strconv.Itoa(*liquidacion_data.Cuentabancoid)).Error; err != nil {
 				framework.RespondError(w, http.StatusInternalServerError, err.Error())
@@ -1165,7 +1136,8 @@ func ImpuestoALasGananciasDevolucion(concepto structConcepto.Concepto, liquidaci
 	return importeCalculado
 }
 
-func canInsertUpdate(liquidacion structLiquidacion.Liquidacion) bool {
+func canInsertUpdate(liquidacion structLiquidacion.Liquidacion, db *gorm.DB) error {
+
 	fechaperiodoliquidacionigualfechasituacionrevistados := true
 	fechaperiodoliquidacionigualfechasituacionrevistatres := true
 
@@ -1193,5 +1165,37 @@ func canInsertUpdate(liquidacion structLiquidacion.Liquidacion) bool {
 
 	}
 
-	return fechaperiodoliquidacionigualfechasituacionrevistauno && fechaperiodoliquidacionigualfechasituacionrevistados && fechaperiodoliquidacionigualfechasituacionrevistatres
+	if !(fechaperiodoliquidacionigualfechasituacionrevistauno && fechaperiodoliquidacionigualfechasituacionrevistados && fechaperiodoliquidacionigualfechasituacionrevistatres) {
+		return errors.New("La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
+	}
+
+	existe, err := existeConceptoImpuestoGanancias(&liquidacion)
+
+	if err != nil {
+		return err
+	}
+
+	if (liquidacion.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion.Tipo.Codigo == "VACACIONES") && existe {
+		return errors.New("La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+	}
+
+	err = estaCargandoSacComoCorresponde(liquidacion, db)
+
+	if err != nil {
+		return err
+	}
+
+	var cantidadItemsConGanancias = 0
+	for _, liquidacionitem := range liquidacion.Liquidacionitems {
+		db.Set("gorm:auto_preload", true).First(&liquidacionitem.Concepto, "id = ?", liquidacionitem.Conceptoid)
+		if liquidacionitem.Concepto.Esganancias {
+			cantidadItemsConGanancias++
+		}
+	}
+
+	if cantidadItemsConGanancias > 1 {
+		return errors.New("Solo se puede utilizar un único concepto de Impuesto a las Ganancias por liquidación")
+	}
+
+	return nil
 }
