@@ -262,7 +262,7 @@ func (cg *CalculoGanancias) getSacYaConsiderado() float64 {
 		codigo = "SAC_PRIMER_CUOTA"
 	}
 	var importeTotal float64
-	sql := "select sum(importe) from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid in (-29, -30) and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND ID != " + strconv.Itoa(cg.Liquidacion.ID) + "))"
+	sql := "select sum(importe) from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem left join concepto on liquidacionitem.conceptoid = concepto.id  where concepto.esganancia = true and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + " AND ID != " + strconv.Itoa(cg.Liquidacion.ID) + "))"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
@@ -270,7 +270,7 @@ func (cg *CalculoGanancias) getSacYaConsiderado() float64 {
 
 func (cg *CalculoGanancias) getSacYaConsideradoDiciembre() float64 {
 	var importeTotal float64
-	sql := "select sum(importe) from acumulador where codigo = 'SAC_SEGUNDA_CUOTA' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < 12 AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + "))"
+	sql := "select sum(importe) from acumulador where codigo = 'SAC_SEGUNDA_CUOTA' and liquidacionitemid in (select id from liquidacionitem  left join concepto on liquidacionitem.conceptoid = concepto.id and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(cg.Liquidacion.Fechaperiodoliquidacion.Year()) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') < 12 AND tipoid in (-1, -2, -3) AND legajoid = " + strconv.Itoa(*cg.Liquidacion.Legajoid) + "))"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal
@@ -717,7 +717,7 @@ func (cg *CalculoGanancias) obtenerAcumuladorLiquidacionItemMesAnteriorSegunCodi
 	mesLiquidacion := getfgMes(&cg.Liquidacion.Fechaperiodoliquidacion) - 1
 	legajoID := *cg.Liquidacion.Legajoid
 
-	sql := "select importe from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem  where conceptoid = -29 and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesLiquidacion) + " AND tipoid = -1 AND legajoid = " + strconv.Itoa(legajoID) + " order by fechaperiodoliquidacion))"
+	sql := "select importe from acumulador where codigo = '" + codigo + "' and liquidacionitemid in (select id from liquidacionitem left join concepto on liquidacionitem.conceptoid = concepto.id where concepto.esganancias = true and liquidacionid in (select ID from liquidacion where to_char(fechaperiodoliquidacion, 'YYYY') = '" + strconv.Itoa(anioLiquidacion) + "' and to_number(to_char(fechaperiodoliquidacion, 'MM'),'99') = " + strconv.Itoa(mesLiquidacion) + " AND tipoid = -1 AND legajoid = " + strconv.Itoa(legajoID) + " order by fechaperiodoliquidacion))"
 	cg.Db.Raw(sql).Row().Scan(&importeTotal)
 
 	return importeTotal

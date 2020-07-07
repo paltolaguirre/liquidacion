@@ -281,29 +281,11 @@ func estaCargandoSacComoCorresponde(liquidacion structLiquidacion.Liquidacion, d
 	return nil
 }
 
-func existeConceptoImpuestoGanancias(liquidacion *structLiquidacion.Liquidacion) (bool, error) {
-	var existeconceptoimpuestoganancias bool = false
-	var err error
-	for _, item := range liquidacion.Liquidacionitems {
-		conceptoid := *item.Conceptoid
-		if item.DeletedAt != nil && (conceptoid == impuestoALasGananciasID || conceptoid == impuestoALasGananciasDevolucionID) {
-			if *item.Importeunitario < 0 {
-				return true, errors.New("El concepto de impuesto a las ganancias no puede tener importe negativo.")
-			}
-			existeconceptoimpuestoganancias = true
-			break
-		}
-	}
-	return existeconceptoimpuestoganancias, err
-}
-
 const (
-	impuestoALasGananciasID           = -29
-	impuestoALasGananciasDevolucionID = -30
-	liquidacionTipoMensualID          = -1
-	liquidacionTipoPrimeraQuincenaID  = -2
-	liquidacionTipoSegundaQuincenaID  = -3
-	liquidacionTipoSacID              = -5
+	liquidacionTipoMensualID         = -1
+	liquidacionTipoPrimeraQuincenaID = -2
+	liquidacionTipoSegundaQuincenaID = -3
+	liquidacionTipoSacID             = -5
 )
 
 func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
@@ -375,6 +357,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 				//Actualizo los Calculos necesarios y refresco los acumuladores de los mismos
 				for i, liquidacionItem := range liquidacion_data.Liquidacionitems {
 
+					db.Set("gorm:auto_preload", true).First(liquidacionItem.Concepto, "id = ?", liquidacionItem.Conceptoid)
 					if !liquidacionItem.Concepto.Eseditable && liquidacionItem.DeletedAt == nil {
 						recalcularLiquidacionItem(&liquidacionItem, liquidacion_data, db2, autenticacion)
 						if roundTo(*liquidacion_data.Liquidacionitems[i].Importeunitario, 2) != roundTo(*liquidacionItem.Importeunitario, 2) {
@@ -384,7 +367,7 @@ func LiquidacionUpdate(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 
-					if liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS" || liquidacionItem.Concepto.Codigo == "IMPUESTO_GANANCIAS_DEVOLUCION" {
+					if liquidacionItem.Concepto.Esganancias {
 						for _, acumulador := range liquidacionItem.Acumuladores {
 							acumulador.ID = 0
 						}
@@ -857,7 +840,7 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 }
 
 func agregarNovedades(liquidacionItems *[]structLiquidacion.Liquidacionitem, fechaperiodoliquidacion time.Time, tipo structLiquidacion.Liquidaciontipo, db *gorm.DB, legajoid int) {
-	var novedades[] structNovedad.Novedad
+	var novedades []structNovedad.Novedad
 	switch tipo.ID {
 	case liquidacionTipoMensualID:
 		db.Set("gorm:auto_preload", true).Find(&novedades, "to_char(fecha, 'YYYY') = ? AND to_char(fecha, 'MM') = ? AND legajoid = ?", fechaperiodoliquidacion.Year(), fechaperiodoliquidacion.Format("01"), legajoid)
@@ -880,7 +863,7 @@ func agregarNovedades(liquidacionItems *[]structLiquidacion.Liquidacionitem, fec
 		}
 
 		liquidacionitem := structLiquidacion.Liquidacionitem{
-			GormModel:       structGormModel.GormModel{
+			GormModel: structGormModel.GormModel{
 				ID:        0,
 				CreatedAt: time.Time{},
 				UpdatedAt: time.Time{},
@@ -1169,32 +1152,29 @@ func canInsertUpdate(liquidacion structLiquidacion.Liquidacion, db *gorm.DB) err
 		return errors.New("La Fecha Desde de Situación Revista debe pertenecer al Periodo Liquidación")
 	}
 
-	existe, err := existeConceptoImpuestoGanancias(&liquidacion)
-
-	if err != nil {
-		return err
-	}
-
-	if (liquidacion.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion.Tipo.Codigo == "VACACIONES") && existe {
-		return errors.New("La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
-	}
-
-	err = estaCargandoSacComoCorresponde(liquidacion, db)
-
-	if err != nil {
-		return err
-	}
-
 	var cantidadItemsConGanancias = 0
 	for _, liquidacionitem := range liquidacion.Liquidacionitems {
 		db.Set("gorm:auto_preload", true).First(&liquidacionitem.Concepto, "id = ?", liquidacionitem.Conceptoid)
-		if liquidacionitem.Concepto.Esganancias {
+		if liquidacionitem.DeletedAt == nil && liquidacionitem.Concepto.Esganancias {
+			if *liquidacionitem.Importeunitario < 0 {
+				return errors.New("El concepto de impuesto a las ganancias no puede tener importe negativo.")
+			}
 			cantidadItemsConGanancias++
 		}
 	}
 
 	if cantidadItemsConGanancias > 1 {
 		return errors.New("Solo se puede utilizar un único concepto de Impuesto a las Ganancias por liquidación")
+	}
+
+	if (liquidacion.Tipo.Codigo == "PRIMER_QUINCENA" || liquidacion.Tipo.Codigo == "VACACIONES") && cantidadItemsConGanancias == 1 {
+		return errors.New("La Liquidación de tipo Primer Quincena o Vacaciones no permite los conceptos de Impuesto a las Ganancias")
+	}
+
+	err := estaCargandoSacComoCorresponde(liquidacion, db)
+
+	if err != nil {
+		return err
 	}
 
 	return nil

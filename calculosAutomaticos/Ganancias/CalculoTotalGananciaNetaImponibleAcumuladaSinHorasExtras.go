@@ -37,7 +37,7 @@ func (cg *CalculoTotalGananciaNetaImponibleAcumuladaSinHorasExtras) getResultInt
 	importeTotalHorasExtrasGravadasOtrosEmpleos = importeTotalHorasExtrasGravadasOtrosEmpleos + (&CalculoHorasExtrasGravadasOtrosEmpleos{cg.CalculoGanancias}).getResult()
 
 	for i := 0; i < len(liquidaciones); i++ {
-		itemGanancias := obtenerItemGananciaFromLiquidacion(&liquidaciones[i])
+		itemGanancias := obtenerItemGananciaFromLiquidacion(&liquidaciones[i], cg.Db)
 		if itemGanancias == nil {
 			itemGanancias = &structLiquidacion.Liquidacionitem{}
 		}
