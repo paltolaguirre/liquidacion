@@ -9,7 +9,7 @@ func (cg *CalculoAjustesPeriodosAnterioresRemuneracionesGravadasOtrosEmpleos) ge
 }
 
 func (cg *CalculoAjustesPeriodosAnterioresRemuneracionesGravadasOtrosEmpleos) getResult() float64 {
-	return cg.getResultOnDemandTemplate("AJUSTES_PERIODOS_ANTERIORES_REMUNERACIONES_GRAVADAS", 0, cg)
+	return cg.getResultOnDemandTemplate("AJUSTES_PERIODOS_ANTERIORES_REMUNERACIONES_GRAVADAS_OTROS_EMPLEOS", 0, cg)
 }
 
 func (cg *CalculoAjustesPeriodosAnterioresRemuneracionesGravadasOtrosEmpleos) getTope() *float64 {
