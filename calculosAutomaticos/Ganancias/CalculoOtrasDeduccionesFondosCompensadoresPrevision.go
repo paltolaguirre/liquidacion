@@ -5,7 +5,7 @@ type CalculoOtrasDeduccionesFondosCompensadoresPrevision struct {
 }
 
 func (cg *CalculoOtrasDeduccionesFondosCompensadoresPrevision) getResultInternal() float64 {
-	return cg.getfgImporteTotalSiradigSegunTipoGrilla("importe", "OTRAS_DEDUCCIONES_ACTORES_RETRIBUCION_PAGADA_A_LOS_REPRESENTANTES_RG_2442_08", "deducciondesgravacionsiradig")
+	return cg.getfgImporteTotalSiradigSegunTipoGrilla("importe", "OTRAS_DEDUCCIONES_FONDOS_COMPENSADORES_DE_PREVISION", "deducciondesgravacionsiradig")
 }
 
 func (cg *CalculoOtrasDeduccionesFondosCompensadoresPrevision) getResult() float64 {
