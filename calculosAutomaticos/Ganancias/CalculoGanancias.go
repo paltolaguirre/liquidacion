@@ -195,6 +195,11 @@ func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
 	(&CalculoImpuestoRetenido{*cg}).getResult()
 	(&CalculoPagosACuenta{*cg}).getResult()
 	(&CalculoSaldoAPagar{*cg}).getResult()
+	(&CalculoSACPrimerCuotaExentasNoAlcanzadas{*cg}).getResult()
+	(&CalculoSACSegundaCuotaExentasNoAlcanzadas{*cg}).getResult()
+	(&CalculoRetribucionesNoHabitualesExentasNoAlcanzadas{*cg}).getResult()
+	(&CalculoAjustesPeriodosAnterioresRemuneracionesGravadas{*cg}).getResult()
+	(&CalculoAjustesPeriodosAnterioresRemuneracionesExentasNoAlcanzadas{*cg}).getResult()
 }
 
 func (cg *CalculoGanancias) getSac(correspondeSemestre bool) float64 {
@@ -630,9 +635,9 @@ func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *stru
 
 	if contieneMesActual {
 		/*
-		Casos especiales:
-		Si estoy en JUNIO y soy de tipo SAC, necesito la liquidacion de JUNIO
-		Si estoy en DICIEMBRE y no soy tipo sac, necesito la liquidacion de tipo SAC de DICIEMBRE
+			Casos especiales:
+			Si estoy en JUNIO y soy de tipo SAC, necesito la liquidacion de JUNIO
+			Si estoy en DICIEMBRE y no soy tipo sac, necesito la liquidacion de tipo SAC de DICIEMBRE
 		*/
 		liquidaciones = *cg.obtenerLiquidacionesIgualAnioLegajoMenorIgualMes()
 	} else {
@@ -649,9 +654,9 @@ func (cg *CalculoGanancias) obtenerLiquidacionIgualAnioLegajoMesAnterior() *stru
 		for _, liquidacion := range liquidaciones {
 			if liquidacion.DeletedAt == nil && (liquidacion.Tipo.Codigo == "MENSUAL" || liquidacion.Tipo.Codigo == "SEGUNDA_QUINCENA" || liquidacion.Tipo.Codigo == "SAC") {
 				/*
-				Casos especiales:
-				Si estoy en JULIO y hay TIPO SAC en JUNIO, obtengo ese.
-				Si estoy en DICIEMBRE y NO soy tipo SAC, obtengo el SAC de diciembre en caso de que esté.
+					Casos especiales:
+					Si estoy en JULIO y hay TIPO SAC en JUNIO, obtengo ese.
+					Si estoy en DICIEMBRE y NO soy tipo SAC, obtengo el SAC de diciembre en caso de que esté.
 				*/
 				if (cg.esDiciembre() && !cg.esTipoSac() && esTipoSac(liquidacion)) || (cg.esJulio() && esTipoSac(liquidacion)) {
 					liquidacionMesAnterior = &liquidacion
