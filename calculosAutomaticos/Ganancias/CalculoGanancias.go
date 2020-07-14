@@ -200,6 +200,14 @@ func (cg *CalculoGanancias) invocarCalculosLiquidacionAnual() {
 	(&CalculoRetribucionesNoHabitualesExentasNoAlcanzadas{*cg}).getResult()
 	(&CalculoAjustesPeriodosAnterioresRemuneracionesGravadas{*cg}).getResult()
 	(&CalculoAjustesPeriodosAnterioresRemuneracionesExentasNoAlcanzadas{*cg}).getResult()
+	(&CalculoAjustesPeriodosAnterioresRemuneracionesExentasNoAlcanzadasOtrosEmpleos{*cg}).getResult()
+	(&CalculoAjustesPeriodosAnterioresRemuneracionesGravadasOtrosEmpleos{*cg}).getResult()
+	(&CalculoOtrasDeduccionesActoresRetribucionPagadaALosRepresentantesRG244208{*cg}).getResult()
+	(&CalculoOtrasDeduccionesFondosCompensadoresPrevision{*cg}).getResult()
+	(&CalculoPagosACuentaImpuestoSobreCreditosDebitos{*cg}).getResult()
+	(&CalculoPagosACuentaPercepcionesRetencionesAduaneras{*cg}).getResult()
+	(&CalculoPagosACuentaResolucionGeneralAFIP38192015CancelacionesEnEfectivo{*cg}).getResult()
+	(&CalculoRetribucionesNoHabitualesExentasNoAlcanzadasOtrosEmpleos{*cg}).getResult()
 }
 
 func (cg *CalculoGanancias) getSac(correspondeSemestre bool) float64 {
