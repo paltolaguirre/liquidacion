@@ -286,14 +286,19 @@ func estaCargandoSacComoCorresponde(liquidacion structLiquidacion.Liquidacion, d
 	var liquidacionNoPermitida structLiquidacion.Liquidacion
 	if liquidacion.Fechaperiodoliquidacion.Month() == time.June && *liquidacion.Tipoid == liquidacionTipoSacID {
 
-		if err := db.Set("gorm:auto_preload", true).First(&liquidacionNoPermitida, "id != ? AND tipoid != ? AND legajoid = ? AND deleted_at is null", liquidacion.ID, liquidacion.Tipoid, liquidacion.Legajoid).Error; gorm.IsRecordNotFoundError(err) {
-			return errors.New("Para cargar una liquidacion de tipo SAC en junio, primero debe cargar la liquidacion mensual/quincenal del legajo para ese mes")
+		db.Set("gorm:auto_preload", true).First(&liquidacionNoPermitida, "id != ? AND (tipoid = -1 OR tipoid = -3) AND legajoid = ? AND deleted_at is null AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND to_char(fechaperiodoliquidacion, 'MM') = '06'", liquidacion.ID, liquidacion.Legajoid, liquidacion.Fechaperiodoliquidacion.Format("2006"))
+
+		if liquidacionNoPermitida.ID == 0 {
+			return errors.New("Para cargar una liquidacion de tipo SAC en junio, primero debe cargar la liquidacion mensual/segunda quincena del legajo para ese mes")
 		}
 		return nil
 	} else if liquidacion.Fechaperiodoliquidacion.Month() == time.December && *liquidacion.Tipoid == liquidacionTipoSacID {
-		if err := db.Set("gorm:auto_preload", true).First(&liquidacionNoPermitida, "id != ? AND (tipoid = -1 OR tipoid = -3) AND legajoid = ? AND deleted_at is null", liquidacion.ID, liquidacion.Legajoid).Error; gorm.IsRecordNotFoundError(err) {
+		db.Set("gorm:auto_preload", true).First(&liquidacionNoPermitida, "id != ? AND (tipoid = -1 OR tipoid = -3) AND legajoid = ? AND deleted_at is null  AND to_char(fechaperiodoliquidacion, 'YYYY') = ? AND to_char(fechaperiodoliquidacion, 'MM') = '12'", liquidacion.ID, liquidacion.Legajoid, liquidacion.Fechaperiodoliquidacion.Format("2006"))
+
+		if liquidacionNoPermitida.ID == 0 {
 			return nil
 		}
+
 		return errors.New("Para cargar una liquidacion de tipo SAC en diciembre, no pueden existir liquidaciones de tipo mensual/segunda quincena en ese mismo mes")
 	}
 
@@ -886,7 +891,7 @@ func LiquidacionDuplicarMasivo(w http.ResponseWriter, r *http.Request) {
 }
 
 func agregarNovedades(liquidacionItems *[]structLiquidacion.Liquidacionitem, fechaperiodoliquidacion time.Time, tipo structLiquidacion.Liquidaciontipo, db *gorm.DB, legajoid int) {
-	var novedades[] structNovedad.Novedad
+	var novedades []structNovedad.Novedad
 	switch tipo.ID {
 	case liquidacionTipoMensualID:
 		db.Set("gorm:auto_preload", true).Find(&novedades, "to_char(fecha, 'YYYY') = ? AND to_char(fecha, 'MM') = ? AND legajoid = ?", fechaperiodoliquidacion.Year(), fechaperiodoliquidacion.Format("01"), legajoid)
@@ -909,7 +914,7 @@ func agregarNovedades(liquidacionItems *[]structLiquidacion.Liquidacionitem, fec
 		}
 
 		liquidacionitem := structLiquidacion.Liquidacionitem{
-			GormModel:       structGormModel.GormModel{
+			GormModel: structGormModel.GormModel{
 				ID:        0,
 				CreatedAt: time.Time{},
 				UpdatedAt: time.Time{},
