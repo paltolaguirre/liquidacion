@@ -539,6 +539,7 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 					obtenerCuentasImportes(liquidaciones[i], &strCuentasImportes, r)
 				}
 				agruparCuentas(strCuentasImportes, mapCuentasImportes)
+				eliminarCuentasImporteCero(mapCuentasImportes)
 
 			} else {
 				framework.RespondError(w, http.StatusNotFound, framework.Seleccionaronliquidacionescontabilizadas)
@@ -548,6 +549,16 @@ func LiquidacionContabilizar(w http.ResponseWriter, r *http.Request) {
 
 		generarAsientoManualDesdeMonolitico(w, r, liquidaciones, mapCuentasImportes, tokenAutenticacion, descripcion_asiento, fecha_asiento, 0, db)
 
+	}
+
+}
+
+func eliminarCuentasImporteCero(mapCuentasImportes map[int]float64) {
+
+	for cuentaContableid, importeUnitario := range mapCuentasImportes {
+		if importeUnitario == 0 {
+			delete(mapCuentasImportes, cuentaContableid)
+		}
 	}
 
 }
